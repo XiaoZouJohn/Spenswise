@@ -1,0 +1,61 @@
+﻿import { useEffect, useState, type FormEvent } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
+import { AmountInput, Money } from '../components/business'
+import { FamilyScenarioPreview } from '../components/family'
+import { Badge, Button, Card, FormField, Input, SectionTitle, SelectInput, State, Textarea } from '../components/ui'
+import { familyErrorMessage, familyApi, type FamilyProposal, type ProposalPreview } from '../lib/familyApi'
+import { useSession } from '../lib/session'
+import { today, money } from '../lib/format'
+
+const statusLabel = { pending: '待决定', approved: '已确认', returned: '已退回' }
+const statusTone = { pending: 'warning', approved: 'success', returned: 'neutral' } as const
+const splitLabels = { equal: '平均分担', author: '提出者承担', leader: '组长承担', custom: '另行约定' }
+
+export function FamilyDecisionsPage() {
+  const session = useSession()
+  const client = useQueryClient()
+  const [params, setParams] = useSearchParams()
+  const proposals = useQuery({ queryKey: ['family', 'proposals'], queryFn: familyApi.proposals })
+  const members = useQuery({ queryKey: ['family', 'members'], queryFn: familyApi.members })
+  const goals = useQuery({ queryKey: ['family', 'goals'], queryFn: familyApi.goals })
+  const selectedId = Number(params.get('proposal') || 0)
+  const selected = proposals.data?.find(item => item.id === selectedId) ?? null
+  const creating = params.get('new') === '1'
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [amount, setAmount] = useState(0)
+  const [plannedDate, setPlannedDate] = useState(today())
+  const [category, setCategory] = useState('')
+  const [splitMethod, setSplitMethod] = useState<NonNullable<FamilyProposal['split_method']>>('equal')
+  const [splitNote, setSplitNote] = useState('')
+  const [fundingGoalId, setFundingGoalId] = useState<number | null>(null)
+  const [preview, setPreview] = useState<ProposalPreview | null>(null)
+  const [comment, setComment] = useState('')
+  const [transactionId, setTransactionId] = useState('')
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState(false)
+  const candidates = useQuery({ queryKey: ['family', 'proposal-candidates', selected?.category], queryFn: () => familyApi.transactions({ category: selected?.category, common_only: true, page_size: 100 }), enabled: !!selected && selected.status === 'approved' && selected.linked_transaction_id == null })
+  useEffect(() => { setPreview(null); setError(''); setMessage('') }, [selectedId, creating])
+  function select(item: FamilyProposal) { setParams({ proposal: String(item.id) }) }
+  async function work(action: () => Promise<unknown>, success: string) { setBusy(true); setError(''); setMessage(''); try { await action(); await client.invalidateQueries({ queryKey: ['family'] }); setMessage(success); return true } catch (issue) { setError(familyErrorMessage(issue, '操作失败')); return false } finally { setBusy(false) } }
+  async function showPreview(amount_cents: number, planned_date: string, funding_goal_id: number | null) { setBusy(true); setError(''); try { setPreview(await familyApi.previewProposal({ amount_cents, planned_date, funding_goal_id })) } catch (issue) { setError(familyErrorMessage(issue, '预览失败')) } finally { setBusy(false) } }
+  async function create(event: FormEvent) { event.preventDefault(); setBusy(true); setError(''); try { const item = await familyApi.createProposal({ title: title.trim(), description: description.trim(), amount_cents: amount, planned_date: plannedDate, category: category.trim(), split_method: splitMethod, split_note: splitNote.trim(), funding_goal_id: fundingGoalId }); await client.invalidateQueries({ queryKey: ['family'] }); setParams({ proposal: String(item.id) }); setTitle(''); setDescription(''); setAmount(0); setCategory(''); setSplitMethod('equal'); setSplitNote(''); setFundingGoalId(null) } catch (issue) { setError(familyErrorMessage(issue, '提交失败')) } finally { setBusy(false) } }
+  async function sendComment(event: FormEvent) { event.preventDefault(); if (!selected || !comment.trim()) return; if (await work(() => familyApi.commentProposal(selected.id, comment.trim()), '留言已保存')) setComment('') }
+  const author = selected ? members.data?.members.find(item => item.user_id === selected.author_id)?.display_name ?? '成员' : ''
+  const leader = session.data?.family?.role === 'leader'
+  return <div className="page space-y-5"><header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="m-0 text-3xl font-semibold">家庭议事板</h1><p className="mt-2 text-sm text-muted">先预览共同支出的现金流影响，再决定是否纳入计划。确认不会生成真实账单。</p></div><Button onClick={() => setParams({ new: '1' })}>提出共同支出</Button></header>
+    <div className="grid items-start gap-5 xl:grid-cols-[320px_minmax(0,1fr)]"><Card className="min-w-0"><SectionTitle title="计划事项"/>{proposals.isLoading ? <State kind="loading"/> : proposals.isError ? <State kind="error" retry={() => proposals.refetch()}/> : proposals.data?.length ? <div className="divide-y divide-line">{proposals.data.map(item => <button key={item.id} type="button" onClick={() => select(item)} className={'family-proposal-row ' + (selected?.id === item.id ? 'is-active' : '')}><span className="flex items-center justify-between gap-3"><strong className="truncate">{item.title}</strong><Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge></span><span className="mt-2 flex items-center justify-between text-sm text-muted"><span>{item.planned_date}</span><Money cents={item.amount_cents}/></span></button>)}</div> : <State kind="empty" message="还没有共同支出计划"/>}</Card>
+      <div className="min-w-0 space-y-5">{creating ? <><Card><SectionTitle title="提出共同支出"/><form onSubmit={create} className="space-y-4"><FormField label="计划名称" htmlFor="proposal-title"><Input id="proposal-title" value={title} onChange={event => setTitle(event.target.value)} required maxLength={100} placeholder="例如：家电更换"/></FormField><div className="grid gap-4 sm:grid-cols-2"><AmountInput label="计划金额" value={amount} onChange={value => { setAmount(value); setPreview(null) }}/><FormField label="计划日期" htmlFor="proposal-date"><Input id="proposal-date" type="date" value={plannedDate} onChange={event => { setPlannedDate(event.target.value); setPreview(null) }} required/></FormField></div><FormField label="分类" htmlFor="proposal-category"><Input id="proposal-category" value={category} onChange={event => setCategory(event.target.value)} required maxLength={80}/></FormField><FormField label="分担方式" htmlFor="proposal-split"><div id="proposal-split"><SelectInput label="分担方式" value={splitMethod} onValueChange={value => setSplitMethod(value as NonNullable<FamilyProposal['split_method']>)} options={Object.entries(splitLabels).map(([value, label]) => ({ value, label }))}/></div></FormField><FormField label="关联储蓄目标" htmlFor="proposal-goal"><div id="proposal-goal"><SelectInput label="关联储蓄目标" value={fundingGoalId == null ? 'none' : String(fundingGoalId)} onValueChange={value => { setFundingGoalId(value === 'none' ? null : Number(value)); setPreview(null) }} options={[{ value: 'none', label: '不指定目标' }, ...(goals.data ?? []).filter(goal => (goal.monthly_contribution_cents ?? 0) > 0).map(goal => ({ value: String(goal.id), label: goal.name }))]}/></div></FormField>{splitMethod === 'custom' && <FormField label="具体分担约定" htmlFor="proposal-split-note"><Input id="proposal-split-note" value={splitNote} onChange={event => setSplitNote(event.target.value)} required maxLength={240}/></FormField>}<FormField label="用途说明" htmlFor="proposal-description"><Textarea id="proposal-description" value={description} onChange={event => setDescription(event.target.value)} maxLength={1000}/></FormField><div className="flex flex-wrap items-center gap-3"><Button type="button" variant="secondary" disabled={busy || amount <= 0} onClick={() => showPreview(amount, plannedDate, fundingGoalId)}>预览影响</Button><Button type="submit" disabled={busy || amount <= 0}>提交计划</Button></div></form></Card>{preview && <Card><SectionTitle title="方案对比"/><FamilyScenarioPreview preview={preview}/></Card>}</> : selected ? <>
+        <Card><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="mb-2"><Badge tone={statusTone[selected.status]}>{statusLabel[selected.status]}</Badge></div><h2 className="m-0 text-2xl font-semibold">{selected.title}</h2><p className="mb-0 mt-2 text-sm text-muted">{author} 提出 · 计划 {selected.planned_date} · {selected.category}</p><p className="mb-0 mt-1 text-sm text-muted">分担：{splitLabels[selected.split_method ?? 'equal']}{selected.split_note && ' · ' + selected.split_note}</p>{selected.funding_goal_id && <p className="mb-0 mt-1 text-sm text-muted">关联目标：{goals.data?.find(goal => goal.id === selected.funding_goal_id)?.name ?? '目标已不可见'}</p>}</div><div className="text-2xl font-semibold"><Money cents={selected.amount_cents}/></div></div>{selected.description && <p className="mb-0 mt-5 border-t border-line pt-4 text-sm leading-7">{selected.description}</p>}
+          <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-line pt-4"><Button variant="secondary" disabled={busy} onClick={() => showPreview(selected.amount_cents, selected.planned_date, selected.funding_goal_id ?? null)}>预览现金流影响</Button>{leader && selected.status === 'pending' && <><Button disabled={busy} onClick={() => work(() => familyApi.decideProposal(selected.id, 'approved'), '计划已确认')}>确认计划</Button><Button variant="secondary" disabled={busy} onClick={() => work(() => familyApi.decideProposal(selected.id, 'returned'), '已退回计划')}>退回</Button></>}</div><p className="mb-0 mt-3 text-sm text-muted">计划确认后仍不计入已发生支出；实际账单入账后再关联。</p></Card>
+        {preview && <Card><SectionTitle title="原计划 / 新方案"/><FamilyScenarioPreview preview={preview}/></Card>}
+        {leader && selected.status === 'approved' && <Card><SectionTitle title="关联实际账单"/>{selected.linked_transaction_id ? <div className="flex flex-wrap items-center justify-between gap-3"><p className="m-0 text-sm text-success">已关联账单 #{selected.linked_transaction_id}，不会把计划重复计为支出。</p><Button variant="secondary" disabled={busy} onClick={() => work(() => familyApi.unlinkProposal(selected.id), '已解除账单关联')}>取消关联</Button></div> : <><p className="mt-0 text-sm text-muted">从已共享的同分类账单中选择实际入账记录。</p>{candidates.isLoading ? <State kind="loading"/> : candidates.isError ? <State kind="error" retry={() => candidates.refetch()}/> : candidates.data?.items.length ? <div className="flex flex-wrap items-end gap-3"><div className="min-w-64 flex-1"><SelectInput label="选择实际账单" value={transactionId} onValueChange={setTransactionId} placeholder="选择账单" options={candidates.data.items.map(item => ({ value: String(item.id), label: `${item.tx_date} · ${item.merchant || item.description} · ${money(item.amount_cents)}` }))}/></div><Button disabled={busy || !transactionId} onClick={() => work(() => familyApi.linkProposal(selected.id, Number(transactionId)), '账单已关联')}>关联账单</Button></div> : <State kind="empty" message="尚无可关联的同分类共享账单"/>}</>}</Card>}
+        <Card><SectionTitle title="讨论"/>{selected.comments.length ? <div className="divide-y divide-line">{selected.comments.map(item => <div key={item.id} className="py-3 first:pt-0"><div className="text-sm font-semibold">{members.data?.members.find(member => member.user_id === item.author_id)?.display_name ?? '成员'} <span className="ml-2 font-normal text-muted">{item.created_at.slice(0, 16).replace('T', ' ')}</span></div><p className="mb-0 mt-1 text-sm leading-6">{item.content}</p></div>)}</div> : <p className="mt-0 text-sm text-muted">还没有讨论内容。</p>}<form onSubmit={sendComment} className="mt-4 space-y-3"><FormField label="添加意见" htmlFor="proposal-comment"><Textarea id="proposal-comment" value={comment} onChange={event => setComment(event.target.value)} required maxLength={1000}/></FormField><Button type="submit" disabled={busy || !comment.trim()}>发送意见</Button></form></Card>
+      </> : <Card><State kind="empty" message="选择左侧计划，或提出新的共同支出"/></Card>}{message && <p className="m-0 text-sm text-success" role="status">{message}</p>}{error && <p className="m-0 text-sm text-danger" role="alert">{error}</p>}</div>
+    </div>
+  </div>
+}
+
+

@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "SpendWise SQLite 数据库升级",
+      "type": "process",
+      "command": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "args": ["-m", "alembic", "upgrade", "head"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend",
+        "env": { "DATABASE_URL": "sqlite:///./spendwise-dev.db" }
+      },
+      "problemMatcher": []
+    }
+  ]
+}

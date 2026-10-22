@@ -1,0 +1,46 @@
+{
+  "name": "spendwise-workbench",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "types:generate": "openapi-ts -c legacy/fetch -i http://127.0.0.1:8000/openapi.json -o src/client/generated",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "1.1.2",
+    "@radix-ui/react-select": "2.1.2",
+    "@radix-ui/react-slot": "1.1.1",
+    "@tanstack/react-query": "5.59.16",
+    "@tanstack/react-table": "8.20.5",
+    "class-variance-authority": "0.7.0",
+    "clsx": "2.1.1",
+    "echarts": "5.5.1",
+    "lucide-react": "0.454.0",
+    "motion": "11.18.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-markdown": "10.1.0",
+    "react-router-dom": "6.28.0",
+    "remark-gfm": "4.0.1",
+    "tailwind-merge": "2.5.4"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.57.0",
+    "@playwright/test": "1.48.2",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@typescript-eslint/eslint-plugin": "8.12.2",
+    "@typescript-eslint/parser": "8.12.2",
+    "@vitejs/plugin-react": "4.3.3",
+    "autoprefixer": "10.4.20",
+    "eslint": "9.14.0",
+    "postcss": "8.4.47",
+    "tailwindcss": "3.4.14",
+    "typescript": "5.6.3",
+    "vite": "5.4.10"
+  }
+}

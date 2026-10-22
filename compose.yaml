@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    ports: ["127.0.0.1:5432:5432"]
+    environment:
+      POSTGRES_DB: spendwise
+      POSTGRES_USER: spendwise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spendwise}
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spendwise"]
+      interval: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports: ["127.0.0.1:6379:6379"]
+  api:
+    build: ./backend
+    env_file: .env
+    ports: ["127.0.0.1:8000:8000"]
+    volumes: [uploads:/app/uploads, ai_keys:/app/ai-key]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_started}
+  worker:
+    build: ./backend
+    env_file: .env
+    command: celery -A app.tasks.celery_app worker --loglevel=INFO
+    volumes: [uploads:/app/uploads, ai_keys:/app/ai-key]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_started}
+  web:
+    build: ./frontend
+    ports: ["127.0.0.1:5173:80"]
+    depends_on: [api]
+volumes:
+  postgres_data:
+  uploads:
+  ai_keys:

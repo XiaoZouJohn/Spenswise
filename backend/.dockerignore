@@ -1,0 +1,8 @@
+.vendor
+.venv
+.pip-cache
+*.db
+uploads
+ai-key
+__pycache__
+.pytest_cache

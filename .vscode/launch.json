@@ -1,0 +1,70 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "SpendWise API (SQLite 开发)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main:app", "--host", "127.0.0.1", "--port", "8000"],
+      "cwd": "${workspaceFolder}/backend",
+      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "preLaunchTask": "SpendWise SQLite 数据库升级",
+      "env": {
+        "DATABASE_URL": "sqlite:///./spendwise-dev.db",
+        "CELERY_ALWAYS_EAGER": "1"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "SpendWise 前端 (Vite)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "program": "${workspaceFolder}/frontend/node_modules/vite/bin/vite.js",
+      "args": ["--host", "127.0.0.1"],
+      "cwd": "${workspaceFolder}/frontend",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "SpendWise API (PostgreSQL)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main:app", "--host", "127.0.0.1", "--port", "8000"],
+      "cwd": "${workspaceFolder}/backend",
+      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "env": {
+        "DATABASE_URL": "postgresql+psycopg://spendwise:spendwise@127.0.0.1:5432/spendwise",
+        "REDIS_URL": "redis://127.0.0.1:6379/0"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "SpendWise Worker (Redis)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "celery",
+      "args": ["-A", "app.tasks.celery_app", "worker", "--pool=solo", "--loglevel=INFO"],
+      "cwd": "${workspaceFolder}/backend",
+      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "env": {
+        "DATABASE_URL": "postgresql+psycopg://spendwise:spendwise@127.0.0.1:5432/spendwise",
+        "REDIS_URL": "redis://127.0.0.1:6379/0"
+      },
+      "justMyCode": true
+    }
+  ],
+  "compounds": [
+    {
+      "name": "SpendWise 前后端",
+      "configurations": ["SpendWise API (SQLite 开发)", "SpendWise 前端 (Vite)"],
+      "stopAll": true
+    },
+    {
+      "name": "SpendWise 完整栈 (PostgreSQL + Redis)",
+      "configurations": ["SpendWise API (PostgreSQL)", "SpendWise Worker (Redis)", "SpendWise 前端 (Vite)"],
+      "stopAll": true
+    }
+  ]
+}

@@ -1,0 +1,274 @@
+import asyncio
+import json
+from datetime import date
+from pathlib import Path
+from unittest.mock import patch
+
+import httpx
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.db import Base, get_db
+from app.main import app
+from app.models import AiConnection, Transaction
+from app.services import ai_chat, ai_connection
+
+
+def test_encrypted_connection_and_streamed_chat(tmp_path: Path, monkeypatch):
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'chat.db'}", connect_args={"check_same_thread": False}
+    )
+    Base.metadata.create_all(engine)
+    monkeypatch.setenv("AI_KEY_FILE", str(tmp_path / "secret" / "fernet.key"))
+    monkeypatch.delenv("AI_ENCRYPTION_KEY", raising=False)
+    monkeypatch.delenv("AI_API_KEY", raising=False)
+    monkeypatch.setattr(ai_chat, "SessionLocal", sessionmaker(bind=engine))
+
+    async def fake_upstream(chat: ai_chat.PreparedChat):
+        assert chat.thinking is True
+        assert [item["role"] for item in chat.messages] == ["system", "user"]
+        assert ("房租商户" in str(chat.messages)) is chat.used_ledger
+        assert "私密账单" not in str(chat.messages)
+        yield {"reasoning_content": "先梳理问题。"}
+        yield {"content": "可以先查看预算设置。"}
+
+    monkeypatch.setattr(ai_chat, "_upstream", fake_upstream)
+
+    def test_db():
+        with Session(engine) as db:
+            yield db
+
+    app.dependency_overrides[get_db] = test_db
+    try:
+        client = TestClient(app)
+        assert (
+            client.post(
+                "/api/auth/register",
+                json={
+                    "email": "chat@example.com",
+                    "password": "safe-test-password-123",
+                    "display_name": "聊天用户",
+                },
+            ).status_code
+            == 200
+        )
+        with Session(engine) as db:
+            db.add(
+                Transaction(
+                    owner_id=1,
+                    tx_date=date(2026, 10, 10),
+                    amount_cents=125000,
+                    tx_type="expense",
+                    merchant="房租商户",
+                    description="私密账单",
+                    category="居住",
+                    confidence=100,
+                    classification_reason="",
+                    is_fixed=True,
+                    source="manual",
+                    fingerprint="test-ai-chat-unique",
+                )
+            )
+            db.commit()
+
+        saved = client.put(
+            "/api/ai/connection", json={"api_key": "test-secret-key-123", "model": "deepseek-flash"}
+        )
+        assert saved.status_code == 200
+        assert saved.json()["configured"] is True
+        assert "api_key" not in saved.text
+        assert "test-secret-key-123" not in saved.text
+        assert client.get("/api/ai/status").json()["consent"] is False
+        assert client.get("/api/ai/chat/ledger-consent").json()["enabled"] is False
+        with Session(engine) as db:
+            encrypted = db.get(AiConnection, 1).encrypted_key
+            assert "test-secret-key-123" not in encrypted
+            assert ai_connection.resolve(db, 1)[0] == "test-secret-key-123"
+
+        response = client.post(
+            "/api/ai/chat/stream",
+            json={"conversation_id": None, "message": "如何整理预算？", "thinking": True},
+        )
+        assert response.status_code == 200
+        assert "event: reasoning" in response.text
+        assert "event: content" in response.text
+        assert "event: done" in response.text
+        conversations = client.get("/api/ai/conversations").json()
+        assert len(conversations) == 1
+        detail = client.get(f"/api/ai/conversations/{conversations[0]['id']}").json()
+        assert [row["role"] for row in detail["messages"]] == ["user", "assistant"]
+        assert detail["messages"][1]["reasoning"] == "先梳理问题。"
+        assert detail["messages"][1]["content"] == "可以先查看预算设置。"
+
+        assert (
+            client.put("/api/ai/chat/ledger-consent", json={"enabled": True}).json()["enabled"]
+            is True
+        )
+        with_ledger = client.post(
+            "/api/ai/chat/stream",
+            json={"conversation_id": None, "message": "查看我的账单", "thinking": True},
+        )
+        assert with_ledger.status_code == 200
+        assert "event: done" in with_ledger.text
+        ledger_conversation = client.get("/api/ai/conversations").json()[0]["id"]
+        assert (
+            client.put("/api/ai/chat/ledger-consent", json={"enabled": False}).json()["enabled"]
+            is False
+        )
+        blocked = client.post(
+            "/api/ai/chat/stream",
+            json={"conversation_id": ledger_conversation, "message": "继续", "thinking": True},
+        )
+        assert blocked.status_code == 409
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_deepseek_stream_contract(monkeypatch):
+    seen: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.update(json.loads(request.content))
+        assert str(request.url) == "https://api.deepseek.com/chat/completions"
+        assert request.headers["authorization"] == "Bearer local-test-key"
+        body = 'data: {"choices":[{"delta":{"reasoning_content":"思考"}}]}\n\n'
+        body += 'data: {"choices":[{"delta":{"content":"回答"}}]}\n\n'
+        body += "data: [DONE]\n\n"
+        return httpx.Response(200, text=body, headers={"content-type": "text/event-stream"})
+
+    original = httpx.AsyncClient
+    transport = httpx.MockTransport(handler)
+    monkeypatch.setattr(
+        ai_chat.httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: original(*args, transport=transport, **kwargs),
+    )
+    chat = ai_chat.PreparedChat(
+        1,
+        "test-session",
+        "问题",
+        True,
+        "问题",
+        True,
+        "local-test-key",
+        "deepseek-flash",
+        [{"role": "user", "content": "问题"}],
+        False,
+    )
+
+    async def collect():
+        return [part async for part in ai_chat._upstream(chat)]
+
+    assert asyncio.run(collect()) == [{"reasoning_content": "思考"}, {"content": "回答"}]
+    assert seen["thinking"] == {"type": "enabled"}
+    assert seen["stream"] is True
+    assert seen["model"] == "deepseek-flash"
+
+
+def test_invalid_chat_message_and_legacy_connection_recovery(tmp_path: Path, monkeypatch):
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'recovery.db'}", connect_args={"check_same_thread": False}
+    )
+    Base.metadata.create_all(engine)
+    monkeypatch.setenv("AI_MODEL", "deepseek-chat")
+    monkeypatch.setenv("AI_API_KEY", "env-backup-key")
+    monkeypatch.setenv("AI_KEY_FILE", str(tmp_path / "original" / "fernet.key"))
+    monkeypatch.delenv("AI_ENCRYPTION_KEY", raising=False)
+
+    def test_db():
+        with Session(engine) as db:
+            yield db
+
+    app.dependency_overrides[get_db] = test_db
+    try:
+        client = TestClient(app)
+        assert (
+            client.post(
+                "/api/auth/register",
+                json={
+                    "email": "recovery@example.com",
+                    "password": "safe-test-password-123",
+                    "display_name": "恢复用户",
+                },
+            ).status_code
+            == 200
+        )
+        invalid = client.post(
+            "/api/ai/chat/stream",
+            json={
+                "conversation_id": None,
+                "message": "   ",
+                "thinking": False,
+            },
+        )
+        assert invalid.status_code == 422
+        assert invalid.json()["detail"]["code"] == "INVALID_CHAT_MESSAGE"
+
+        legacy = client.get("/api/ai/connection")
+        assert legacy.status_code == 200
+        assert legacy.json()["configured"] is True
+        assert legacy.json()["model"] == "deepseek-flash"
+
+        monkeypatch.delenv("AI_API_KEY")
+        saved = client.put(
+            "/api/ai/connection",
+            json={
+                "api_key": "stored-secret-key",
+                "model": "deepseek-flash",
+            },
+        )
+        assert saved.status_code == 200
+        monkeypatch.setenv("AI_KEY_FILE", str(tmp_path / "missing" / "fernet.key"))
+        monkeypatch.setenv("AI_API_KEY", "env-backup-key")
+        with Session(engine) as db:
+            assert ai_connection.resolve(db, 1) == ("env-backup-key", "deepseek-flash")
+        assert client.get("/api/ai/connection").json()["configured"] is True
+        changed = client.put("/api/ai/connection", json={"model": "deepseek-v4-pro"})
+        assert changed.status_code == 200
+        assert changed.json()["model"] == "deepseek-v4-pro"
+        with Session(engine) as db:
+            assert ai_connection.resolve(db, 1) == ("env-backup-key", "deepseek-v4-pro")
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_revocation_between_prepare_and_send_keeps_ledger_off_upstream(
+    tmp_path: Path,
+    monkeypatch,
+):
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'revocation.db'}", connect_args={"check_same_thread": False}
+    )
+    Base.metadata.create_all(engine)
+    monkeypatch.setenv("AI_API_KEY", "test-env-key")
+    monkeypatch.setattr(ai_chat, "SessionLocal", sessionmaker(bind=engine))
+
+    with Session(engine) as db:
+        ai_chat.set_ledger_consent(db, True, 1)
+        db.commit()
+        prepared = ai_chat.prepare(db, None, "Review my bills", False, 1)
+        assert prepared.used_ledger is True
+        ai_chat.set_ledger_consent(db, False, 1)
+        db.commit()
+
+    upstream_calls = []
+
+    async def fake_upstream(_chat):
+        upstream_calls.append(True)
+        yield {"content": "should not be sent"}
+
+    async def collect_reply():
+        return [event async for event in ai_chat.stream_reply(prepared)]
+
+    with patch.object(ai_chat, "_upstream", fake_upstream):
+        events = asyncio.run(collect_reply())
+    assert any("event: error" in event for event in events)
+    assert upstream_calls == []
+
+    async def collect_upstream():
+        return [delta async for delta in ai_chat._upstream(prepared)]
+
+    with pytest.raises(PermissionError):
+        asyncio.run(collect_upstream())

@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="930" viewBox="0 0 1440 930" role="img" aria-label="家庭组财务驾驶台概念图：现金流时间轴、待商量事项、资金去向与共同目标">
+  <defs>
+    <style>
+      text { font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif; fill: #213540; }
+      .title { font-size: 31px; font-weight: 700; }
+      .section { font-size: 19px; font-weight: 700; }
+      .body { font-size: 15px; }
+      .small { font-size: 13px; fill: #657780; }
+      .label { font-size: 12px; font-weight: 700; letter-spacing: 1px; fill: #62747c; }
+      .money { font-size: 22px; font-weight: 700; }
+      .line { stroke: #dce3e3; stroke-width: 1; }
+    </style>
+  </defs>
+  <rect width="1440" height="930" fill="#f5f6f3"/>
+  <rect width="1440" height="73" fill="#ffffff"/>
+  <path d="M0 72H1440" class="line"/>
+  <rect x="54" y="22" width="28" height="28" rx="5" fill="#1c6d68"/>
+  <path d="M61 42V30h14v12M61 36h14" stroke="white" stroke-width="2" fill="none"/>
+  <text x="96" y="43" font-size="22" font-weight="700">SpendWise</text>
+  <text x="315" y="43" class="body">个人空间</text>
+  <text x="425" y="43" class="body" fill="#1c6d68" font-weight="700">家庭组</text>
+  <rect x="422" y="69" width="59" height="3" fill="#1c6d68"/>
+  <text x="1024" y="43" class="body">家庭收支</text>
+  <text x="1139" y="43" class="body">共同预算</text>
+  <text x="1255" y="43" class="body">成员与权限</text>
+
+  <text x="64" y="127" class="title">家庭财务</text>
+  <text x="65" y="155" class="small">示意数据 · 两位成员 · 更新于今天 09:30</text>
+  <rect x="1138" y="99" width="114" height="38" rx="4" fill="#ffffff" stroke="#d7dfdf"/>
+  <text x="1161" y="124" class="body">2026 年 10 月</text>
+  <rect x="1264" y="99" width="112" height="38" rx="4" fill="#1c6d68"/>
+  <text x="1280" y="124" font-size="15" fill="#ffffff" font-weight="700">提出共同支出</text>
+
+  <rect x="64" y="179" width="1312" height="66" rx="5" fill="#e9f0ec"/>
+  <rect x="64" y="179" width="5" height="66" fill="#1c6d68"/>
+  <text x="87" y="207" class="label">未来 30 天</text>
+  <text x="87" y="230" font-size="19" font-weight="700">10 月 24 日是预计余额低点；旅行支出延后可留出更多缓冲。</text>
+  <text x="1225" y="219" class="body" fill="#1c6d68" font-weight="700">查看方案 →</text>
+
+  <rect x="64" y="263" width="887" height="391" rx="5" fill="#ffffff" stroke="#dce3e3"/>
+  <text x="87" y="302" class="section">未来现金流</text>
+  <text x="809" y="301" class="small">按日查看  ·  30 天</text>
+  <text x="87" y="327" class="small">调整计划日期，预览最低余额的变化；点击节点可看来源账单</text>
+  <path d="M119 391H919 M119 452H919 M119 513H919" class="line" stroke-dasharray="4 5"/>
+  <text x="86" y="394" class="small">高</text>
+  <text x="86" y="517" class="small">低</text>
+  <path d="M135 451 C186 449 205 369 253 369 S326 390 367 404 S431 419 477 422 S549 470 591 473 S655 451 707 449 S774 501 822 500 S867 468 904 457" fill="none" stroke="#1c6d68" stroke-width="4"/>
+  <path d="M135 451 C186 449 205 369 253 369 S326 390 367 404 S431 419 477 422 S549 470 591 473 S655 451 707 449 S774 501 822 500 S867 468 904 457 L904 514H135Z" fill="#1c6d68" opacity="0.06"/>
+  <circle cx="253" cy="369" r="6" fill="#1c6d68"/>
+  <circle cx="477" cy="422" r="6" fill="#b76835"/>
+  <circle cx="591" cy="473" r="6" fill="#b76835"/>
+  <circle cx="822" cy="500" r="7" fill="#bf594b"/>
+  <path d="M822 500V382" stroke="#bf594b" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <rect x="725" y="346" width="185" height="37" rx="4" fill="#fff4ee" stroke="#f1d7cc"/>
+  <text x="739" y="370" font-size="14" font-weight="700" fill="#a94738">24 日 · 预计最低余额</text>
+  <text x="221" y="354" class="small">工资入账</text>
+  <text x="448" y="407" class="small">房租</text>
+  <text x="561" y="458" class="small">保险</text>
+  <path d="M135 518V536 M253 518V536 M367 518V536 M477 518V536 M591 518V536 M707 518V536 M822 518V536 M904 518V536" stroke="#bdc8c8"/>
+  <text x="115" y="556" class="small">10/1</text>
+  <text x="232" y="556" class="small">10/5</text>
+  <text x="345" y="556" class="small">10/9</text>
+  <text x="452" y="556" class="small">10/13</text>
+  <text x="567" y="556" class="small">10/17</text>
+  <text x="680" y="556" class="small">10/21</text>
+  <text x="797" y="556" class="small">10/24</text>
+  <text x="881" y="556" class="small">10/30</text>
+  <rect x="86" y="585" width="20" height="20" rx="3" fill="#def0e9"/>
+  <text x="112" y="600" class="body">已确认收入</text>
+  <rect x="264" y="585" width="20" height="20" rx="3" fill="#f3e8da"/>
+  <text x="290" y="600" class="body">固定账单</text>
+  <rect x="432" y="585" width="20" height="20" rx="3" fill="#f8e4e0"/>
+  <text x="458" y="600" class="body">计划支出</text>
+  <text x="725" y="601" class="body" fill="#1c6d68" font-weight="700">展开现金流明细 →</text>
+
+  <rect x="968" y="263" width="408" height="391" rx="5" fill="#ffffff" stroke="#dce3e3"/>
+  <text x="991" y="302" class="section">待一起决定</text>
+  <text x="991" y="327" class="small">围绕具体支出讨论，确认后关联账单</text>
+  <path d="M991 346H1353" class="line"/>
+  <rect x="991" y="367" width="4" height="66" fill="#b76835"/>
+  <text x="1009" y="385" class="small">共同支出 · 等待确认</text>
+  <text x="1009" y="408" font-size="17" font-weight="700">周末短途旅行</text>
+  <text x="1009" y="430" class="body">10 月 24 日 · 影响本月余额低点</text>
+  <text x="1285" y="407" class="body" fill="#1c6d68" font-weight="700">讨论 →</text>
+  <path d="M991 450H1353" class="line"/>
+  <rect x="991" y="470" width="4" height="66" fill="#bf594b"/>
+  <text x="1009" y="489" class="small">共同预算 · 需要调整</text>
+  <text x="1009" y="512" font-size="17" font-weight="700">餐饮接近本月上限</text>
+  <text x="1009" y="534" class="body">查看本月分类来源与可用空间</text>
+  <text x="1285" y="511" class="body" fill="#1c6d68" font-weight="700">处理 →</text>
+  <path d="M991 554H1353" class="line"/>
+  <text x="991" y="584" class="small">已确认事项</text>
+  <text x="991" y="609" class="body">房租已记录 · 来源账单已关联</text>
+  <text x="1285" y="609" class="body" fill="#1c6d68" font-weight="700">查看 →</text>
+
+  <rect x="64" y="672" width="724" height="204" rx="5" fill="#ffffff" stroke="#dce3e3"/>
+  <text x="87" y="711" class="section">本月钱的去向</text>
+  <text x="87" y="735" class="small">分类面积对应已发生支出；颜色提示与预算的关系</text>
+  <rect x="87" y="752" width="295" height="92" fill="#245f61"/>
+  <text x="105" y="789" font-size="19" font-weight="700" fill="white">住房</text>
+  <text x="105" y="814" font-size="14" fill="white">固定支出</text>
+  <rect x="386" y="752" width="171" height="92" fill="#b96d3f"/>
+  <text x="401" y="789" font-size="18" font-weight="700" fill="white">餐饮</text>
+  <text x="401" y="814" font-size="14" fill="white">接近上限</text>
+  <rect x="561" y="752" width="112" height="92" fill="#6b8790"/>
+  <text x="574" y="790" font-size="17" font-weight="700" fill="white">交通</text>
+  <rect x="677" y="752" width="87" height="92" fill="#a6aaa4"/>
+  <text x="687" y="790" font-size="15" font-weight="700" fill="white">其他</text>
+  <text x="87" y="863" class="small">点击分类 → 按成员与来源账单下钻；内部转账不计作支出</text>
+
+  <rect x="806" y="672" width="570" height="204" rx="5" fill="#ffffff" stroke="#dce3e3"/>
+  <text x="829" y="711" class="section">共同目标</text>
+  <text x="829" y="735" class="small">调整每月投入，查看达成时间和最低余额是否仍安全</text>
+  <text x="829" y="777" class="body" font-weight="700">应急金</text>
+  <text x="1242" y="777" class="body">预计明年 4 月</text>
+  <rect x="829" y="794" width="500" height="9" rx="4" fill="#e5ebea"/>
+  <rect x="829" y="794" width="316" height="9" rx="4" fill="#1c6d68"/>
+  <path d="M998 787V811 M1164 787V811" stroke="#8c9b9b" stroke-width="2"/>
+  <text x="829" y="841" class="small">已积累</text>
+  <text x="982" y="841" class="small">第一阶段</text>
+  <text x="1136" y="841" class="small">三个月开销</text>
+  <text x="1240" y="841" class="body" fill="#1c6d68" font-weight="700">调整计划 →</text>
+  <text x="64" y="909" class="small">概念图：页面结构与示意数据，仅用于讨论交互方向；真实金额、权限和预测以实际数据模型为准。</text>
+</svg>
