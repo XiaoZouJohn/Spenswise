@@ -97,7 +97,10 @@ def _review_items(db: Session, items: list[Transaction], owner_id: int) -> list[
         if not isinstance(item, dict):
             continue
         try:
-            item_id = int(item.get("id"))
+            raw_id = item.get("id")
+            if raw_id is None:
+                continue
+            item_id = int(raw_id)
             confidence = max(0, min(100, int(item.get("confidence", 0))))
         except (TypeError, ValueError):
             continue
@@ -169,13 +172,13 @@ def review_all(db: Session, owner_id: int) -> dict:
 
     suggestions = []
     for rows in groups.values():
-        suggestion = representative_suggestions.get(rows[0].id)
-        if not suggestion:
+        representative = representative_suggestions.get(rows[0].id)
+        if not representative:
             continue
         for row in rows:
             suggestions.append(
                 {
-                    **suggestion,
+                    **representative,
                     "id": row.id,
                     "merchant": row.merchant,
                     "description": row.description,
@@ -194,7 +197,7 @@ def apply_suggestions(db: Session, suggestions: list[dict], owner_id: int) -> di
     if not enabled(db, owner_id):
         raise ValueError("请先授权并配置 AI 连接")
     ids = [int(item["id"]) for item in suggestions]
-    rows = []
+    rows: list[Transaction] = []
     # Keep the save action compatible with SQLite builds that cap the number of
     # bound variables in a single IN query.
     for start in range(0, len(ids), 500):

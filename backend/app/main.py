@@ -356,8 +356,7 @@ def confirm_import(
         # rescan the file. Transaction fingerprints still prevent duplicates,
         # while rows deleted from the ledger can be restored by re-importing.
         if existing.id == value.token or (
-            os.getenv("CELERY_ALWAYS_EAGER") != "1"
-            and existing.status in {"pending", "running"}
+            os.getenv("CELERY_ALWAYS_EAGER") != "1" and existing.status in {"pending", "running"}
         ):
             return {
                 "id": existing.id,

@@ -7,7 +7,7 @@ import uuid
 from datetime import date, datetime
 from itertools import islice
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Sequence
 
 from sqlalchemy.orm import Session
 
@@ -97,7 +97,7 @@ def _clean_header(value: object) -> str:
     return re.sub(r"\s+", "", str(value or "").replace("\ufeff", "")).strip()
 
 
-def _unique_columns(values: list[object]) -> list[str]:
+def _unique_columns(values: Sequence[object]) -> list[str]:
     columns: list[str] = []
     counts: dict[str, int] = {}
     for index, value in enumerate(values, start=1):
@@ -124,7 +124,7 @@ def _mapping_value(columns: list[str], aliases: list[str]) -> str | None:
     return None
 
 
-def _header_candidate(values: list[object]) -> tuple[int, list[str]] | None:
+def _header_candidate(values: Sequence[object]) -> tuple[int, list[str]] | None:
     columns = _unique_columns(values)
     non_empty = sum(bool(_clean_header(value)) for value in values)
     if non_empty < 2:
@@ -137,7 +137,7 @@ def _header_candidate(values: list[object]) -> tuple[int, list[str]] | None:
     return required * 100 + recognized * 10 + non_empty, columns
 
 
-def _find_header(rows: list[list[object]]) -> tuple[int, list[str]]:
+def _find_header(rows: Sequence[Sequence[object]]) -> tuple[int, list[str]]:
     best: tuple[int, int, list[str]] | None = None
     for index, values in enumerate(rows[:HEADER_SCAN_LIMIT]):
         candidate = _header_candidate(values)
@@ -151,7 +151,9 @@ def _find_header(rows: list[list[object]]) -> tuple[int, list[str]]:
     return best[1], best[2]
 
 
-def _rows_to_records(rows: list[list[object]], header_index: int, columns: list[str]) -> list[dict]:
+def _rows_to_records(
+    rows: Sequence[Sequence[object]], header_index: int, columns: list[str]
+) -> list[dict]:
     mapping = guess_mapping(columns)
     date_column = mapping.get("date")
     amount_column = mapping.get("amount")
