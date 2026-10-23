@@ -21,6 +21,7 @@ from app.services.budget import (
 from app.services.budget import (
     summary as _summary,
 )
+from app.services.forecast import next_calendar_month
 from app.services.forecast import simulate as _simulate
 from app.services.imports import guess_mapping, normalize_row, parse_file
 from app.services.ledger import add_transaction as _add_transaction
@@ -75,6 +76,17 @@ def test_money_rounding():
     assert to_cents("-0.005") == -1
 
 
+def test_next_calendar_month_handles_year_and_leap_month_boundaries():
+    assert next_calendar_month(date(2026, 12, 20)) == (
+        date(2027, 1, 1),
+        date(2027, 1, 31),
+    )
+    assert next_calendar_month(date(2028, 1, 15)) == (
+        date(2028, 2, 1),
+        date(2028, 2, 29),
+    )
+
+
 def test_balance_refund_transfer_and_duplicate(tmp_path):
     engine = create_engine(f"sqlite:///{tmp_path / 'test.db'}")
     Base.metadata.create_all(engine)
@@ -124,7 +136,9 @@ def test_forecast_excludes_paid_recurring(tmp_path):
             )
         db.commit()
         result = simulate(
-            db, ScenarioIn(amount_cents=10000, purchase_date=anchor, reserve_cents=0), as_of=anchor
+            db,
+            ScenarioIn(amount_cents=10000, purchase_date=date(2026, 10, 1), reserve_cents=0),
+            as_of=anchor,
         )
         assert all(x["date"] != "2026-09-05" for x in result["recurring_bills"])
         assert any(x["date"] == "2026-10-05" for x in result["recurring_bills"])
@@ -149,10 +163,70 @@ def test_monthly_plan_loads_with_varying_history(tmp_path):
             )
         db.commit()
         result = simulate(
-            db, ScenarioIn(amount_cents=0, purchase_date=anchor, reserve_cents=0), as_of=anchor
+            db,
+            ScenarioIn(amount_cents=0, purchase_date=date(2026, 11, 1), reserve_cents=0),
+            as_of=anchor,
         )
-        assert result["baseline"]["method"] == "statsmodels-simple-exponential-smoothing"
+        assert result["baseline"]["method"] == "hybrid-monthly-ensemble"
         assert len(result["timeline"]) == 30
+        assert result["period_start"] == "2026-11-01"
+        assert result["period_end"] == "2026-11-30"
+        assert result["timeline"][0]["date"] == "2026-11-01"
+        assert result["timeline"][-1]["date"] == "2026-11-30"
+
+
+def test_monthly_forecast_tracks_complete_month_spending_not_budget_or_default_purchase(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'monthly-forecast.db'}")
+    Base.metadata.create_all(engine)
+    anchor = date(2026, 10, 22)
+    with Session(engine) as db:
+        save_settings(db, {"opening_balance_cents": 500000, "monthly_budget_cents": 300000})
+        for month, amount in zip(
+            range(4, 10),
+            (280000, 300000, 290000, 310000, 295000, 305000),
+            strict=True,
+        ):
+            add_transaction(
+                db,
+                TransactionIn(
+                    tx_date=date(2026, month, 15),
+                    amount_cents=amount,
+                    tx_type="expense",
+                    merchant="校园综合消费",
+                    category="餐饮",
+                ),
+            )
+        add_transaction(
+            db,
+            TransactionIn(
+                tx_date=date(2026, 10, 22),
+                amount_cents=200000,
+                tx_type="expense",
+                merchant="本月累计消费",
+                category="餐饮",
+            ),
+        )
+        db.commit()
+        result = simulate(
+            db,
+            ScenarioIn(
+                amount_cents=0,
+                purchase_date=date(2026, 11, 1),
+                reserve_cents=0,
+                use_ai_review=False,
+            ),
+            as_of=anchor,
+        )
+        assert 280000 <= result["expected_expense_cents"] <= 310000
+        assert result["expected_expense_cents"] != 120000
+        assert result["expected_budget_remaining_cents"] == (
+            300000 - result["expected_expense_cents"]
+        )
+        assert result["ai_review"]["status"] == "not_requested"
+        assert result["recurring_bills"] == []
+        assert result["timeline"][-1]["before_cents"] == (
+            result["opening_balance_cents"] - result["expected_expense_cents"]
+        )
 
 
 def test_monthly_budget_alerts_use_net_spending_only(tmp_path):

@@ -26,6 +26,54 @@ export const AccountDeleteOutSchema = {
     title: 'AccountDeleteOut'
 } as const;
 
+export const AiCategoryApplyInSchema = {
+    properties: {
+        suggestions: {
+            items: {
+                '$ref': '#/components/schemas/AiCategorySuggestionIn'
+            },
+            type: 'array',
+            maxItems: 10000,
+            minItems: 1,
+            title: 'Suggestions'
+        }
+    },
+    type: 'object',
+    required: ['suggestions'],
+    title: 'AiCategoryApplyIn'
+} as const;
+
+export const AiCategorySuggestionInSchema = {
+    properties: {
+        id: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Id'
+        },
+        category: {
+            type: 'string',
+            maxLength: 80,
+            minLength: 1,
+            title: 'Category'
+        },
+        confidence: {
+            type: 'integer',
+            maximum: 100,
+            minimum: 0,
+            title: 'Confidence'
+        },
+        reason: {
+            type: 'string',
+            maxLength: 200,
+            title: 'Reason',
+            default: 'AI 分类'
+        }
+    },
+    type: 'object',
+    required: ['id', 'category', 'confidence'],
+    title: 'AiCategorySuggestionIn'
+} as const;
+
 export const AiConnectionInSchema = {
     properties: {
         api_key: {
@@ -1372,6 +1420,39 @@ export const FamilyTimelineDaySchema = {
     title: 'FamilyTimelineDay'
 } as const;
 
+export const ForecastAiReviewSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            enum: ['applied', 'unavailable', 'failed', 'not_requested'],
+            title: 'Status'
+        },
+        model: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Model'
+        },
+        adjustment_percent: {
+            type: 'number',
+            title: 'Adjustment Percent',
+            default: 0
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason'
+        }
+    },
+    type: 'object',
+    required: ['status', 'reason'],
+    title: 'ForecastAiReview'
+} as const;
+
 export const ForecastBaselineSchema = {
     properties: {
         daily_cents: {
@@ -1804,6 +1885,16 @@ export const PageSchema = {
         page_size: {
             type: 'integer',
             title: 'Page Size'
+        },
+        expense_cents: {
+            type: 'integer',
+            title: 'Expense Cents',
+            default: 0
+        },
+        income_cents: {
+            type: 'integer',
+            title: 'Income Cents',
+            default: 0
         }
     },
     type: 'object',
@@ -2147,6 +2238,11 @@ export const ScenarioInSchema = {
             minimum: 7,
             title: 'Horizon Days',
             default: 30
+        },
+        use_ai_review: {
+            type: 'boolean',
+            title: 'Use Ai Review',
+            default: false
         }
     },
     type: 'object',
@@ -2164,6 +2260,30 @@ export const ScenarioResultSchema = {
             type: 'string',
             format: 'date',
             title: 'As Of'
+        },
+        period_start: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Period Start'
+        },
+        period_end: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Period End'
         },
         currency: {
             type: 'string',
@@ -2221,6 +2341,71 @@ export const ScenarioResultSchema = {
             },
             type: 'array',
             title: 'Source Transaction Ids'
+        },
+        expected_expense_cents: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expected Expense Cents'
+        },
+        expected_expense_after_purchase_cents: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expected Expense After Purchase Cents'
+        },
+        forecast_lower_expense_cents: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Forecast Lower Expense Cents'
+        },
+        forecast_upper_expense_cents: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Forecast Upper Expense Cents'
+        },
+        expected_budget_remaining_cents: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expected Budget Remaining Cents'
+        },
+        ai_review: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ForecastAiReview'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',
@@ -2434,6 +2619,10 @@ export const TransactionOutSchema = {
             type: 'integer',
             title: 'Confidence'
         },
+        classification_reason: {
+            type: 'string',
+            title: 'Classification Reason'
+        },
         family_shared: {
             type: 'boolean',
             title: 'Family Shared',
@@ -2446,7 +2635,7 @@ export const TransactionOutSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'tx_date', 'amount_cents', 'tx_type', 'merchant', 'description', 'category', 'is_fixed', 'source', 'confidence'],
+    required: ['id', 'tx_date', 'amount_cents', 'tx_type', 'merchant', 'description', 'category', 'is_fixed', 'source', 'confidence', 'classification_reason'],
     title: 'TransactionOut'
 } as const;
 

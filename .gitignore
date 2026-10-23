@@ -1,5 +1,10 @@
 .tooling/
 .npm-cache/
+.build-temp/
+build/
+dist/
+/package-lock.json
+packaging/__pycache__/
 frontend/node_modules/
 frontend/dist/
 frontend/test-results/

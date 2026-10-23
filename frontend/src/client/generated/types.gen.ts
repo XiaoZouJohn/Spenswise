@@ -8,6 +8,17 @@ export type AccountDeleteOut = {
     deleted: boolean;
 };
 
+export type AiCategoryApplyIn = {
+    suggestions: Array<AiCategorySuggestionIn>;
+};
+
+export type AiCategorySuggestionIn = {
+    id: number;
+    category: string;
+    confidence: number;
+    reason?: string;
+};
+
 export type AiConnectionIn = {
     api_key?: (string | null);
     model?: 'deepseek-flash' | 'deepseek-v4-pro';
@@ -340,6 +351,15 @@ export type FamilyTimelineDay = {
     cumulative_change_cents: number;
 };
 
+export type ForecastAiReview = {
+    status: 'applied' | 'unavailable' | 'failed' | 'not_requested';
+    model?: (string | null);
+    adjustment_percent?: number;
+    reason: string;
+};
+
+export type status2 = 'applied' | 'unavailable' | 'failed' | 'not_requested';
+
 export type ForecastBaseline = {
     daily_cents: number;
     lower_daily_cents: number;
@@ -439,6 +459,8 @@ export type Page = {
     total: number;
     page: number;
     page_size: number;
+    expense_cents?: number;
+    income_cents?: number;
 };
 
 export type PasswordChangeIn = {
@@ -523,11 +545,14 @@ export type ScenarioIn = {
     reserve_cents: number;
     protected_categories?: Array<(string)>;
     horizon_days?: number;
+    use_ai_review?: boolean;
 };
 
 export type ScenarioResult = {
     data_version: string;
     as_of: string;
+    period_start?: (string | null);
+    period_end?: (string | null);
     currency: 'CNY';
     baseline: ForecastBaseline;
     opening_balance_cents: number;
@@ -540,6 +565,12 @@ export type ScenarioResult = {
     timeline: Array<CashflowDay>;
     recurring_bills: Array<RecurringBill>;
     source_transaction_ids: Array<(number)>;
+    expected_expense_cents?: (number | null);
+    expected_expense_after_purchase_cents?: (number | null);
+    forecast_lower_expense_cents?: (number | null);
+    forecast_upper_expense_cents?: (number | null);
+    expected_budget_remaining_cents?: (number | null);
+    ai_review?: (ForecastAiReview | null);
 };
 
 export type currency = 'CNY';
@@ -596,6 +627,7 @@ export type TransactionOut = {
     is_fixed: boolean;
     source: string;
     confidence: number;
+    classification_reason: string;
     family_shared?: boolean;
     family_internal?: boolean;
 };
@@ -897,10 +929,14 @@ export type PreviewBudgetApiBudgetPreviewPostResponse = (BudgetStatus);
 
 export type TransactionsApiTransactionsGetData = {
     category?: (string | null);
+    dateFrom?: (string | null);
+    dateTo?: (string | null);
     ids?: (string | null);
+    merchant?: (string | null);
     page?: number;
     pageSize?: number;
     review?: boolean;
+    txType?: ('expense' | 'income' | 'refund' | 'transfer' | null);
 };
 
 export type TransactionsApiTransactionsGetResponse = (Page);
@@ -910,6 +946,10 @@ export type CreateTransactionApiTransactionsPostData = {
 };
 
 export type CreateTransactionApiTransactionsPostResponse = (TransactionOut);
+
+export type DeleteAllTransactionsApiTransactionsDeleteResponse = ({
+    [key: string]: unknown;
+});
 
 export type DeleteTransactionApiTransactionsTransactionIdDeleteData = {
     transactionId: number;
@@ -1040,5 +1080,17 @@ export type ReviewAiApiAiReviewTransactionsPostData = {
 };
 
 export type ReviewAiApiAiReviewTransactionsPostResponse = ({
+    [key: string]: unknown;
+});
+
+export type ReviewAllAiApiAiReviewAllTransactionsPostResponse = ({
+    [key: string]: unknown;
+});
+
+export type ApplyAiCategoriesApiAiApplyTransactionCategoriesPostData = {
+    requestBody: AiCategoryApplyIn;
+};
+
+export type ApplyAiCategoriesApiAiApplyTransactionCategoriesPostResponse = ({
     [key: string]: unknown;
 });
