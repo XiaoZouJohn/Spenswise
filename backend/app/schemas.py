@@ -31,6 +31,7 @@ class TransactionOut(BaseModel):
     is_fixed: bool
     source: str
     confidence: int
+    classification_reason: str
     family_shared: bool = False
     family_internal: bool = False
 
@@ -40,6 +41,8 @@ class Page(BaseModel):
     total: int
     page: int
     page_size: int
+    expense_cents: int = 0
+    income_cents: int = 0
 
 
 class CategoryBudgetIn(BaseModel):
@@ -179,6 +182,7 @@ class ScenarioIn(BaseModel):
     reserve_cents: int = Field(ge=0)
     protected_categories: list[str] = Field(default_factory=list)
     horizon_days: int = Field(ge=7, le=90, default=30)
+    use_ai_review: bool = False
 
 
 class ForecastBaseline(BaseModel):
@@ -190,6 +194,13 @@ class ForecastBaseline(BaseModel):
     history_start: date
     assumptions: list[str]
     parameters: dict[str, float | int]
+
+
+class ForecastAiReview(BaseModel):
+    status: Literal["applied", "unavailable", "failed", "not_requested"]
+    model: str | None = None
+    adjustment_percent: float = 0
+    reason: str
 
 
 class BudgetCut(BaseModel):
@@ -223,6 +234,8 @@ class RecurringBill(BaseModel):
 class ScenarioResult(BaseModel):
     data_version: str
     as_of: date
+    period_start: date | None = None
+    period_end: date | None = None
     currency: Literal["CNY"]
     baseline: ForecastBaseline
     opening_balance_cents: int
@@ -235,6 +248,12 @@ class ScenarioResult(BaseModel):
     timeline: list[CashflowDay]
     recurring_bills: list[RecurringBill]
     source_transaction_ids: list[int]
+    expected_expense_cents: int | None = None
+    expected_expense_after_purchase_cents: int | None = None
+    forecast_lower_expense_cents: int | None = None
+    forecast_upper_expense_cents: int | None = None
+    expected_budget_remaining_cents: int | None = None
+    ai_review: ForecastAiReview | None = None
 
 
 class SavedScenario(BaseModel):
@@ -254,6 +273,26 @@ class BatchCategory(BaseModel):
     ids: list[int]
     category: str
     create_rule: bool = False
+
+
+class AiCategorySuggestionIn(BaseModel):
+    id: int = Field(gt=0)
+    category: str = Field(min_length=1, max_length=80)
+    confidence: int = Field(ge=0, le=100)
+    reason: str = Field(default="AI 分类", max_length=200)
+
+
+class AiCategoryApplyIn(BaseModel):
+    suggestions: list[AiCategorySuggestionIn] = Field(min_length=1, max_length=10000)
+
+    @field_validator("suggestions")
+    @classmethod
+    def unique_transaction_ids(
+        cls, value: list[AiCategorySuggestionIn]
+    ) -> list[AiCategorySuggestionIn]:
+        if len({item.id for item in value}) != len(value):
+            raise ValueError("同一笔账单不能重复提交")
+        return value
 
 
 class ImportMapping(BaseModel):

@@ -1,10 +1,10 @@
 import hashlib
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import case, delete, func, select
 from sqlalchemy.orm import Session
 
-from app.models import CategoryBudget, MerchantRule, Setting, Transaction
+from app.models import CategoryBudget, HouseholdProposal, MerchantRule, Setting, Transaction
 from app.schemas import TransactionIn
 
 
@@ -55,6 +55,105 @@ def add_transaction(
     db.add(row)
     db.flush()
     return row, True
+
+
+def list_transactions(
+    db: Session,
+    *,
+    owner_id: int,
+    page: int,
+    page_size: int,
+    category: str | None = None,
+    tx_type: str | None = None,
+    merchant: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    review: bool = False,
+    ids: list[int] | None = None,
+) -> tuple[list[Transaction], int, dict[str, int]]:
+    if date_from and date_to and date_from > date_to:
+        raise ValueError("开始日期不能晚于结束日期")
+
+    statement = select(Transaction).where(Transaction.owner_id == owner_id)
+    if ids:
+        statement = statement.where(Transaction.id.in_(ids))
+    if category:
+        statement = statement.where(Transaction.category == category)
+    if tx_type:
+        statement = statement.where(Transaction.tx_type == tx_type)
+    if merchant and merchant.strip():
+        escaped = merchant.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        statement = statement.where(Transaction.merchant.ilike(f"%{escaped}%", escape="\\"))
+    if date_from:
+        statement = statement.where(Transaction.tx_date >= date_from)
+    if date_to:
+        statement = statement.where(Transaction.tx_date <= date_to)
+    if review:
+        statement = statement.where(Transaction.category == "待确认")
+
+    filtered = statement.subquery()
+    totals = db.execute(
+        select(
+            func.coalesce(
+                func.sum(
+                    case(
+                        (filtered.c.tx_type == "expense", filtered.c.amount_cents),
+                        (filtered.c.tx_type == "refund", -filtered.c.amount_cents),
+                        else_=0,
+                    )
+                ),
+                0,
+            ),
+            func.coalesce(
+                func.sum(case((filtered.c.tx_type == "income", filtered.c.amount_cents), else_=0)),
+                0,
+            ),
+            func.count(),
+        ).select_from(filtered)
+    ).one()
+    expense_cents, income_cents, total = (int(value or 0) for value in totals)
+    items = list(
+        db.scalars(
+            statement.order_by(Transaction.tx_date.desc(), Transaction.id.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).all()
+    )
+    return (
+        items,
+        total,
+        {
+            "expense_cents": expense_cents,
+            "income_cents": income_cents,
+        },
+    )
+
+
+def delete_transaction(db: Session, transaction_id: int, owner_id: int) -> bool:
+    row = db.get(Transaction, transaction_id)
+    if not row or row.owner_id != owner_id:
+        return False
+    if db.scalar(
+        select(HouseholdProposal.id).where(
+            HouseholdProposal.linked_transaction_id == transaction_id
+        )
+    ):
+        raise ValueError("请先解除议事提案的账单关联")
+    db.delete(row)
+    return True
+
+
+def delete_all_transactions(db: Session, owner_id: int) -> int:
+    owned_ids = select(Transaction.id).where(Transaction.owner_id == owner_id)
+    linked_count = db.scalar(
+        select(func.count())
+        .select_from(HouseholdProposal)
+        .where(HouseholdProposal.linked_transaction_id.in_(owned_ids))
+    )
+    if linked_count:
+        raise ValueError(f"有 {linked_count} 笔账单关联了家庭议事，请先解除关联")
+    result = db.execute(delete(Transaction).where(Transaction.owner_id == owner_id))
+    return int(result.rowcount or 0)
 
 
 def batch_category(

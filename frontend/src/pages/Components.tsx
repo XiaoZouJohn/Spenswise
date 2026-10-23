@@ -8,7 +8,7 @@ import type { ProposalPreview } from '../lib/familyApi'
 import type { Transaction } from '../types'
 
 type ShowcaseState = 'normal' | 'loading' | 'empty' | 'error'
-const sample: Transaction = { id: 1, tx_date: today(), amount_cents: 2380, tx_type: 'expense', merchant: '示例咖啡馆', description: '午间咖啡', category: '餐饮', is_fixed: false, source: '组件示例', confidence: 100 }
+const sample: Transaction = { id: 1, tx_date: today(), amount_cents: 2380, tx_type: 'expense', merchant: '示例咖啡馆', description: '午间咖啡', category: '餐饮', is_fixed: false, source: '组件示例', confidence: 100, classification_reason: '组件示例' }
 const nextDay = (offset: number) => new Date(Date.now() + offset * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' })
 const preview: ProposalPreview = {
   scope: 'household',

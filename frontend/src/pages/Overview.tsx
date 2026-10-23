@@ -2,34 +2,52 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { api, json } from '../lib/api'
 import type { OverviewData, ScenarioResult } from '../types'
-import { Card, SectionTitle, State } from '../components/ui'
+import { Badge, Card, SectionTitle, State } from '../components/ui'
 import { MetricCard, Money } from '../components/business'
 import { Chart } from '../components/Chart'
-import { money, today } from '../lib/format'
+import { money, nextMonthRange, today } from '../lib/format'
 import { chartColors } from '../lib/tokens'
 
 function Outlook({ dataVersion }: { dataVersion: string }) {
+  const nextMonth = nextMonthRange()
   const query = useQuery({
     queryKey: ['cashflow-outlook', dataVersion, today()],
     queryFn: () => api<ScenarioResult>('/simulate', json('POST', {
-      name: '未来 30 天',
+      name: '下个月',
       amount_cents: 0,
-      purchase_date: today(),
+      purchase_date: nextMonth.start,
       reserve_cents: 0,
       protected_categories: ['居住', '医疗健康'],
-      horizon_days: 30,
+      use_ai_review: true,
     })),
   })
 
   return <Card>
-    <SectionTitle title="未来 30 天"/>
+    <SectionTitle title="下个月收支预测"/>
     {query.isLoading ? <State kind="loading" message="正在计算未来收支…"/> :
       query.isError ? <State kind="error" message="未来收支暂时无法显示" retry={() => query.refetch()}/> :
         query.data && <div className="space-y-4">
-          <div>
-            <div className="text-sm text-muted">预计最低账户余额</div>
-            <div className="mt-1 text-3xl font-semibold"><Money cents={query.data.minimum_after_cents}/></div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-control bg-canvas p-3">
+              <div className="text-sm text-muted">预计总支出</div>
+              <div className="mt-1 text-2xl font-semibold"><Money cents={query.data.expected_expense_cents ?? 0}/></div>
+            </div>
+            <div className="rounded-control bg-canvas p-3">
+              <div className="text-sm text-muted">预计预算剩余</div>
+              <div className="mt-1 text-2xl font-semibold"><Money cents={query.data.expected_budget_remaining_cents ?? 0}/></div>
+            </div>
+            <div className="rounded-control bg-canvas p-3">
+              <div className="text-sm text-muted">预计账户最低余额</div>
+              <div className="mt-1 text-2xl font-semibold"><Money cents={query.data.minimum_after_cents}/></div>
+            </div>
           </div>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+            <span>{nextMonth.start} 至 {nextMonth.end}</span>
+            <span>·</span>
+            <span>支出区间 {money(query.data.forecast_lower_expense_cents ?? 0)}–{money(query.data.forecast_upper_expense_cents ?? 0)}</span>
+            <Badge tone={query.data.ai_review?.status === 'applied' ? 'success' : 'neutral'}>{query.data.ai_review?.status === 'applied' ? 'DeepSeek 已复核' : '本地模型'}</Badge>
+          </div>
+          {query.data.ai_review?.reason && <p className="m-0 text-sm leading-6 text-muted">{query.data.ai_review.reason}</p>}
           <div className="border-t border-line pt-4">
             <div className="mb-2 text-sm font-semibold">待付周期账单 · {query.data.recurring_bills.length} 项</div>
             {query.data.recurring_bills.length ? query.data.recurring_bills.slice(0, 3).map((bill, index) =>

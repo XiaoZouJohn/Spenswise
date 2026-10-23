@@ -1,19 +1,19 @@
 import os
 import uuid
 from datetime import date, datetime
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .auth import current_user
 from .db import get_db
 from .models import (
     BackgroundTask,
-    HouseholdProposal,
     ImportJob,
     Scenario,
     Transaction,
@@ -23,6 +23,7 @@ from .models import (
 from .routes_auth import router as auth_router
 from .routes_family import router as family_router
 from .schemas import (
+    AiCategoryApplyIn,
     AiConnectionIn,
     AiConnectionOut,
     AiStatusOut,
@@ -130,12 +131,16 @@ def transactions(
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=200),
     category: str | None = None,
+    tx_type: Literal["expense", "income", "refund", "transfer"] | None = None,
+    merchant: str | None = Query(default=None, max_length=255),
+    date_from: date | None = None,
+    date_to: date | None = None,
     review: bool = False,
     ids: str | None = None,
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ) -> Page:
-    statement = select(Transaction).where(Transaction.owner_id == user.id)
+    selected_ids = None
     if ids:
         try:
             selected_ids = [int(value) for value in ids.split(",")]
@@ -145,22 +150,29 @@ def transactions(
             ) from exc
         if len(selected_ids) > 200:
             raise HTTPException(422, detail={"code": "TOO_MANY_IDS", "message": "最多筛选 200 笔"})
-        statement = statement.where(Transaction.id.in_(selected_ids))
-    if category:
-        statement = statement.where(Transaction.category == category)
-    if review:
-        statement = statement.where(Transaction.category == "待确认")
-    total = db.scalar(select(func.count()).select_from(statement.subquery())) or 0
-    items = db.scalars(
-        statement.order_by(Transaction.tx_date.desc(), Transaction.id.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-    ).all()
+    try:
+        items, total, totals = ledger.list_transactions(
+            db,
+            owner_id=user.id,
+            page=page,
+            page_size=page_size,
+            category=category,
+            tx_type=tx_type,
+            merchant=merchant,
+            date_from=date_from,
+            date_to=date_to,
+            review=review,
+            ids=selected_ids,
+        )
+    except ValueError as exc:
+        raise HTTPException(422, detail={"code": "INVALID_FILTER", "message": str(exc)}) from exc
     return Page(
         items=[TransactionOut.model_validate(item) for item in items],
         total=total,
         page=page,
         page_size=page_size,
+        expense_cents=totals["expense_cents"],
+        income_cents=totals["income_cents"],
     )
 
 
@@ -181,20 +193,30 @@ def create_transaction(
 def delete_transaction(
     transaction_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> dict:
-    row = db.get(Transaction, transaction_id)
-    if not row or row.owner_id != user.id:
-        raise HTTPException(404, detail={"code": "NOT_FOUND", "message": "账单不存在"})
-    if db.scalar(
-        select(HouseholdProposal.id).where(
-            HouseholdProposal.linked_transaction_id == transaction_id
-        )
-    ):
+    try:
+        deleted = ledger.delete_transaction(db, transaction_id, user.id)
+    except ValueError as exc:
         raise HTTPException(
-            409, detail={"code": "TRANSACTION_LINKED", "message": "请先解除议事提案的账单关联"}
-        )
-    db.delete(row)
+            409, detail={"code": "TRANSACTION_LINKED", "message": str(exc)}
+        ) from exc
+    if not deleted:
+        raise HTTPException(404, detail={"code": "NOT_FOUND", "message": "账单不存在"})
     db.commit()
     return {"deleted": transaction_id}
+
+
+@app.delete("/api/transactions")
+def delete_all_transactions(
+    user: User = Depends(current_user), db: Session = Depends(get_db)
+) -> dict:
+    try:
+        deleted = ledger.delete_all_transactions(db, user.id)
+    except ValueError as exc:
+        raise HTTPException(
+            409, detail={"code": "TRANSACTION_LINKED", "message": str(exc)}
+        ) from exc
+    db.commit()
+    return {"deleted": deleted}
 
 
 @app.post("/api/transactions/batch-category")
@@ -220,6 +242,10 @@ def undo_categories(
         row = db.get(Transaction, item.get("id"))
         if row and row.owner_id == user.id:
             row.category = item["category"]
+            if "confidence" in item:
+                row.confidence = int(item["confidence"])
+            if "classification_reason" in item:
+                row.classification_reason = str(item["classification_reason"])
             restored += 1
     db.commit()
     return {"restored": restored}
@@ -325,12 +351,22 @@ def confirm_import(
         )
     )
     if existing:
-        return {
-            "id": existing.id,
-            "status": existing.status,
-            "inserted": existing.inserted,
-            "duplicates": existing.duplicates,
-        }
+        # Repeating the exact same confirmation request should stay idempotent.
+        # A fresh preview receives a new token, however, and must be allowed to
+        # rescan the file. Transaction fingerprints still prevent duplicates,
+        # while rows deleted from the ledger can be restored by re-importing.
+        if existing.id == value.token or (
+            os.getenv("CELERY_ALWAYS_EAGER") != "1"
+            and existing.status in {"pending", "running"}
+        ):
+            return {
+                "id": existing.id,
+                "status": existing.status,
+                "inserted": existing.inserted,
+                "duplicates": existing.duplicates,
+            }
+        db.delete(existing)
+        db.flush()
     job = ImportJob(
         id=value.token,
         owner_id=user.id,
@@ -535,3 +571,29 @@ def review_ai(
         return {"suggestions": ai.review(db, ids, user.id)}
     except ValueError as exc:
         raise HTTPException(403, detail={"code": "AI_UNAVAILABLE", "message": str(exc)}) from exc
+
+
+@app.post("/api/ai/review-all-transactions")
+def review_all_ai(user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    try:
+        return ai.review_all(db, user.id)
+    except ValueError as exc:
+        raise HTTPException(403, detail={"code": "AI_UNAVAILABLE", "message": str(exc)}) from exc
+
+
+@app.post("/api/ai/apply-transaction-categories")
+def apply_ai_categories(
+    value: AiCategoryApplyIn,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        result = ai.apply_suggestions(
+            db, [item.model_dump() for item in value.suggestions], user.id
+        )
+        db.commit()
+        return result
+    except ValueError as exc:
+        raise HTTPException(
+            422, detail={"code": "INVALID_AI_CATEGORIES", "message": str(exc)}
+        ) from exc

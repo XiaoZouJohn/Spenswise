@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { RegisterApiAuthRegisterPostData, RegisterApiAuthRegisterPostResponse, LoginApiAuthLoginPostData, LoginApiAuthLoginPostResponse, MeApiAuthMeGetResponse, LogoutApiAuthLogoutPostResponse, UserProfileApiUsersMeGetResponse, UpdateProfileApiUsersMePutData, UpdateProfileApiUsersMePutResponse, DeleteMyAccountApiUsersMeDeleteData, DeleteMyAccountApiUsersMeDeleteResponse, ChangePasswordApiUsersMePasswordPostData, ChangePasswordApiUsersMePasswordPostResponse, SessionsApiAuthSessionsGetResponse, RevokeSessionApiAuthSessionsSessionIdDeleteData, RevokeSessionApiAuthSessionsSessionIdDeleteResponse, ExportMyDataApiUsersMeExportGetResponse, ClaimLegacyApiAuthClaimLegacyPostData, ClaimLegacyApiAuthClaimLegacyPostResponse, GetFamilyApiFamiliesGetResponse, CreateFamilyApiFamiliesPostData, CreateFamilyApiFamiliesPostResponse, DissolveApiFamiliesDeleteResponse, GetMembersApiFamiliesMembersGetResponse, CreateInvitationApiFamiliesInvitationsPostData, CreateInvitationApiFamiliesInvitationsPostResponse, PreviewInvitationApiFamiliesInvitationsPreviewGetData, PreviewInvitationApiFamiliesInvitationsPreviewGetResponse, AcceptInvitationApiFamiliesInvitationsAcceptPostData, AcceptInvitationApiFamiliesInvitationsAcceptPostResponse, GetSharingApiFamiliesSharingGetResponse, PutSharingApiFamiliesSharingPutData, PutSharingApiFamiliesSharingPutResponse, LeaveApiFamiliesLeavePostResponse, RemoveMemberApiFamiliesMembersUserIdDeleteData, RemoveMemberApiFamiliesMembersUserIdDeleteResponse, TransferApiFamiliesTransferPostData, TransferApiFamiliesTransferPostResponse, TransactionsApiFamiliesTransactionsGetData, TransactionsApiFamiliesTransactionsGetResponse, SetSharedApiTransactionsTransactionIdFamilySharingPatchData, SetSharedApiTransactionsTransactionIdFamilySharingPatchResponse, SetInternalApiTransactionsTransactionIdFamilyInternalPatchData, SetInternalApiTransactionsTransactionIdFamilyInternalPatchResponse, GetBudgetApiFamiliesBudgetGetResponse, PutBudgetApiFamiliesBudgetPutData, PutBudgetApiFamiliesBudgetPutResponse, DashboardApiFamiliesDashboardGetData, DashboardApiFamiliesDashboardGetResponse, ProposalsApiFamiliesProposalsGetResponse, CreateProposalApiFamiliesProposalsPostData, CreateProposalApiFamiliesProposalsPostResponse, PreviewProposalApiFamiliesProposalsPreviewPostData, PreviewProposalApiFamiliesProposalsPreviewPostResponse, CommentProposalApiFamiliesProposalsProposalIdCommentsPostData, CommentProposalApiFamiliesProposalsProposalIdCommentsPostResponse, DecideProposalApiFamiliesProposalsProposalIdConfirmPostData, DecideProposalApiFamiliesProposalsProposalIdConfirmPostResponse, LinkTransactionApiFamiliesProposalsProposalIdLinkTransactionPostData, LinkTransactionApiFamiliesProposalsProposalIdLinkTransactionPostResponse, UnlinkTransactionApiFamiliesProposalsProposalIdLinkTransactionDeleteData, UnlinkTransactionApiFamiliesProposalsProposalIdLinkTransactionDeleteResponse, GoalsApiFamiliesGoalsGetResponse, CreateGoalApiFamiliesGoalsPostData, CreateGoalApiFamiliesGoalsPostResponse, UpdateGoalApiFamiliesGoalsGoalIdPutData, UpdateGoalApiFamiliesGoalsGoalIdPutResponse, AssetsApiUsersMeAssetsGetResponse, CreateAssetApiUsersMeAssetsPostData, CreateAssetApiUsersMeAssetsPostResponse, ArchiveAssetApiUsersMeAssetsAccountKeyArchivePostData, ArchiveAssetApiUsersMeAssetsAccountKeyArchivePostResponse, AssetCoverageApiUsersMeAssetsCoverageGetResponse, SetAssetCoverageApiUsersMeAssetsCoveragePutData, SetAssetCoverageApiUsersMeAssetsCoveragePutResponse, GetAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyGetResponse, PutAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyPutData, PutAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyPutResponse, HealthApiHealthGetResponse, GetSettingsApiSettingsGetResponse, PutSettingsApiSettingsPutData, PutSettingsApiSettingsPutResponse, OverviewApiOverviewGetData, OverviewApiOverviewGetResponse, GetBudgetStatusApiBudgetStatusGetData, GetBudgetStatusApiBudgetStatusGetResponse, PreviewBudgetApiBudgetPreviewPostData, PreviewBudgetApiBudgetPreviewPostResponse, TransactionsApiTransactionsGetData, TransactionsApiTransactionsGetResponse, CreateTransactionApiTransactionsPostData, CreateTransactionApiTransactionsPostResponse, DeleteTransactionApiTransactionsTransactionIdDeleteData, DeleteTransactionApiTransactionsTransactionIdDeleteResponse, UpdateCategoriesApiTransactionsBatchCategoryPostData, UpdateCategoriesApiTransactionsBatchCategoryPostResponse, UndoCategoriesApiTransactionsUndoCategoryPostData, UndoCategoriesApiTransactionsUndoCategoryPostResponse, SimulateApiSimulatePostData, SimulateApiSimulatePostResponse, ScenariosApiScenariosGetResponse, SaveScenarioApiScenariosPostData, SaveScenarioApiScenariosPostResponse, PreviewImportApiImportPreviewPostData, PreviewImportApiImportPreviewPostResponse, ConfirmImportApiImportConfirmPostData, ConfirmImportApiImportConfirmPostResponse, ImportStatusApiImportJobsJobIdGetData, ImportStatusApiImportJobsJobIdGetResponse, TaskStatusApiTasksTaskIdGetData, TaskStatusApiTasksTaskIdGetResponse, AiStatusApiAiStatusGetResponse, GetAiConnectionApiAiConnectionGetResponse, PutAiConnectionApiAiConnectionPutData, PutAiConnectionApiAiConnectionPutResponse, ListAiConversationsApiAiConversationsGetResponse, GetChatLedgerConsentApiAiChatLedgerConsentGetResponse, PutChatLedgerConsentApiAiChatLedgerConsentPutData, PutChatLedgerConsentApiAiChatLedgerConsentPutResponse, GetAiConversationApiAiConversationsConversationIdGetData, GetAiConversationApiAiConversationsConversationIdGetResponse, DeleteAiConversationApiAiConversationsConversationIdDeleteData, DeleteAiConversationApiAiConversationsConversationIdDeleteResponse, StreamAiChatApiAiChatStreamPostData, StreamAiChatApiAiChatStreamPostResponse, AiExplainApiAiExplainPostData, AiExplainApiAiExplainPostResponse, TestAiApiAiTestPostResponse, ReviewAiApiAiReviewTransactionsPostData, ReviewAiApiAiReviewTransactionsPostResponse } from './types.gen';
+import type { RegisterApiAuthRegisterPostData, RegisterApiAuthRegisterPostResponse, LoginApiAuthLoginPostData, LoginApiAuthLoginPostResponse, MeApiAuthMeGetResponse, LogoutApiAuthLogoutPostResponse, UserProfileApiUsersMeGetResponse, UpdateProfileApiUsersMePutData, UpdateProfileApiUsersMePutResponse, DeleteMyAccountApiUsersMeDeleteData, DeleteMyAccountApiUsersMeDeleteResponse, ChangePasswordApiUsersMePasswordPostData, ChangePasswordApiUsersMePasswordPostResponse, SessionsApiAuthSessionsGetResponse, RevokeSessionApiAuthSessionsSessionIdDeleteData, RevokeSessionApiAuthSessionsSessionIdDeleteResponse, ExportMyDataApiUsersMeExportGetResponse, ClaimLegacyApiAuthClaimLegacyPostData, ClaimLegacyApiAuthClaimLegacyPostResponse, GetFamilyApiFamiliesGetResponse, CreateFamilyApiFamiliesPostData, CreateFamilyApiFamiliesPostResponse, DissolveApiFamiliesDeleteResponse, GetMembersApiFamiliesMembersGetResponse, CreateInvitationApiFamiliesInvitationsPostData, CreateInvitationApiFamiliesInvitationsPostResponse, PreviewInvitationApiFamiliesInvitationsPreviewGetData, PreviewInvitationApiFamiliesInvitationsPreviewGetResponse, AcceptInvitationApiFamiliesInvitationsAcceptPostData, AcceptInvitationApiFamiliesInvitationsAcceptPostResponse, GetSharingApiFamiliesSharingGetResponse, PutSharingApiFamiliesSharingPutData, PutSharingApiFamiliesSharingPutResponse, LeaveApiFamiliesLeavePostResponse, RemoveMemberApiFamiliesMembersUserIdDeleteData, RemoveMemberApiFamiliesMembersUserIdDeleteResponse, TransferApiFamiliesTransferPostData, TransferApiFamiliesTransferPostResponse, TransactionsApiFamiliesTransactionsGetData, TransactionsApiFamiliesTransactionsGetResponse, SetSharedApiTransactionsTransactionIdFamilySharingPatchData, SetSharedApiTransactionsTransactionIdFamilySharingPatchResponse, SetInternalApiTransactionsTransactionIdFamilyInternalPatchData, SetInternalApiTransactionsTransactionIdFamilyInternalPatchResponse, GetBudgetApiFamiliesBudgetGetResponse, PutBudgetApiFamiliesBudgetPutData, PutBudgetApiFamiliesBudgetPutResponse, DashboardApiFamiliesDashboardGetData, DashboardApiFamiliesDashboardGetResponse, ProposalsApiFamiliesProposalsGetResponse, CreateProposalApiFamiliesProposalsPostData, CreateProposalApiFamiliesProposalsPostResponse, PreviewProposalApiFamiliesProposalsPreviewPostData, PreviewProposalApiFamiliesProposalsPreviewPostResponse, CommentProposalApiFamiliesProposalsProposalIdCommentsPostData, CommentProposalApiFamiliesProposalsProposalIdCommentsPostResponse, DecideProposalApiFamiliesProposalsProposalIdConfirmPostData, DecideProposalApiFamiliesProposalsProposalIdConfirmPostResponse, LinkTransactionApiFamiliesProposalsProposalIdLinkTransactionPostData, LinkTransactionApiFamiliesProposalsProposalIdLinkTransactionPostResponse, UnlinkTransactionApiFamiliesProposalsProposalIdLinkTransactionDeleteData, UnlinkTransactionApiFamiliesProposalsProposalIdLinkTransactionDeleteResponse, GoalsApiFamiliesGoalsGetResponse, CreateGoalApiFamiliesGoalsPostData, CreateGoalApiFamiliesGoalsPostResponse, UpdateGoalApiFamiliesGoalsGoalIdPutData, UpdateGoalApiFamiliesGoalsGoalIdPutResponse, AssetsApiUsersMeAssetsGetResponse, CreateAssetApiUsersMeAssetsPostData, CreateAssetApiUsersMeAssetsPostResponse, ArchiveAssetApiUsersMeAssetsAccountKeyArchivePostData, ArchiveAssetApiUsersMeAssetsAccountKeyArchivePostResponse, AssetCoverageApiUsersMeAssetsCoverageGetResponse, SetAssetCoverageApiUsersMeAssetsCoveragePutData, SetAssetCoverageApiUsersMeAssetsCoveragePutResponse, GetAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyGetResponse, PutAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyPutData, PutAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyPutResponse, HealthApiHealthGetResponse, GetSettingsApiSettingsGetResponse, PutSettingsApiSettingsPutData, PutSettingsApiSettingsPutResponse, OverviewApiOverviewGetData, OverviewApiOverviewGetResponse, GetBudgetStatusApiBudgetStatusGetData, GetBudgetStatusApiBudgetStatusGetResponse, PreviewBudgetApiBudgetPreviewPostData, PreviewBudgetApiBudgetPreviewPostResponse, TransactionsApiTransactionsGetData, TransactionsApiTransactionsGetResponse, CreateTransactionApiTransactionsPostData, CreateTransactionApiTransactionsPostResponse, DeleteAllTransactionsApiTransactionsDeleteResponse, DeleteTransactionApiTransactionsTransactionIdDeleteData, DeleteTransactionApiTransactionsTransactionIdDeleteResponse, UpdateCategoriesApiTransactionsBatchCategoryPostData, UpdateCategoriesApiTransactionsBatchCategoryPostResponse, UndoCategoriesApiTransactionsUndoCategoryPostData, UndoCategoriesApiTransactionsUndoCategoryPostResponse, SimulateApiSimulatePostData, SimulateApiSimulatePostResponse, ScenariosApiScenariosGetResponse, SaveScenarioApiScenariosPostData, SaveScenarioApiScenariosPostResponse, PreviewImportApiImportPreviewPostData, PreviewImportApiImportPreviewPostResponse, ConfirmImportApiImportConfirmPostData, ConfirmImportApiImportConfirmPostResponse, ImportStatusApiImportJobsJobIdGetData, ImportStatusApiImportJobsJobIdGetResponse, TaskStatusApiTasksTaskIdGetData, TaskStatusApiTasksTaskIdGetResponse, AiStatusApiAiStatusGetResponse, GetAiConnectionApiAiConnectionGetResponse, PutAiConnectionApiAiConnectionPutData, PutAiConnectionApiAiConnectionPutResponse, ListAiConversationsApiAiConversationsGetResponse, GetChatLedgerConsentApiAiChatLedgerConsentGetResponse, PutChatLedgerConsentApiAiChatLedgerConsentPutData, PutChatLedgerConsentApiAiChatLedgerConsentPutResponse, GetAiConversationApiAiConversationsConversationIdGetData, GetAiConversationApiAiConversationsConversationIdGetResponse, DeleteAiConversationApiAiConversationsConversationIdDeleteData, DeleteAiConversationApiAiConversationsConversationIdDeleteResponse, StreamAiChatApiAiChatStreamPostData, StreamAiChatApiAiChatStreamPostResponse, AiExplainApiAiExplainPostData, AiExplainApiAiExplainPostResponse, TestAiApiAiTestPostResponse, ReviewAiApiAiReviewTransactionsPostData, ReviewAiApiAiReviewTransactionsPostResponse, ReviewAllAiApiAiReviewAllTransactionsPostResponse, ApplyAiCategoriesApiAiApplyTransactionCategoriesPostData, ApplyAiCategoriesApiAiApplyTransactionCategoriesPostResponse } from './types.gen';
 
 /**
  * Register
@@ -939,6 +939,10 @@ export const previewBudgetApiBudgetPreviewPost = (data: PreviewBudgetApiBudgetPr
  * @param data.page
  * @param data.pageSize
  * @param data.category
+ * @param data.txType
+ * @param data.merchant
+ * @param data.dateFrom
+ * @param data.dateTo
  * @param data.review
  * @param data.ids
  * @returns Page Successful Response
@@ -952,6 +956,10 @@ export const transactionsApiTransactionsGet = (data: TransactionsApiTransactions
             page: data.page,
             page_size: data.pageSize,
             category: data.category,
+            tx_type: data.txType,
+            merchant: data.merchant,
+            date_from: data.dateFrom,
+            date_to: data.dateTo,
             review: data.review,
             ids: data.ids
         },
@@ -977,6 +985,18 @@ export const createTransactionApiTransactionsPost = (data: CreateTransactionApiT
         errors: {
             422: 'Validation Error'
         }
+    });
+};
+
+/**
+ * Delete All Transactions
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const deleteAllTransactionsApiTransactionsDelete = (): CancelablePromise<DeleteAllTransactionsApiTransactionsDeleteResponse> => {
+    return __request(OpenAPI, {
+        method: 'DELETE',
+        url: '/api/transactions'
     });
 };
 
@@ -1353,6 +1373,37 @@ export const reviewAiApiAiReviewTransactionsPost = (data: ReviewAiApiAiReviewTra
     return __request(OpenAPI, {
         method: 'POST',
         url: '/api/ai/review-transactions',
+        body: data.requestBody,
+        mediaType: 'application/json',
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Review All Ai
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const reviewAllAiApiAiReviewAllTransactionsPost = (): CancelablePromise<ReviewAllAiApiAiReviewAllTransactionsPostResponse> => {
+    return __request(OpenAPI, {
+        method: 'POST',
+        url: '/api/ai/review-all-transactions'
+    });
+};
+
+/**
+ * Apply Ai Categories
+ * @param data The data for the request.
+ * @param data.requestBody
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const applyAiCategoriesApiAiApplyTransactionCategoriesPost = (data: ApplyAiCategoriesApiAiApplyTransactionCategoriesPostData): CancelablePromise<ApplyAiCategoriesApiAiApplyTransactionCategoriesPostResponse> => {
+    return __request(OpenAPI, {
+        method: 'POST',
+        url: '/api/ai/apply-transaction-categories',
         body: data.requestBody,
         mediaType: 'application/json',
         errors: {

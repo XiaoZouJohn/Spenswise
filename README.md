@@ -1,6 +1,6 @@
 # SpendWise v3.0
 
-个人与家庭财务决策工作台。项目分为 `frontend`（React）和 `backend`（FastAPI）。这份交付包只含源码、迁移、测试、配置模板、设计资料和虚构演示数据；每位成员首次启动时会建立自己的空数据库。
+个人与家庭财务决策工作台。项目分为 `frontend`（React）和 `backend`（FastAPI）。这份交付包只含源码、迁移、测试、配置模板、设计资料和虚构演示数据；每位成员首次启动时会建立自己的本地数据库，若检测到旧版数据则会自动迁移并继续使用。
 
 ## 在 VS Code 启动（Windows）
 
@@ -15,6 +15,8 @@ npm ci
 ```
 
 回到“运行和调试”，选 **SpendWise 前后端**，按 F5。这个启动项会先升级本地 SQLite 数据库，再启动后端和前端。打开 <http://localhost:5173> 注册自己的账号。`npm ci` 如果调用了旧版 Node，请先用 `node --version` 确认终端正在使用 Node 20。
+
+双击打包版 `SpendWise-v3.0.exe` 时，账号、账单、预算、分类规则、AI 连接和对话会保存在 `%LOCALAPPDATA%\SpendWise\`。升级或重新打开程序会继续使用同一数据库；旧版 `%LOCALAPPDATA%\SpendWise-v3.0\` 或项目内 `backend\spendwise-dev.db` 会在首次启动时自动迁移。如果检测到旧数据库已有表但缺少迁移版本，启动器会先生成备份，再从已识别的版本继续升级，避免重复建表。
 
 VS Code 启动项要求 `node` 能在终端的 PATH 中找到。后端虚拟环境固定在 `backend/.venv`，因此依赖安装在项目所在的磁盘。
 
