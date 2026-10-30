@@ -14,9 +14,12 @@ process.env.NO_PROXY = [...new Set([...(process.env.NO_PROXY || '').split(',').f
 export default defineConfig({
   testDir: './tests',
   workers: 1,
+  timeout: 90000,
   use: {
     baseURL: frontendUrl,
-    ...(process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {}),
+    launchOptions: { args: ['--no-proxy-server', '--disable-gpu'] },
+    screenshot: 'only-on-failure',
+    ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : process.env.PLAYWRIGHT_USE_SYSTEM_CHROME ? { channel: 'chrome' } : {}),
   },
   webServer: [
     {
@@ -34,11 +37,11 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: `"${process.execPath}" ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5174 --strictPort`,
+      command: `"${process.execPath}" ./node_modules/vite/bin/vite.js build --outDir .playwright-dist && "${process.execPath}" ./node_modules/vite/bin/vite.js preview --outDir .playwright-dist --host 127.0.0.1 --port 5174 --strictPort`,
       env: { VITE_API_URL: backendUrl },
       url: frontendUrl,
       reuseExistingServer: false,
-      timeout: 120_000,
+      timeout: 180_000,
     },
   ],
 })

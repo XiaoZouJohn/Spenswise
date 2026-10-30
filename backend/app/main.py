@@ -20,6 +20,7 @@ from .models import (
     UploadToken,
     User,
 )
+from .routes_agent import router as agent_router
 from .routes_auth import router as auth_router
 from .routes_family import router as family_router
 from .schemas import (
@@ -63,6 +64,7 @@ app.add_middleware(
 )
 app.include_router(auth_router)
 app.include_router(family_router)
+app.include_router(agent_router)
 
 
 @app.middleware("http")
@@ -86,7 +88,10 @@ def local_today() -> date:
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok"}
+    result = {"status": "ok"}
+    if instance := os.getenv("SPENDWISE_INSTANCE"):
+        result["instance"] = instance
+    return result
 
 
 @app.get("/api/settings", response_model=SettingsOut)

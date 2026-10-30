@@ -76,3 +76,24 @@ def test_richer_versioned_legacy_database_replaces_failed_shell(tmp_path, monkey
         assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == ("0007",)
         assert connection.execute("SELECT COUNT(*) FROM users").fetchone() == (2,)
     assert (current_root / "spendwise.incomplete-backup.db").is_file()
+
+
+def test_isolated_source_runtime_does_not_migrate_legacy_data(tmp_path, monkeypatch):
+    import os
+
+    launcher = load_launcher()
+
+    def forbidden():
+        raise AssertionError("Isolated launch must never touch the installed app data")
+
+    monkeypatch.setattr(launcher, "app_data_dir", forbidden)
+    for key in ("DATABASE_URL", "UPLOAD_DIR", "AI_KEY_FILE", "CELERY_ALWAYS_EAGER", "CORS_ORIGINS"):
+        monkeypatch.setenv(key, os.environ.get(key, ""))
+    target = tmp_path / "agent-data"
+    data, database = launcher.configure_runtime(8766, data_directory=target)
+    assert data == target
+    assert database == target / "spendwise.db"
+    assert os.environ["AI_KEY_FILE"] == str(target / "ai-key" / "fernet.key")
+    launcher.migrate_database(PROJECT_ROOT / "backend" / "migrations")
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == ("0007",)

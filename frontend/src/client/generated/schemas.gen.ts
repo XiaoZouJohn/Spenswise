@@ -26,6 +26,183 @@ export const AccountDeleteOutSchema = {
     title: 'AccountDeleteOut'
 } as const;
 
+export const AgentBriefSchema = {
+    properties: {
+        preferences: {
+            '$ref': '#/components/schemas/AgentPreferencesOut'
+        },
+        as_of: {
+            type: 'string',
+            format: 'date',
+            title: 'As Of'
+        },
+        month: {
+            type: 'string',
+            title: 'Month'
+        },
+        fingerprint: {
+            type: 'string',
+            title: 'Fingerprint'
+        },
+        source: {
+            type: 'string',
+            enum: ['local', 'ai'],
+            title: 'Source'
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason'
+        },
+        cards: {
+            items: {
+                '$ref': '#/components/schemas/AgentCard'
+            },
+            type: 'array',
+            title: 'Cards'
+        },
+        risks: {
+            additionalProperties: {
+                type: 'integer'
+            },
+            type: 'object',
+            title: 'Risks'
+        },
+        facts: {
+            '$ref': '#/components/schemas/AgentFacts'
+        },
+        pending_import: {
+            type: 'boolean',
+            title: 'Pending Import'
+        },
+        generated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Generated At'
+        }
+    },
+    type: 'object',
+    required: ['preferences', 'as_of', 'month', 'fingerprint', 'source', 'reason', 'cards', 'risks', 'facts', 'pending_import', 'generated_at'],
+    title: 'AgentBrief'
+} as const;
+
+export const AgentCardSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        tone: {
+            type: 'string',
+            enum: ['warning', 'encouragement', 'info'],
+            title: 'Tone'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        evidence: {
+            type: 'string',
+            title: 'Evidence'
+        },
+        message: {
+            type: 'string',
+            title: 'Message'
+        },
+        href: {
+            type: 'string',
+            title: 'Href'
+        }
+    },
+    type: 'object',
+    required: ['id', 'tone', 'title', 'evidence', 'message', 'href'],
+    title: 'AgentCard'
+} as const;
+
+export const AgentFactsSchema = {
+    properties: {
+        income_cents: {
+            type: 'integer',
+            title: 'Income Cents'
+        },
+        spent_cents: {
+            type: 'integer',
+            title: 'Spent Cents'
+        },
+        budget_cents: {
+            type: 'integer',
+            title: 'Budget Cents'
+        },
+        previous_spent_cents: {
+            type: 'integer',
+            title: 'Previous Spent Cents'
+        },
+        recent_spent_cents: {
+            type: 'integer',
+            title: 'Recent Spent Cents'
+        },
+        preceding_spent_cents: {
+            type: 'integer',
+            title: 'Preceding Spent Cents'
+        },
+        transaction_count: {
+            type: 'integer',
+            title: 'Transaction Count'
+        }
+    },
+    type: 'object',
+    required: ['income_cents', 'spent_cents', 'budget_cents', 'previous_spent_cents', 'recent_spent_cents', 'preceding_spent_cents', 'transaction_count'],
+    title: 'AgentFacts'
+} as const;
+
+export const AgentPreferencesInSchema = {
+    properties: {
+        automatic_enabled: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Automatic Enabled'
+        },
+        ai_enabled: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ai Enabled'
+        }
+    },
+    type: 'object',
+    title: 'AgentPreferencesIn'
+} as const;
+
+export const AgentPreferencesOutSchema = {
+    properties: {
+        automatic_enabled: {
+            type: 'boolean',
+            title: 'Automatic Enabled'
+        },
+        ai_enabled: {
+            type: 'boolean',
+            title: 'Ai Enabled'
+        },
+        scope: {
+            type: 'string',
+            title: 'Scope'
+        }
+    },
+    type: 'object',
+    required: ['automatic_enabled', 'ai_enabled', 'scope'],
+    title: 'AgentPreferencesOut'
+} as const;
+
 export const AiCategoryApplyInSchema = {
     properties: {
         suggestions: {

@@ -5,6 +5,7 @@ import type { OverviewData, SettingsData, BudgetStatusData } from '../types'
 import { AmountInput, Money } from '../components/business'
 import { BudgetLimitsEditor } from '../components/BudgetLimitsEditor'
 import { AiConnectionSettings } from '../components/AiConnectionSettings'
+import { AgentReminderSettings } from '../components/AgentReminder'
 import { Badge, Button, Card, SectionTitle, State } from '../components/ui'
 
 const draftKey = 'spendwise-settings-draft-v1'
@@ -137,6 +138,7 @@ export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: B
         <p className="text-sm text-muted">此授权只用于账单辅助分类。AI 对话如需读取账本，须在对话页单独授权。</p>
         <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={form.ai_consent} onChange={event => changeForm({ ...form, ai_consent: event.target.checked })}/>允许将必要账单文本用于辅助分类，并将月度与分类汇总发送给 DeepSeek 复核预测</label>
       </Card>
+      <AgentReminderSettings/>
       <AiConnectionSettings/>
       <div className="flex items-center gap-3"><Button onClick={() => save.mutate(form)} disabled={save.isPending}>立即保存</Button><span role="status" className="text-sm text-muted">{save.isPending ? '正在保存…' : save.isError ? '保存失败，草稿已保留' : dirty ? '修改已暂存，正在自动保存' : '已保存'}</span></div>
       {save.isError && <p role="alert" className="text-sm text-danger">保存失败，修改仍保留在本机。请稍后点击“立即保存”重试。{save.error.message}</p>}

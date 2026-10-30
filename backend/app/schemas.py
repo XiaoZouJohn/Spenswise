@@ -9,6 +9,50 @@ class ErrorBody(BaseModel):
     message: str
 
 
+class AgentPreferencesIn(BaseModel):
+    automatic_enabled: bool | None = None
+    ai_enabled: bool | None = None
+
+
+class AgentPreferencesOut(BaseModel):
+    automatic_enabled: bool
+    ai_enabled: bool
+    scope: str
+
+
+class AgentCard(BaseModel):
+    id: str
+    tone: Literal["warning", "encouragement", "info"]
+    title: str
+    evidence: str
+    message: str
+    href: str
+
+
+class AgentFacts(BaseModel):
+    income_cents: int
+    spent_cents: int
+    budget_cents: int
+    previous_spent_cents: int
+    recent_spent_cents: int
+    preceding_spent_cents: int
+    transaction_count: int
+
+
+class AgentBrief(BaseModel):
+    preferences: AgentPreferencesOut
+    as_of: date
+    month: str
+    fingerprint: str
+    source: Literal["local", "ai"]
+    reason: str
+    cards: list[AgentCard]
+    risks: dict[str, int]
+    facts: AgentFacts
+    pending_import: bool
+    generated_at: datetime
+
+
 class TransactionIn(BaseModel):
     tx_date: date
     amount_cents: int = Field(gt=0)

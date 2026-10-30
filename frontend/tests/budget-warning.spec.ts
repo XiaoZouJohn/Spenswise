@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures'
 
-test('本月预算超额时弹窗并可重新查看', async ({ page }) => {
+test('本月预算超额保留警示入口，由用户打开详情', async ({ page }) => {
   await page.route('**/api/budget/status', route => route.fulfill({
     json: {
       month: '2026-10',
@@ -18,12 +18,16 @@ test('本月预算超额时弹窗并可重新查看', async ({ page }) => {
 
   await page.goto('/overview')
   const dialog = page.getByRole('dialog')
+  await expect(dialog).toHaveCount(0)
+  await page.getByRole('button', { name: '关闭简报' }).click()
+  await page.getByRole('button', { name: /查看警示/ }).click()
   await expect(dialog).toBeVisible()
   await expect(dialog.getByText('总消费预算')).toBeVisible()
   await expect(dialog.getByText('餐饮预算')).toBeVisible()
-  const bounds = await dialog.boundingBox()
-  expect(bounds).not.toBeNull()
-  expect(Math.abs(bounds!.x + bounds!.width / 2 - page.viewportSize()!.width / 2)).toBeLessThan(3)
+  await expect.poll(async () => {
+    const bounds = await dialog.boundingBox()
+    return bounds ? Math.abs(bounds.x + bounds.width / 2 - page.viewportSize()!.width / 2) : Infinity
+  }).toBeLessThan(3)
   await dialog.getByRole('button', { name: '关闭弹窗' }).click()
   await expect(dialog).toBeHidden()
   await page.getByRole('button', { name: /查看警示/ }).click()
@@ -33,21 +37,16 @@ test('本月预算超额时弹窗并可重新查看', async ({ page }) => {
 test('填写总预算和分类预算时全局警示即时更新', async ({ page }) => {
   let previewCalls = 0
   let saves = 0
+  let stored = {
+    monthly_budget_cents: 300000, opening_balance_cents: 0, ai_consent: false,
+    category_budgets: [{ category: '餐饮', limit_cents: 80000 }],
+    currency: 'CNY', timezone: 'Asia/Shanghai',
+  }
   await page.route('**/api/settings', route => {
-    if (route.request().method() === 'PUT') saves += 1
-    return route.fulfill({ json: {
-      monthly_budget_cents: 300000, opening_balance_cents: 0, ai_consent: false,
-      category_budgets: [{ category: '餐饮', limit_cents: 80000 }],
-      currency: 'CNY', timezone: 'Asia/Shanghai',
-    } })
+    if (route.request().method() === 'PUT') { saves += 1; stored = { ...stored, ...route.request().postDataJSON() } }
+    return route.fulfill({ json: stored })
   })
-  await page.route('**/api/budget/status', route => route.fulfill({ json: {
-    month: '2026-10', as_of: '2026-10-08', income_cents: 0, spent_cents: 115000,
-    total_limit_cents: 300000, alerts: [], data_version: 'saved',
-  } }))
-  await page.route('**/api/budget/preview', route => {
-    previewCalls += 1
-    const draft = route.request().postDataJSON()
+  function budgetStatus(draft: Pick<typeof stored, 'monthly_budget_cents' | 'category_budgets'>) {
     const alerts = []
     if (115000 > draft.monthly_budget_cents) alerts.push({
       scope: 'total', category: null, limit_cents: draft.monthly_budget_cents,
@@ -57,28 +56,33 @@ test('填写总预算和分类预算时全局警示即时更新', async ({ page 
       scope: 'category', category: '餐饮', limit_cents: draft.category_budgets[0].limit_cents,
       spent_cents: 115000, over_cents: 115000 - draft.category_budgets[0].limit_cents,
     })
-    return route.fulfill({ json: {
+    return {
       month: '2026-10', as_of: '2026-10-08', income_cents: 0, spent_cents: 115000,
-      total_limit_cents: draft.monthly_budget_cents, alerts, data_version: 'preview',
-    } })
+      total_limit_cents: draft.monthly_budget_cents, alerts, data_version: String(saves),
+    }
+  }
+  await page.route('**/api/budget/status', route => route.fulfill({ json: budgetStatus(stored) }))
+  await page.route('**/api/budget/preview', route => {
+    previewCalls += 1
+    return route.fulfill({ json: budgetStatus(route.request().postDataJSON()) })
   })
 
   await page.goto('/settings')
   await expect(page.getByText('预算警示预览')).toHaveCount(0)
   await page.getByRole('spinbutton', { name: '每月总消费上限' }).fill('1000')
-  await expect(page.getByRole('button', { name: /当前填写 2 项预算超额/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /2 项预算超额/ })).toBeVisible()
   await page.getByRole('spinbutton', { name: '每月上限' }).fill('1200')
-  await expect(page.getByRole('button', { name: /当前填写 1 项预算超额/ })).toBeVisible()
-  await page.getByRole('button', { name: /当前填写.*查看警示/ }).click()
+  await expect(page.getByRole('button', { name: /1 项预算超额/ })).toBeVisible()
+  await page.getByRole('button', { name: /查看警示/ }).click()
   await expect(page.getByRole('dialog')).toContainText('预算警示')
   await expect(page.getByRole('dialog').getByText('总消费预算')).toBeVisible()
   await expect(page.getByRole('dialog').getByText('餐饮预算')).toHaveCount(0)
   await page.getByRole('dialog').getByRole('button', { name: '关闭弹窗' }).click()
   await expect(page.getByRole('dialog')).toBeHidden()
   await page.getByRole('spinbutton', { name: '每月总消费上限' }).fill('1500')
-  await expect(page.getByRole('button', { name: /当前填写.*查看警示/ })).toBeHidden()
+  await expect(page.getByRole('button', { name: /查看警示/ })).toBeHidden()
   expect(previewCalls).toBeGreaterThan(1)
-  expect(saves).toBe(0)
+  await expect.poll(() => stored.monthly_budget_cents).toBe(150000)
 })
 
 test('预算修改后切换页面仍保留并写入设置接口', async ({ page }) => {
@@ -110,7 +114,7 @@ test('预算修改后切换页面仍保留并写入设置接口', async ({ page 
   await page.getByRole('spinbutton', { name: '每月上限' }).fill('800')
   await page.getByRole('spinbutton', { name: '每月总消费上限' }).fill('1200')
   await page.getByRole('link', { name: '概览' }).click()
-  await page.getByRole('link', { name: '设置' }).click()
+  await page.getByRole('link', { name: '设置', exact: true }).click()
   await expect(page.getByRole('spinbutton', { name: '每月总消费上限' })).toHaveValue('1200.00')
   await expect(page.getByRole('spinbutton', { name: '每月上限' })).toHaveValue('800.00')
   await expect.poll(() => saves).toBeGreaterThan(0)

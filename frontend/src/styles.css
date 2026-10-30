@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+/* Local builds must not wait for external font downloads; the existing font stack falls back locally. */
 @tailwind base; @tailwind components; @tailwind utilities;
 :root{--canvas:#f3f4f2;--surface:#ffffff;--ink:#1d2a25;--muted:#64716a;--line:#dce2dc;--accent:#155e47;--success:#167447;--danger:#a33a32;--warning:#9b671c;--chart-1:#155e47;--chart-2:#a6bc96;--chart-3:#d6aa72;--chart-4:#728ea2;--chart-5:#ca8374;--radius-panel:14px;--radius-control:8px;--shadow-panel:0 8px 30px rgba(27,45,35,.045);--shadow-dialog:0 24px 72px rgba(29,42,37,.22);--shadow-float:0 14px 32px rgba(21,94,71,.25);--space-page:32px;--space-section:24px;--chat-sidebar-width:244px}
 *{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--canvas);font-family:Inter,'Noto Sans SC',Arial,sans-serif}button,input,select{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted);font-weight:600}input,select{outline:none}input:focus,select:focus{border-color:var(--accent)}.field{display:flex;flex-direction:column;gap:7px}.field label{font-size:12px;font-weight:600;color:var(--muted)}.field input,.field select{height:40px;border:1px solid var(--line);border-radius:var(--radius-control);padding:0 12px;background:#fff}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel);box-shadow:var(--shadow-panel)}.page{max-width:1500px;margin:auto;padding:var(--space-page)}.grid-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.two-col{display:grid;grid-template-columns:1.35fr 1fr;gap:var(--space-section)}@media(max-width:1000px){.grid-metrics{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}@media(max-width:650px){.page{padding:16px}.grid-metrics{grid-template-columns:1fr}}
@@ -115,6 +115,10 @@
 
 /* 家庭空间使用现有设计令牌，视觉层级由日期轴和任务列表承担。 */
 :root{--accent-soft:#e9f0ec}
+.agent-entry{position:relative;flex:none}
+.agent-panel{position:fixed;z-index:35;right:24px;top:76px;width:380px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 96px);overflow-y:auto;border:1px solid var(--line);border-radius:var(--radius-panel);background:var(--surface);box-shadow:0 12px 48px #17342826;padding:18px;overflow-wrap:anywhere}
+.agent-item{border:1px solid var(--line);border-radius:var(--radius-control);background:var(--canvas);padding:14px}
+@media(max-width:650px){.agent-panel{right:12px;top:16px;max-height:calc(100dvh - 32px)}.family-account-link span{max-width:70px}}
 .family-topbar{display:flex;min-height:64px;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);background:var(--surface);padding:0 var(--space-page)}
 .family-space-link{display:inline-flex;min-height:42px;align-items:center;border-bottom:2px solid transparent;padding:0 15px;color:var(--muted);font-size:14px;font-weight:600}
 .family-space-link:hover,.family-space-link.is-active{color:var(--accent)}

@@ -29,7 +29,7 @@ export function BudgetAlertSummary({ data }: { data: BudgetStatusData }) {
   </div>
 }
 
-export function BudgetWarning({ draft }: { draft?: BudgetStatusData | null }) {
+export function BudgetWarning({ draft, autoOpen = true }: { draft?: BudgetStatusData | null; autoOpen?: boolean }) {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
   const status = useQuery({
@@ -43,10 +43,10 @@ export function BudgetWarning({ draft }: { draft?: BudgetStatusData | null }) {
   const signature = saved ? `spendwise-budget-alert:${saved.month}:${saved.data_version}` : ''
 
   useEffect(() => {
-    if (pathname !== '/settings' && !draft && saved?.alerts.length && signature && sessionStorage.getItem(signature) !== 'dismissed') {
+    if (autoOpen && pathname !== '/settings' && !draft && saved?.alerts.length && signature && sessionStorage.getItem(signature) !== 'dismissed') {
       setOpen(true)
     }
-  }, [draft, pathname, saved, signature])
+  }, [autoOpen, draft, pathname, saved, signature])
 
   useEffect(() => { if (data && data.alerts.length === 0) setOpen(false) }, [data])
 
