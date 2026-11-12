@@ -99,8 +99,8 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
   async function send(value = draft) {
     const content = value.trim()
     if (!content || streamingRef.current || !canSend) return
-    const requestId = crypto.randomUUID()
-    const answerId = crypto.randomUUID()
+    const requestId = crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('')
+    const answerId = crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('')
     const controller = new AbortController()
     abortRef.current = controller
     streamingRef.current = true
