@@ -1,11 +1,10 @@
 ﻿import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { LayoutDashboard, SlidersHorizontal, ReceiptText, Upload, Settings, UsersRound, CalendarRange, ChartNoAxesCombined, WalletCards, Target, UserRound } from 'lucide-react'
+import { LayoutDashboard, SlidersHorizontal, ReceiptText, Settings, UsersRound, CalendarRange, ChartNoAxesCombined, WalletCards, Target, UserRound } from 'lucide-react'
 import { Overview } from './pages/Overview'
 import { Simulate } from './pages/Simulate'
 import { Ledger } from './pages/Ledger'
-import { Import } from './pages/Import'
 import { SettingsPage } from './pages/Settings'
 import { ComponentsPage } from './pages/Components'
 import { AuthPage } from './pages/Auth'
@@ -28,11 +27,10 @@ import { useSession } from './lib/session'
 import type { BudgetStatusData } from './types'
 
 const personalNav = [
-  { path: '/overview', label: '概览', icon: LayoutDashboard },
-  { path: '/simulate', label: '消费模拟', icon: SlidersHorizontal },
+  { path: '/overview', label: '首页', icon: LayoutDashboard },
   { path: '/ledger', label: '账本', icon: ReceiptText },
   { path: '/accounts', label: '账户与资产', icon: WalletCards },
-  { path: '/import', label: '导入', icon: Upload },
+  { path: '/simulate', label: '消费模拟', icon: SlidersHorizontal },
   { path: '/settings', label: '设置', icon: Settings },
 ]
 const familyNav = [
@@ -89,7 +87,7 @@ export default function App() {
           <Route path="/plan" element={<Navigate to="/overview" replace/>}/>
           <Route path="/ledger" element={<Ledger/>}/>
           <Route path="/accounts" element={<AccountsPage/>}/>
-          <Route path="/import" element={<Import/>}/>
+          <Route path="/import" element={<Navigate to="/ledger?import=1" replace/>}/>
           <Route path="/settings" element={<SettingsPage onBudgetPreview={setBudgetPreview}/>}/>
           <Route path="/user" element={<UserCenter/>}/>
           <Route path="/family" element={hasFamily ? <FamilyDashboardPage/> : <FamilyWelcome/>}/>

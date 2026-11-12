@@ -6,7 +6,7 @@ import { Badge, Card, SectionTitle, State } from '../components/ui'
 import { MetricCard, Money } from '../components/business'
 import { Chart } from '../components/Chart'
 import { money, nextMonthRange, today } from '../lib/format'
-import { chartColors } from '../lib/tokens'
+import { categoryChartColors } from '../lib/tokens'
 
 function Outlook({ dataVersion }: { dataVersion: string }) {
   const nextMonth = nextMonthRange()
@@ -67,10 +67,9 @@ export function Overview() {
   const data = query.data
 
   return <div className="page space-y-6">
-    <header><h1 className="m-0 text-3xl font-semibold">概览</h1></header>
+    <header><h1 className="m-0 text-3xl font-semibold">首页</h1></header>
     {query.isLoading ? <State kind="loading"/> : query.isError ? <State kind="error" retry={() => query.refetch()}/> : data && <>
       <div className="grid-metrics">
-        <MetricCard label="账户余额" cents={data.account_balance_cents} detail="期初余额加已记账收支"/>
         <MetricCard label="本月预算剩余" cents={data.budget_remaining_cents} detail="按本月预算和支出计算"/>
         <MetricCard label="本月收入" cents={data.income_cents} tone="positive"/>
         <MetricCard label="本月净支出" cents={data.expense_cents}/>
@@ -80,9 +79,9 @@ export function Overview() {
           <SectionTitle title="分类支出"/>
           {data.category_spend.length ? <>
             <Chart option={{
-              color: chartColors,
+              color: categoryChartColors,
               tooltip: { trigger: 'item', formatter: (p: any) => p.name + ': ' + money(p.value) },
-              series: [{ type: 'pie', radius: ['55%', '76%'], center: ['50%', '52%'], label: { formatter: '{b}' }, data: data.category_spend.map(x => ({ name: x.category, value: x.amount_cents })) }],
+              series: [{ type: 'pie', radius: ['48%', '76%'], center: ['50%', '52%'], padAngle: 2, itemStyle: { borderColor: '#ffffff', borderWidth: 3, borderRadius: 6 }, label: { formatter: '{b}', color: '#334155' }, data: data.category_spend.map(x => ({ name: x.category, value: x.amount_cents })) }],
             }} onClick={p => navigate('/ledger?category=' + encodeURIComponent(String(p.name)))}/>
             <div className="grid gap-2">{data.category_spend.map(item =>
               <button key={item.category} className="flex justify-between rounded-control px-2 py-2 text-sm hover:bg-canvas" onClick={() => navigate('/ledger?category=' + encodeURIComponent(item.category))}>

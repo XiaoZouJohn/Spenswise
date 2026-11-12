@@ -5,7 +5,8 @@ import { useSearchParams } from 'react-router-dom'
 import { AiClassificationPanel } from '../components/AiClassificationPanel'
 import { AmountInput, CategoryPicker, Money, TransactionDetail } from '../components/business'
 import { TransactionTable } from '../components/TransactionTable'
-import { Button, Card, CenterDialog, DetailDialog, SectionTitle, State } from '../components/ui'
+import { Badge, Button, Card, CenterDialog, DetailDialog, Disclosure, SectionTitle, State } from '../components/ui'
+import { ImportPanel } from './Import'
 import { api, json } from '../lib/api'
 import { familyApi } from '../lib/familyApi'
 import { today } from '../lib/format'
@@ -127,27 +128,37 @@ export function Ledger() {
     </Card>
 
     <Card>
+      <Disclosure title="导入账单" description="导入微信、支付宝或其他 CSV、TXT、XLSX 账单" defaultOpen={search.get('import') === '1'}>
+        <ImportPanel/>
+      </Disclosure>
+    </Card>
+
+    <Card>
       <SectionTitle title="交易记录" action={<div className="flex flex-wrap gap-2">
         <Button variant={review ? 'primary' : 'secondary'} onClick={() => updateFilter('review', review ? '' : '1')}>待审核</Button>
         <Button variant="secondary" onClick={() => { setSearch({}); setMerchantDraft(''); setPage(1); setSelected([]) }}>全部账单</Button>
         <Button variant="danger" disabled={query.isLoading} onClick={() => setDeleteTarget('all')}><Trash2 size={16}/>删除全部</Button>
       </div>}/>
 
-      <div className="mb-4 rounded-panel border border-line bg-canvas p-4">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-          <div className="field"><label>收支类型</label><select value={txType} onChange={event => updateFilter('tx_type', event.target.value)}><option value="">全部类型</option><option value="expense">支出</option><option value="income">收入</option><option value="refund">退款</option><option value="transfer">转账</option></select></div>
-          <div className="field"><label>消费分类</label><select value={filterCategory} onChange={event => updateFilter('category', event.target.value)}><option value="">全部分类</option>{categories.map(item => <option key={item} value={item}>{item}</option>)}</select></div>
-          <div className="field"><label>开始日期</label><input type="date" value={dateFrom} max={dateTo || undefined} onChange={event => updateFilter('date_from', event.target.value)}/></div>
-          <div className="field"><label>结束日期</label><input type="date" value={dateTo} min={dateFrom || undefined} onChange={event => updateFilter('date_to', event.target.value)}/></div>
-          <form className="field xl:col-span-2" onSubmit={event => { event.preventDefault(); updateFilter('merchant', merchantDraft.trim()) }}>
-            <label>搜索商户</label>
-            <div className="flex gap-2"><input value={merchantDraft} placeholder="输入商户名称" onChange={event => setMerchantDraft(event.target.value)}/><Button type="submit" variant="secondary"><Search size={16}/>搜索</Button></div>
-          </form>
-        </div>
-        <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted">
-          <span>{activeFilterCount ? `已启用 ${activeFilterCount} 个筛选条件` : '当前显示全部账单'}</span>
-          {activeFilterCount > 0 && <Button variant="ghost" onClick={() => { setSearch({}); setMerchantDraft(''); setPage(1); setSelected([]) }}>重置筛选</Button>}
-        </div>
+      <div className="mb-4">
+        <Disclosure title="筛选与搜索" description="按收支类型、分类、日期和商户缩小交易范围" badge={<Badge tone={activeFilterCount ? 'warning' : 'neutral'}>{activeFilterCount ? `${activeFilterCount} 个条件` : '全部账单'}</Badge>} defaultOpen={activeFilterCount > 0}>
+          <div className="rounded-panel border border-line bg-canvas p-4">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+              <div className="field"><label>收支类型</label><select value={txType} onChange={event => updateFilter('tx_type', event.target.value)}><option value="">全部类型</option><option value="expense">支出</option><option value="income">收入</option><option value="refund">退款</option><option value="transfer">转账</option></select></div>
+              <div className="field"><label>消费分类</label><select value={filterCategory} onChange={event => updateFilter('category', event.target.value)}><option value="">全部分类</option>{categories.map(item => <option key={item} value={item}>{item}</option>)}</select></div>
+              <div className="field"><label>开始日期</label><input type="date" value={dateFrom} max={dateTo || undefined} onChange={event => updateFilter('date_from', event.target.value)}/></div>
+              <div className="field"><label>结束日期</label><input type="date" value={dateTo} min={dateFrom || undefined} onChange={event => updateFilter('date_to', event.target.value)}/></div>
+              <form className="field xl:col-span-2" onSubmit={event => { event.preventDefault(); updateFilter('merchant', merchantDraft.trim()) }}>
+                <label>搜索商户</label>
+                <div className="flex gap-2"><input value={merchantDraft} placeholder="输入商户名称" onChange={event => setMerchantDraft(event.target.value)}/><Button type="submit" variant="secondary"><Search size={16}/>搜索</Button></div>
+              </form>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted">
+              <span>{activeFilterCount ? `已启用 ${activeFilterCount} 个筛选条件` : '当前显示全部账单'}</span>
+              {activeFilterCount > 0 && <Button variant="ghost" onClick={() => { setSearch({}); setMerchantDraft(''); setPage(1); setSelected([]) }}>重置筛选</Button>}
+            </div>
+          </div>
+        </Disclosure>
       </div>
 
       {query.data && <div className="mb-4 grid gap-3 sm:grid-cols-3">

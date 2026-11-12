@@ -14,6 +14,7 @@ test('用户中心可导出本人数据、撤销设备并修改密码', async ({
 
     await page.goto('/user')
     await expect(page.getByRole('heading', { name: '用户中心' })).toBeVisible()
+    await page.getByRole('button', { name: /登录设备/ }).click()
     await expect(page.getByRole('button', { name: '退出该设备' })).toBeVisible()
     await page.getByRole('button', { name: '退出该设备' }).click()
     await expect(page.getByRole('status')).toContainText('已退出所选设备')
@@ -21,6 +22,7 @@ test('用户中心可导出本人数据、撤销设备并修改密码', async ({
 
     const downloadPromise = page.waitForEvent('download')
     const exportResponse = page.waitForResponse(response => response.url().endsWith('/api/users/me/export'))
+    await page.getByRole('button', { name: /个人数据/ }).click()
     await page.getByRole('button', { name: '导出个人数据 JSON' }).click()
     const download = await downloadPromise
     expect(download.suggestedFilename()).toMatch(/^SpendWise-个人数据-.*\.json$/)
@@ -29,6 +31,7 @@ test('用户中心可导出本人数据、撤销设备并修改密码', async ({
     expect(payload.user.email).toBe(user.email)
     expect(payload.data).toHaveProperty('transactions')
 
+    await page.getByRole('button', { name: /修改密码/ }).click()
     await page.getByLabel('当前密码').fill('Playwright-Test-2026!')
     await page.getByLabel('新密码', { exact: true }).fill('Playwright-New-2026!')
     await page.getByLabel('再次输入新密码').fill('Playwright-New-2026!')

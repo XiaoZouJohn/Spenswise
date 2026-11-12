@@ -3,6 +3,7 @@ import * as SelectPrimitive from '@radix-ui/react-select'
 import { Slot } from '@radix-ui/react-slot'
 import { Check, ChevronDown } from 'lucide-react'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { useId, useState } from 'react'
 import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
 import { cn } from '../lib/cn'
 
@@ -21,9 +22,34 @@ export function State({ kind, message, retry }: { kind: 'loading' | 'empty' | 'e
 
 export function SectionTitle({ title, action }: { title: string; action?: ReactNode }) { return <div className="mb-5 flex items-center justify-between gap-4"><h2 className="m-0 text-lg font-semibold">{title}</h2>{action}</div> }
 
+export function Disclosure({ title, description, badge, defaultOpen = false, children }: { title: string; description?: string; badge?: ReactNode; defaultOpen?: boolean; children: ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const contentId = useId()
+  return <div>
+    <button
+      type="button"
+      className="flex w-full items-center justify-between gap-4 rounded-panel border border-accent/30 bg-accent/5 px-4 py-4 text-left text-ink transition hover:border-accent/60 hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-accent/30"
+      aria-expanded={open}
+      aria-controls={contentId}
+      onClick={() => setOpen(value => !value)}
+    >
+      <span className="min-w-0">
+        <span className="block font-semibold">{title}</span>
+        {description && <span className="mt-1 block text-sm font-normal text-muted">{description}</span>}
+      </span>
+      <span className="flex shrink-0 items-center gap-2">
+        {badge}
+        <span className="text-sm font-semibold text-accent">{open ? '收起' : '展开'}</span>
+        <ChevronDown size={19} className={cn('text-accent transition-transform', open && 'rotate-180')}/>
+      </span>
+    </button>
+    {open && <div id={contentId} className="pt-4">{children}</div>}
+  </div>
+}
+
 export function DetailDialog({ open, onOpenChange, title, children }: { open: boolean; onOpenChange: (open: boolean) => void; title: string; children: ReactNode }) { return <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}><DialogPrimitive.Portal><DialogPrimitive.Overlay className="fixed inset-0 z-20 bg-black/30"/><DialogPrimitive.Content className="fixed right-0 top-0 z-30 h-full w-full max-w-md bg-white p-7 shadow-panel"><div className="mb-6 flex items-center justify-between"><DialogPrimitive.Title className="text-lg font-semibold">{title}</DialogPrimitive.Title><DialogPrimitive.Close asChild><Button variant="ghost">关闭</Button></DialogPrimitive.Close></div>{children}</DialogPrimitive.Content></DialogPrimitive.Portal></DialogPrimitive.Root> }
 
-export function CenterDialog({ open, onOpenChange, title, children }: { open: boolean; onOpenChange: (open: boolean) => void; title: string; children: ReactNode }) { return <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}><DialogPrimitive.Portal><DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-ink/45 backdrop-blur-[3px]"/><DialogPrimitive.Content className="center-dialog fixed left-1/2 top-1/2 z-50 max-h-[88vh] w-[min(92vw,560px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-panel border border-line bg-white p-6"><div className="mb-5 flex items-start justify-between gap-3"><DialogPrimitive.Title className="text-xl font-semibold">{title}</DialogPrimitive.Title><DialogPrimitive.Close asChild><Button variant="ghost" aria-label="关闭弹窗">关闭</Button></DialogPrimitive.Close></div>{children}</DialogPrimitive.Content></DialogPrimitive.Portal></DialogPrimitive.Root> }
+export function CenterDialog({ open, onOpenChange, title, children, dismissible = true }: { open: boolean; onOpenChange: (open: boolean) => void; title: string; children: ReactNode; dismissible?: boolean }) { return <DialogPrimitive.Root open={open} onOpenChange={next => { if (dismissible || next) onOpenChange(next) }}><DialogPrimitive.Portal><DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-ink/45 backdrop-blur-[3px]"/><DialogPrimitive.Content onEscapeKeyDown={event => { if (!dismissible) event.preventDefault() }} onPointerDownOutside={event => { if (!dismissible) event.preventDefault() }} onInteractOutside={event => { if (!dismissible) event.preventDefault() }} className="center-dialog fixed left-1/2 top-1/2 z-50 max-h-[88vh] w-[min(92vw,560px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-panel border border-line bg-white p-6"><div className="mb-5 flex items-start justify-between gap-3"><DialogPrimitive.Title className="text-xl font-semibold">{title}</DialogPrimitive.Title>{dismissible && <DialogPrimitive.Close asChild><Button variant="ghost" aria-label="关闭弹窗">关闭</Button></DialogPrimitive.Close>}</div>{children}</DialogPrimitive.Content></DialogPrimitive.Portal></DialogPrimitive.Root> }
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) { return <input className={cn('h-10 w-full rounded-control border border-line bg-white px-3 text-sm text-ink outline-none focus:border-accent disabled:opacity-50', className)} {...props}/> }
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) { return <textarea className={cn('min-h-24 w-full rounded-control border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-accent disabled:opacity-50', className)} {...props}/> }
