@@ -19,6 +19,7 @@ import { FamilyGoalsPage } from './pages/FamilyGoals'
 import { FamilyMembersPage } from './pages/FamilyMembers'
 import { AccountsPage } from './pages/Accounts'
 import { BudgetWarning } from './components/BudgetWarning'
+import { AgentReminder } from './components/AgentReminder'
 import { AiLauncher } from './components/AiLauncher'
 import type { AiBubblePosition } from './components/AiLauncher'
 import { AiChatWindow } from './components/AiChatWindow'
@@ -78,8 +79,8 @@ export default function App() {
       </nav>}
     </aside>
     <main className="min-w-0 flex-1">
-      <div className="family-topbar"><div className="flex items-center gap-1"><Link to="/overview" className={'family-space-link ' + (!isFamily ? 'is-active' : '')}>个人空间</Link><Link to="/family" className={'family-space-link ' + (isFamily ? 'is-active' : '')}>家庭组</Link></div><Link to="/user" className="family-account-link"><UserRound size={18}/><span className="max-w-32 truncate">{session.data.user.display_name}</span></Link></div>
-      {!isFamily && <BudgetWarning draft={budgetPreview}/>}
+      <div className="family-topbar"><div className="flex items-center gap-1"><Link to="/overview" className={'family-space-link ' + (!isFamily ? 'is-active' : '')}>个人空间</Link><Link to="/family" className={'family-space-link ' + (isFamily ? 'is-active' : '')}>家庭组</Link></div><div className="flex min-w-0 items-center gap-1"><AgentReminder key={session.data.user.id} ownerId={session.data.user.id}/><Link to="/user" className="family-account-link"><UserRound size={18}/><span className="max-w-32 truncate">{session.data.user.display_name}</span></Link></div></div>
+      {!isFamily && <BudgetWarning draft={budgetPreview} autoOpen={false}/>}
       <motion.div key={location.pathname} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .18 }}>
         <Routes>
           <Route path="/" element={<Navigate to="/overview" replace/>}/>

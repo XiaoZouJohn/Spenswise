@@ -217,9 +217,15 @@ def choose_port(preferred: int = DEFAULT_PORT) -> int:
     raise RuntimeError("无法找到可用的本地端口，请关闭其他 SpendWise 窗口后重试。")
 
 
-def configure_runtime(port: int) -> tuple[Path, Path]:
-    data_dir = app_data_dir()
-    for config_path in (executable_dir() / "SpendWise.env", data_dir / "SpendWise.env"):
+def configure_runtime(port: int, data_directory: Path | None = None) -> tuple[Path, Path]:
+    data_dir = data_directory if data_directory is not None else app_data_dir()
+    data_dir.mkdir(parents=True, exist_ok=True)
+    config_paths = (
+        (data_dir / "SpendWise.env",)
+        if data_directory is not None
+        else (executable_dir() / "SpendWise.env", data_dir / "SpendWise.env")
+    )
+    for config_path in config_paths:
         load_env(config_path)
 
     database_path = data_dir / "spendwise.db"
@@ -238,11 +244,11 @@ def configure_runtime(port: int) -> tuple[Path, Path]:
     return data_dir, database_path
 
 
-def migrate_database() -> None:
+def migrate_database(migration_root: Path | None = None) -> None:
     from alembic import command
     from alembic.config import Config
 
-    migration_root = resource_dir() / "migrations"
+    migration_root = migration_root or resource_dir() / "migrations"
     if not (migration_root / "env.py").is_file():
         raise RuntimeError(f"数据库迁移资源缺失：{migration_root}")
     config = Config()
@@ -263,11 +269,11 @@ def migrate_database() -> None:
     command.upgrade(config, "head")
 
 
-def build_app():
+def build_app(static_root: Path | None = None, migration_root: Path | None = None):
     from fastapi import HTTPException
     from fastapi.responses import FileResponse
 
-    migrate_database()
+    migrate_database(migration_root)
 
     from app.main import app
     from app.tasks import celery_app
@@ -275,7 +281,7 @@ def build_app():
     celery_app.conf.task_always_eager = True
     celery_app.conf.task_eager_propagates = True
 
-    static_root = resource_dir() / "frontend_dist"
+    static_root = static_root or resource_dir() / "frontend_dist"
     if not (static_root / "index.html").is_file():
         raise RuntimeError(f"前端资源缺失：{static_root}")
 

@@ -1,4 +1,8 @@
+> 组员协作包：请先阅读 [组员交接说明](组员交接说明.md)。本包附已构建前端，但不附 Python 环境或 EXE；首次使用需安装依赖。双击启动版与 F5 开发版使用独立数据库。
+
 # SpendWise v3.0
+
+本机 Agent 增量版：双击 `start-agent.cmd` 即可使用。新增打开时简报、重要消费变化提醒和独立 AI 授权。独立数据在本目录 `data/`，不迁移旧版账本；详见 [Agent 使用与数据说明](AGENT-README.md)。下文保留原版协作启动说明。
 
 个人与家庭财务决策工作台。项目分为 `frontend`（React）和 `backend`（FastAPI）。这份交付包只含源码、迁移、测试、配置模板、设计资料和虚构演示数据；每位成员首次启动时会建立自己的本地数据库，若检测到旧版数据则会自动迁移并继续使用。
 
@@ -19,6 +23,8 @@ npm ci
 双击打包版 `SpendWise-v3.0.exe` 时，账号、账单、预算、分类规则、AI 连接和对话会保存在 `%LOCALAPPDATA%\SpendWise\`。升级或重新打开程序会继续使用同一数据库；旧版 `%LOCALAPPDATA%\SpendWise-v3.0\` 或项目内 `backend\spendwise-dev.db` 会在首次启动时自动迁移。如果检测到旧数据库已有表但缺少迁移版本，启动器会先生成备份，再从已识别的版本继续升级，避免重复建表。
 
 VS Code 启动项要求 `node` 能在终端的 PATH 中找到。后端虚拟环境固定在 `backend/.venv`，因此依赖安装在项目所在的磁盘。
+
+当前 Windows 工作区使用项目内 `.tooling/node-v22.16.0-win-x64/node.exe` 启动前端，避免系统旧版 Node 干扰；新开的 VS Code 终端也会优先使用它。该目录不提交到 Git，新副本需先下载并解压对应的 Node.js Windows x64 ZIP 到 `.tooling/`，或将 `.vscode/launch.json` 的 Windows `runtimeExecutable` 改为本机 Node 20+ 路径，并同步调整 `.vscode/settings.json` 中的 PATH。Python 虚拟环境与 `node_modules` 同样需要每台电脑单独安装。修改配置后关闭旧终端，再新建终端。
 
 ## 用终端分别启动
 

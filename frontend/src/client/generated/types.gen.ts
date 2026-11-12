@@ -8,6 +8,56 @@ export type AccountDeleteOut = {
     deleted: boolean;
 };
 
+export type AgentBrief = {
+    preferences: AgentPreferencesOut;
+    as_of: string;
+    month: string;
+    fingerprint: string;
+    source: 'local' | 'ai';
+    reason: string;
+    cards: Array<AgentCard>;
+    risks: {
+        [key: string]: (number);
+    };
+    facts: AgentFacts;
+    pending_import: boolean;
+    generated_at: string;
+};
+
+export type source = 'local' | 'ai';
+
+export type AgentCard = {
+    id: string;
+    tone: 'warning' | 'encouragement' | 'info';
+    title: string;
+    evidence: string;
+    message: string;
+    href: string;
+};
+
+export type tone = 'warning' | 'encouragement' | 'info';
+
+export type AgentFacts = {
+    income_cents: number;
+    spent_cents: number;
+    budget_cents: number;
+    previous_spent_cents: number;
+    recent_spent_cents: number;
+    preceding_spent_cents: number;
+    transaction_count: number;
+};
+
+export type AgentPreferencesIn = {
+    automatic_enabled?: (boolean | null);
+    ai_enabled?: (boolean | null);
+};
+
+export type AgentPreferencesOut = {
+    automatic_enabled: boolean;
+    ai_enabled: boolean;
+    scope: string;
+};
+
 export type AiCategoryApplyIn = {
     suggestions: Array<AiCategorySuggestionIn>;
 };
@@ -896,6 +946,18 @@ export type PutAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyPutData = {
 };
 
 export type PutAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyPutResponse = (AssetCoveragePolicyOut);
+
+export type AgentPreferencesApiAgentPreferencesGetResponse = (AgentPreferencesOut);
+
+export type UpdateAgentPreferencesApiAgentPreferencesPutData = {
+    requestBody: AgentPreferencesIn;
+};
+
+export type UpdateAgentPreferencesApiAgentPreferencesPutResponse = (AgentPreferencesOut);
+
+export type AgentStatusApiAgentStatusGetResponse = (AgentBrief);
+
+export type AgentBriefApiAgentBriefPostResponse = (AgentBrief);
 
 export type HealthApiHealthGetResponse = ({
     [key: string]: unknown;

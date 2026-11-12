@@ -2,7 +2,7 @@ import parser from '@typescript-eslint/parser'
 import plugin from '@typescript-eslint/eslint-plugin'
 
 export default [
-  { ignores: ['dist/**', 'node_modules/**', 'src/client/generated/**', 'test-results/**'] },
+  { ignores: ['dist/**', '.playwright-dist/**', 'node_modules/**', '.pnpm-store/**', 'src/client/generated/**', 'test-results/**'] },
   {
     files: ['src/**/*.{ts,tsx}', 'tests/**/*.ts'],
     languageOptions: { parser, parserOptions: { ecmaFeatures: { jsx: true }, sourceType: 'module' } },

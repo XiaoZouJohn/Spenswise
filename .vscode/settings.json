@@ -1,0 +1,6 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+  "terminal.integrated.env.windows": {
+    "PATH": "${workspaceFolder}\\.tooling\\node-v22.16.0-win-x64;${env:PATH}"
+  }
+}

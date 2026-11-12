@@ -6,6 +6,9 @@ const apiUrl = 'http://127.0.0.1:18080'
 // A unique registered user per test keeps browser cases independent.
 export const test = base.extend({
   page: async ({ page, context }, use) => {
+    // Local workflow tests must not wait on optional external fonts.
+    await context.route('https://fonts.googleapis.com/**', route => route.abort())
+    await context.route('https://fonts.gstatic.com/**', route => route.abort())
     const response = await context.request.post(`${apiUrl}/api/auth/register`, {
       data: {
         email: `browser-${randomUUID()}@example.test`,

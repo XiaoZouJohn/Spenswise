@@ -17,7 +17,7 @@ test('概览承接未来收支，开发页不出现在用户导航', async ({ pa
 
   await page.goto('/plan')
   await expect(page).toHaveURL(/\/overview$/)
-  await expect(page.getByText('预计最低账户余额')).toBeVisible()
+  await expect(page.getByText('预计账户最低余额')).toBeVisible()
   await expect(page.getByText('房租')).toBeVisible()
   await expect(page.getByRole('link', { name: '月度规划' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: '组件展示' })).toHaveCount(0)

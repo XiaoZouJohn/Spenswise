@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .db import get_db
 from .models import User, UserSession
 
-COOKIE_NAME = "spendwise_session"
+COOKIE_NAME = os.getenv("SPENDWISE_COOKIE_NAME", "spendwise_session")
 SESSION_DAYS = 14
 
 

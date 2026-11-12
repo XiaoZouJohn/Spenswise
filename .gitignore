@@ -6,12 +6,16 @@ dist/
 /package-lock.json
 packaging/__pycache__/
 frontend/node_modules/
+frontend/.pnpm-store/
 frontend/dist/
+frontend/.playwright-dist/
 frontend/test-results/
 backend/.vendor/
 backend/.pip-cache/
 backend/.wheels/
 .browsers/
+/data/
+/agent-runtime*.log
 backend/.venv/
 backend/uploads/
 backend/*.db

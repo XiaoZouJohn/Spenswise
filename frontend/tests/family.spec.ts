@@ -81,7 +81,7 @@ test('家庭邀请、授权、共担账单和议事形成完整流程', async ({
     await page.goto('/family/decisions')
     await page.getByRole('button', { name: /周末共同采购/ }).click()
     await page.getByRole('button', { name: '确认计划' }).click()
-    await expect(page.getByRole('status')).toContainText('计划已确认')
+    await expect(page.getByRole('status').filter({ hasText: '计划已确认' })).toBeVisible()
     await page.getByRole('combobox', { name: '选择实际账单' }).click()
     await page.getByRole('option', { name: new RegExp(memberCommon) }).click()
     await page.getByRole('button', { name: '关联账单' }).click()

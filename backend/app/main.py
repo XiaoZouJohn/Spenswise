@@ -20,6 +20,7 @@ from .models import (
     UploadToken,
     User,
 )
+from .routes_agent import router as agent_router
 from .routes_auth import router as auth_router
 from .routes_family import router as family_router
 from .schemas import (
@@ -47,7 +48,16 @@ from .schemas import (
     TransactionIn,
     TransactionOut,
 )
-from .services import ai, ai_chat, ai_connection, budget, forecast, imports, ledger
+from .services import (
+    ai,
+    ai_chat,
+    ai_connection,
+    ai_ledger_consent,
+    budget,
+    forecast,
+    imports,
+    ledger,
+)
 from .tasks import category_task, celery_app, import_task
 
 app = FastAPI(title="SpendWise API", version="3.0.0")
@@ -63,6 +73,7 @@ app.add_middleware(
 )
 app.include_router(auth_router)
 app.include_router(family_router)
+app.include_router(agent_router)
 
 
 @app.middleware("http")
@@ -86,7 +97,10 @@ def local_today() -> date:
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok"}
+    result = {"status": "ok"}
+    if instance := os.getenv("SPENDWISE_INSTANCE"):
+        result["instance"] = instance
+    return result
 
 
 @app.get("/api/settings", response_model=SettingsOut)
@@ -477,9 +491,8 @@ def get_chat_ledger_consent(
 def put_chat_ledger_consent(
     value: ChatLedgerConsentIn, user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> dict:
-    result = ai_chat.set_ledger_consent(db, value.enabled, user.id)
-    db.commit()
-    return result
+    ai_ledger_consent.set_enabled(db, user.id, value.enabled)
+    return ai_chat.ledger_consent_status(db, user.id)
 
 
 @app.get("/api/ai/conversations/{conversation_id}", response_model=ChatConversationDetail)
