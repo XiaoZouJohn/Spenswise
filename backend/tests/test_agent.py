@@ -82,14 +82,14 @@ def configure(client):
     )
 
 
-def test_auth_defaults_and_independent_consent(clients, monkeypatch):
+def test_auth_defaults_and_shared_consent(clients, monkeypatch):
     first, second, _ = clients
     with TestClient(app) as anonymous:
         assert anonymous.get("/api/agent/status").status_code == 401
         assert anonymous.post("/api/agent/brief").status_code == 401
     initial = first.get("/api/agent/preferences")
     assert initial.status_code == 200
-    assert initial.json()["ai_enabled"] is False
+    assert initial.json()["ai_enabled"] is True
     assert initial.json()["automatic_enabled"] is True
     assert (
         first.put(
@@ -101,8 +101,12 @@ def test_auth_defaults_and_independent_consent(clients, monkeypatch):
         ).status_code
         == 200
     )
-    assert second.get("/api/agent/preferences").json()["ai_enabled"] is False
-    assert first.get("/api/ai/chat/ledger-consent").json()["enabled"] is False
+    assert second.get("/api/agent/preferences").json()["ai_enabled"] is True
+    assert first.get("/api/ai/chat/ledger-consent").json()["enabled"] is True
+    first.put("/api/ai/chat/ledger-consent", json={"enabled": False})
+    assert first.get("/api/agent/preferences").json()["ai_enabled"] is False
+    first.put("/api/agent/preferences", json={"ai_enabled": True})
+    assert first.get("/api/ai/chat/ledger-consent").json()["enabled"] is True
 
 
 def test_budget_facts_thresholds_and_owner_isolation(clients):
@@ -126,6 +130,7 @@ def test_budget_facts_thresholds_and_owner_isolation(clients):
 
 def test_local_fallback_never_sends_unconsented_data(clients, monkeypatch):
     first, _, _ = clients
+    first.put("/api/ai/chat/ledger-consent", json={"enabled": False})
 
     def forbidden(*args, **kwargs):
         raise AssertionError("no consent: must not call model")

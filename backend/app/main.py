@@ -48,7 +48,16 @@ from .schemas import (
     TransactionIn,
     TransactionOut,
 )
-from .services import ai, ai_chat, ai_connection, budget, forecast, imports, ledger
+from .services import (
+    ai,
+    ai_chat,
+    ai_connection,
+    ai_ledger_consent,
+    budget,
+    forecast,
+    imports,
+    ledger,
+)
 from .tasks import category_task, celery_app, import_task
 
 app = FastAPI(title="SpendWise API", version="3.0.0")
@@ -482,9 +491,8 @@ def get_chat_ledger_consent(
 def put_chat_ledger_consent(
     value: ChatLedgerConsentIn, user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> dict:
-    result = ai_chat.set_ledger_consent(db, value.enabled, user.id)
-    db.commit()
-    return result
+    ai_ledger_consent.set_enabled(db, user.id, value.enabled)
+    return ai_chat.ledger_consent_status(db, user.id)
 
 
 @app.get("/api/ai/conversations/{conversation_id}", response_model=ChatConversationDetail)

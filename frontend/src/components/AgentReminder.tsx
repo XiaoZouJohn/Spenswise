@@ -100,9 +100,9 @@ export function AgentReminder({ ownerId }: { ownerId: number }) {
     request.current = manual => { void check(manual) }
     const unsubscribe = client.getQueryCache().subscribe(event => {
       if (event.type !== 'updated' || event.action.type !== 'invalidate') return
-      if (!['budget-status', 'agent-preferences', 'ai-status'].includes(String(event.query.queryKey[0]))) return
+      if (!['budget-status', 'agent-preferences', 'ai-ledger-consent', 'ai-status'].includes(String(event.query.queryKey[0]))) return
       epoch += 1 // Ignore a result begun before a ledger/consent/connection change.
-      if (event.query.queryKey[0] === 'agent-preferences') {
+      if (['agent-preferences', 'ai-ledger-consent'].includes(String(event.query.queryKey[0]))) {
         current = null
         setReport(null)
         if (automaticPopup) setOpen(false)
@@ -161,7 +161,15 @@ export function AgentReminderSettings() {
   const query = useQuery({ queryKey, queryFn: agentApi.preferences, enabled: !!session.data })
   const save = useMutation({
     mutationFn: agentApi.savePreferences,
-    onMutate: () => { void client.invalidateQueries({ queryKey, refetchType: 'none' }) },
+    onMutate: value => {
+      client.setQueryData<Awaited<ReturnType<typeof agentApi.preferences>>>(queryKey, current =>
+        current ? {
+          ...current,
+          automatic_enabled: value.automatic_enabled ?? current.automatic_enabled,
+          ai_enabled: value.ai_enabled ?? current.ai_enabled,
+        } : current)
+      void client.invalidateQueries({ queryKey, refetchType: 'none' })
+    },
     onSuccess: async stored => {
       client.setQueryData(queryKey, stored)
       await client.invalidateQueries({ queryKey })
@@ -173,9 +181,7 @@ export function AgentReminderSettings() {
     {query.isPending ? <State kind="loading"/> : query.isError ? <State kind="error" retry={() => query.refetch()}/> : <div className="space-y-4 text-sm">
       <label className="flex items-start gap-3"><input type="checkbox" className="mt-1" checked={save.isPending ? save.variables.automatic_enabled ?? query.data.automatic_enabled : query.data.automatic_enabled} disabled={save.isPending} onChange={event => save.mutate({ automatic_enabled: event.target.checked })}/>打开软件和重要变化时自动提醒</label>
       <p className="m-0 leading-6 text-muted">每次打开给出一份简报；达到预算预警线或风险升级时追加提醒。刷新、切页和同等级的小额变化不重复弹出。关闭后仍能从顶部手动查看。</p>
-      <label className="flex items-start gap-3"><input type="checkbox" className="mt-1" checked={save.isPending ? save.variables.ai_enabled ?? query.data.ai_enabled : query.data.ai_enabled} disabled={save.isPending} onChange={event => save.mutate({ ai_enabled: event.target.checked })}/>允许 AI 自动分析并提醒</label>
-      <p className="m-0 leading-6 text-muted">{query.data.scope}</p>
-      <p className="m-0 text-xs text-muted">使用下方账号自己的 DeepSeek 连接；此授权独立于聊天和分类授权。无连接或分析失败时仍提供本地提醒。关闭授权后不再新发数据，已经开始发送的请求无法撤回。</p>
+      <p className="m-0 leading-6 text-muted">Agent 简报仅发送本人账本汇总和提醒依据；聊天按需读取最新账单。无连接或分析失败时仍提供本地提醒。</p>
     </div>}
     {save.isPending && <p role="status" className="mb-0 text-sm text-muted">正在保存；若有进行中的 AI 请求，需等待它结束。</p>}
     {save.isSuccess && <p role="status" className="mb-0 text-sm text-success">提醒设置已保存</p>}

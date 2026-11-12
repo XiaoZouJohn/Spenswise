@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Bot, Check, ChevronDown, ChevronRight, CircleAlert, Database, LoaderCircle, Plus, Send, Square, WandSparkles } from 'lucide-react'
+import { Bot, Check, ChevronDown, ChevronRight, CircleAlert, LoaderCircle, Plus, Send, Square, WandSparkles } from 'lucide-react'
 import { Button, State } from '../components/ui'
 import { AiMarkdown } from '../components/AiMarkdown'
 import {
-  getAiConnection, getAiConversation, getAiConversations, getAiLedgerConsent, putAiLedgerConsent, streamAiChat,
+  getAiConnection, getAiConversation, getAiConversations, getAiLedgerConsent, streamAiChat,
   type AiMessage,
 } from '../lib/aiChat'
 
@@ -52,7 +52,6 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
   const [activeThinking, setActiveThinking] = useState(false)
   const [progress, setProgress] = useState<Progress>('idle')
   const [error, setError] = useState('')
-  const [privacyNotice, setPrivacyNotice] = useState('')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [isStreaming, setStreaming] = useState(false)
   const [openReasoning, setOpenReasoning] = useState<Record<string, boolean>>({})
@@ -60,23 +59,6 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
   const abortRef = useRef<AbortController | null>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const ledgerUpdate = useMutation({
-    mutationFn: putAiLedgerConsent,
-    onSuccess: (value) => {
-      cache.setQueryData(['ai-ledger-consent'], value)
-      if (!value.enabled) {
-        setSelectedId(null)
-        localStorage.removeItem(selectedConversationKey)
-        setMessages([])
-        setProgress('idle')
-        setError('')
-        setPrivacyNotice('账本授权已关闭，已切换到新对话。')
-      } else {
-        setPrivacyNotice('已允许读取账本。')
-      }
-    },
-  })
-
   useEffect(() => {
     if (!initialConversationId || initialConversationId === selectedId) return
     setSelectedId(initialConversationId)
@@ -112,7 +94,6 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
     setPreset('')
     setError('')
     setProgress('idle')
-    setPrivacyNotice('')
   }
 
   async function send(value = draft) {
@@ -127,7 +108,6 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
     setActiveThinking(thinking)
     setProgress('connecting')
     setError('')
-    setPrivacyNotice('')
     setDraft('')
     setPreset('')
     setMessages(previous => [...previous,
@@ -191,12 +171,6 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
     }
   }
 
-  function toggleLedgerConsent() {
-    if (ledgerConsent.isLoading || ledgerUpdate.isPending || isStreaming) return
-    if (ledgerConsent.isError) { ledgerConsent.refetch(); return }
-    ledgerUpdate.mutate(!ledgerConsent.data?.enabled)
-  }
-
   return <div className={mode === 'panel' ? 'ai-chat-embedded' : 'page ai-page'} data-testid="ai-chat-panel" data-initial-conversation={initialConversationId || undefined}>
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -225,10 +199,6 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
       <section className="ai-conversation" aria-label="AI 对话">
         <div className="ai-conversation-head">
           <div className="flex items-center gap-3"><span className="ai-model-mark"><Bot size={18}/></span><div><div className="text-sm font-semibold">DeepSeek</div><div className="text-xs text-muted">{connection.isLoading ? '正在检查连接' : connection.data?.configured ? '已连接' : '尚未连接'}</div></div></div>
-          <div className="flex items-center gap-2">
-            <button type="button" className={`ai-ledger-toggle ${ledgerConsent.data?.enabled ? 'is-enabled' : ''}`} onClick={toggleLedgerConsent} disabled={ledgerConsent.isLoading || ledgerUpdate.isPending || isStreaming} aria-pressed={!!ledgerConsent.data?.enabled} title={ledgerConsent.data ? `${ledgerConsent.data.scope} 已发送内容无法撤回。` : '点击切换账本授权'} data-testid="ai-ledger-consent-toggle"><Database size={15}/>{ledgerConsent.isLoading ? '账本授权：读取中' : ledgerConsent.isError ? '账本授权：重试' : ledgerConsent.data?.enabled ? '账本授权：已开启' : '账本授权：关闭'}</button>
-            {isStreaming && <Button variant="secondary" className="h-9" onClick={() => abortRef.current?.abort()}><Square size={14}/>停止</Button>}
-          </div>
         </div>
 
         <div className="ai-message-list">
@@ -237,7 +207,7 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
               : messages.length === 0 ? <div className="ai-welcome">
                 <span className="ai-welcome-mark"><WandSparkles size={24}/></span>
                 <h2 className="mb-2 mt-5 text-2xl font-semibold">从一个问题开始</h2>
-                <p className="m-0 max-w-lg text-muted">可以问预算、消费和账单分类。提问及最近的对话会发送给 DeepSeek。{ledgerConsent.isLoading ? '正在确认账本授权。' : ledgerConsent.isError ? '请重试读取账本授权状态。' : ledgerConsent.data?.enabled ? '账本授权已开启。' : '账本默认不发送。'}</p>
+                <p className="m-0 max-w-lg text-muted">可以问预算、消费和账单分类。提问及最近的对话会发送给 DeepSeek。{ledgerConsent.isLoading ? '正在确认账本授权。' : ledgerConsent.isError ? '请重试读取账本授权状态。' : ledgerConsent.data?.enabled ? 'AI 账本授权已开启；模型按需读取最新账单。' : 'AI 账本授权已关闭。'}</p>
               </div> : <div className="ai-messages">
                 {messages.map(message => <article key={message.id} className={`ai-message ${message.role === 'user' ? 'ai-message-user' : ''}`} data-testid="ai-message" data-role={message.role}>
                   <div className="ai-message-mark" aria-hidden="true">{message.role === 'user' ? '你' : <Bot size={16}/>}</div>
@@ -263,9 +233,7 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
             {isStreaming && <ol className="ai-progress-steps" aria-label="回复进度">{stages.map((stage, index) => <li key={stage.phase} className={index < activeStage ? 'is-complete' : index === activeStage ? 'is-current' : ''}>{index < activeStage ? <Check size={12}/> : <span className="ai-step-dot"/>}{stage.label}</li>)}</ol>}
           </div>}
           {error && <div role="alert" className="ai-error"><CircleAlert size={16}/><span>{error}</span>{progress === 'error' && <button type="button" className="font-semibold underline" disabled={!draft.trim() || !canSend} onClick={() => void send()}>重新发送</button>}</div>}
-          {privacyNotice && <div role="status" className="ai-privacy-notice">{privacyNotice}</div>}
           {blockedConversation && <div role="status" className="ai-notice">此对话使用过账单数据；授权已关闭。<button type="button" onClick={() => chooseConversation(null)}>新建对话以继续</button></div>}
-          {ledgerUpdate.isError && <div role="alert" className="ai-error"><CircleAlert size={16}/>账本授权更新失败。请重试。{ledgerUpdate.error.message}</div>}
           {ledgerConsent.isError && <div className="ai-notice">暂时无法确认账本授权状态，发送已暂停。<button type="button" onClick={() => ledgerConsent.refetch()}>重试</button></div>}
           {!connection.isLoading && !connection.data?.configured && <div className="ai-notice">DeepSeek 尚未配置。<Link to="/settings#ai-connection">前往设置</Link></div>}
           {connection.isError && <div className="ai-notice">无法确认 AI 连接状态。<button type="button" onClick={() => connection.refetch()}>重试</button></div>}
@@ -281,7 +249,7 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
               </label>
               <div className="flex items-center gap-3">
                 <label className="ai-thinking-toggle" htmlFor="ai-thinking-toggle"><input id="ai-thinking-toggle" type="checkbox" checked={thinking} onChange={event => setThinking(event.target.checked)} disabled={isStreaming || blockedConversation} data-testid="ai-thinking-toggle"/><span>思考模式</span></label>
-                <Button className="h-9 px-3" onClick={() => void send()} disabled={!draft.trim() || isStreaming || !canSend} aria-label="发送消息" data-testid="ai-send"><Send size={16}/><span className="hidden sm:inline">发送</span></Button>
+                <Button type="button" variant={isStreaming ? 'secondary' : 'primary'} className="h-9 px-3" onClick={() => isStreaming ? abortRef.current?.abort() : void send()} disabled={!isStreaming && (!draft.trim() || !canSend)} aria-label={isStreaming ? '停止回复' : '发送消息'} data-testid="ai-send">{isStreaming ? <><Square size={16}/><span className="hidden sm:inline">停止</span></> : <><Send size={16}/><span className="hidden sm:inline">发送</span></>}</Button>
               </div>
             </div>
           </div>

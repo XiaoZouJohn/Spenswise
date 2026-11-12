@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: spendwise
       POSTGRES_USER: spendwise
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spendwise}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes: [postgres_data:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U spendwise"]
@@ -32,7 +32,7 @@ services:
       redis: {condition: service_started}
   web:
     build: ./frontend
-    ports: ["127.0.0.1:5173:80"]
+    ports: ["80:80"]
     depends_on: [api]
 volumes:
   postgres_data:

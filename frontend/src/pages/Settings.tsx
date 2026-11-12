@@ -135,7 +135,7 @@ export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: B
       </Card>
       <Card>
         <SectionTitle title="AI 辅助分类与预测复核授权" action={<Badge tone={form.ai_consent !== query.data?.ai_consent ? 'warning' : form.ai_consent ? 'success' : 'neutral'}>{form.ai_consent !== query.data?.ai_consent ? '待保存' : form.ai_consent ? '已授权' : '未授权'}</Badge>}/>
-        <p className="text-sm text-muted">此授权只用于账单辅助分类。AI 对话如需读取账本，须在对话页单独授权。</p>
+        <p className="text-sm text-muted">此授权用于辅助分类与预测复核。AI 对话和 Agent 简报使用本人账本。</p>
         <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={form.ai_consent} onChange={event => changeForm({ ...form, ai_consent: event.target.checked })}/>允许将必要账单文本用于辅助分类，并将月度与分类汇总发送给 DeepSeek 复核预测</label>
       </Card>
       <AgentReminderSettings/>

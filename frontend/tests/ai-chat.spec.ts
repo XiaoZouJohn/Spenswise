@@ -201,12 +201,15 @@ test('预设可改写，思考与回答按事件显示，刷新可恢复会话',
   await page.getByTestId('ai-send').click()
   try {
     await expect(page.getByTestId('ai-progress')).toBeVisible()
+    await expect(page.getByTestId('ai-send')).toHaveAccessibleName('停止回复')
+    await expect(page.locator('.ai-conversation-head').getByRole('button', { name: '停止回复' })).toHaveCount(0)
   } finally {
     release()
   }
 
   await expect(page.getByTestId('ai-reasoning')).toContainText('先区分预算与现金余额。')
   await expect(page.getByTestId('ai-message').last()).toContainText('再决定是否购买。')
+  await expect(page.getByTestId('ai-send')).toHaveAccessibleName('发送消息')
   expect(submitted).toEqual({ conversation_id: null, message: '请帮我分析预算', thinking: true })
 
   await page.reload()

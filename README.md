@@ -24,6 +24,8 @@ npm ci
 
 VS Code 启动项要求 `node` 能在终端的 PATH 中找到。后端虚拟环境固定在 `backend/.venv`，因此依赖安装在项目所在的磁盘。
 
+当前 Windows 工作区使用项目内 `.tooling/node-v22.16.0-win-x64/node.exe` 启动前端，避免系统旧版 Node 干扰；新开的 VS Code 终端也会优先使用它。该目录不提交到 Git，新副本需先下载并解压对应的 Node.js Windows x64 ZIP 到 `.tooling/`，或将 `.vscode/launch.json` 的 Windows `runtimeExecutable` 改为本机 Node 20+ 路径，并同步调整 `.vscode/settings.json` 中的 PATH。Python 虚拟环境与 `node_modules` 同样需要每台电脑单独安装。修改配置后关闭旧终端，再新建终端。
+
 ## 用终端分别启动
 
 如果不使用 F5，先在 `backend` 中执行数据库迁移并启动 API：

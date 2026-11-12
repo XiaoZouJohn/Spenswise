@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db import Base, get_db
 from app.main import app
-from app.models import AiConnection, Transaction
-from app.services import ai_chat, ai_connection
+from app.models import AiConnection, Transaction, User
+from app.services import ai_chat, ai_connection, ledger_skill
 
 
 def test_encrypted_connection_and_streamed_chat(tmp_path: Path, monkeypatch):
@@ -29,7 +29,7 @@ def test_encrypted_connection_and_streamed_chat(tmp_path: Path, monkeypatch):
     async def fake_upstream(chat: ai_chat.PreparedChat):
         assert chat.thinking is True
         assert [item["role"] for item in chat.messages] == ["system", "user"]
-        assert ("房租商户" in str(chat.messages)) is chat.used_ledger
+        assert "房租商户" not in str(chat.messages)
         assert "私密账单" not in str(chat.messages)
         yield {"reasoning_content": "先梳理问题。"}
         yield {"content": "可以先查看预算设置。"}
@@ -81,7 +81,7 @@ def test_encrypted_connection_and_streamed_chat(tmp_path: Path, monkeypatch):
         assert "api_key" not in saved.text
         assert "test-secret-key-123" not in saved.text
         assert client.get("/api/ai/status").json()["consent"] is False
-        assert client.get("/api/ai/chat/ledger-consent").json()["enabled"] is False
+        assert client.get("/api/ai/chat/ledger-consent").json()["enabled"] is True
         with Session(engine) as db:
             encrypted = db.get(AiConnection, 1).encrypted_key
             assert "test-secret-key-123" not in encrypted
@@ -272,3 +272,80 @@ def test_revocation_between_prepare_and_send_keeps_ledger_off_upstream(
 
     with pytest.raises(PermissionError):
         asyncio.run(collect_upstream())
+
+
+def test_ledger_tool_reads_latest_owner_rows_and_excludes_notes(tmp_path: Path, monkeypatch):
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'ledger-tool.db'}", connect_args={"check_same_thread": False}
+    )
+    Base.metadata.create_all(engine)
+    monkeypatch.setenv("AI_API_KEY", "test-env-key")
+    monkeypatch.setattr(ai_chat, "SessionLocal", sessionmaker(bind=engine))
+    with Session(engine) as db:
+        db.add_all(
+            [
+                User(id=1, email="one@example.test", display_name="one", password_hash="x"),
+                User(id=2, email="two@example.test", display_name="two", password_hash="x"),
+            ]
+        )
+        db.commit()
+        ai_chat.set_ledger_consent(db, True, 1)
+        prepared = ai_chat.prepare(db, None, "刚记的餐饮账单是什么？", False, 1)
+        assert prepared.used_ledger is True
+        for owner_id, merchant in [(1, "新记账单"), (2, "他人私账")]:
+            db.add(
+                Transaction(
+                    owner_id=owner_id,
+                    tx_date=date(2026, 11, 9),
+                    amount_cents=1234,
+                    tx_type="expense",
+                    merchant=merchant,
+                    category="餐饮",
+                    description="绝密备注",
+                    fingerprint=f"tool-{owner_id}",
+                )
+            )
+        db.commit()
+        assert ledger_skill.view_ledger(db, 1, {"category": "餐饮"})["matched_count"] == 1
+        assert ledger_skill.view_ledger(db, 1, {"merchant": "新记"})["matched_count"] == 1
+        with pytest.raises(ValueError):
+            ledger_skill.view_ledger(db, 1, {"limit": 101})
+        with pytest.raises(ValueError):
+            ledger_skill.view_ledger(db, 1, {"start_date": 9})
+        with pytest.raises(ValueError):
+            ledger_skill.view_ledger(db, 1, {"tx_type": ["expense"]})
+
+    sent = []
+
+    async def fake_upstream(chat):
+        sent.append(chat.messages)
+        if len(sent) == 1:
+            yield {"content": "我会先查看最新账单。"}
+            yield {
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_1",
+                        "function": {
+                            "name": "view_ledger",
+                            "arguments": '{"category":"餐饮"}',
+                        },
+                    }
+                ]
+            }
+        else:
+            assert "新记账单" in str(chat.messages)
+            assert "我会先查看最新账单。" in str(chat.messages)
+            assert "他人私账" not in str(chat.messages)
+            assert "绝密备注" not in str(chat.messages)
+            yield {"content": "刚记的餐饮账单是新记账单。"}
+
+    monkeypatch.setattr(ai_chat, "_upstream", fake_upstream)
+
+    async def collect():
+        return [event async for event in ai_chat.stream_reply(prepared)]
+
+    events = asyncio.run(collect())
+    assert len(sent) == 2
+    assert "新记账单" not in str(sent[0])
+    assert any("event: done" in event for event in events)

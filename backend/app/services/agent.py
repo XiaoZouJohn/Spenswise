@@ -1,9 +1,8 @@
-"""Personal briefings: deterministic facts, separately consented model wording."""
+"""Personal briefings: deterministic facts and shared AI ledger permission."""
 
 import hashlib
 import json
 import re
-import threading
 import uuid
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
@@ -15,16 +14,16 @@ from sqlalchemy.orm import Session
 
 from app.models import AiConnection, ImportJob, Setting, Transaction, User
 
-from . import ai, ai_connection, budget
+from . import ai, ai_connection, ai_ledger_consent, budget
 
 SCOPE = (
     "开启后，在打开软件、重要消费变化或手动查看时，向 DeepSeek 发送本人的本月收支、预算、"
     "分类汇总、上月同期及近两周支出汇总和程序生成的提醒依据。"
-    "不发送商户、备注、原始账单、家庭数据或聊天记录。可随时关闭。"
+    "不发送商户、备注、原始账单、家庭数据或聊天记录。与 AI 对话共用账本授权，可随时关闭。"
 )
 # ponytail: striped locks bound memory and coalesce this desktop API's requests.
 # Multi-process deployment can duplicate model calls; use a shared lock if scaling workers.
-_locks = [threading.Lock() for _ in range(64)]
+_locks = [ai_ledger_consent.owner_lock(i) for i in range(64)]
 
 
 def _read(db: Session, owner_id: int, key: str) -> dict:
@@ -51,7 +50,7 @@ def preferences(db: Session, owner_id: int) -> dict:
     saved = _read(db, owner_id, "agent_preferences")
     return {
         "automatic_enabled": saved.get("automatic_enabled", True) is True,
-        "ai_enabled": saved.get("ai_enabled", False) is True,
+        "ai_enabled": ai_ledger_consent.enabled(db, owner_id),
         "scope": SCOPE,
     }
 
@@ -62,7 +61,13 @@ def save_preferences(db: Session, owner_id: int, values: dict) -> dict:
     with _locks[owner_id % len(_locks)]:
         db.rollback()
         saved = _read(db, owner_id, "agent_preferences")
-        changes = {k: v for k, v in values.items() if k in {"automatic_enabled", "ai_enabled"}}
+        changes = {k: v for k, v in values.items() if k == "automatic_enabled"}
+        if "ai_enabled" in values:
+            row = db.get(Setting, (owner_id, "ai_chat_ledger_consent"))
+            if row is None:
+                row = Setting(owner_id=owner_id, key="ai_chat_ledger_consent", value="false")
+                db.add(row)
+            row.value = "true" if values["ai_enabled"] else "false"
         _write(
             db, owner_id, "agent_preferences", {**saved, **changes, "revision": uuid.uuid4().hex}
         )
@@ -221,6 +226,7 @@ def status(db: Session, owner_id: int, today: date | None = None) -> dict:
             "cards": cards[:3],
             "pending_import": pending,
             "prefs": _read(db, owner_id, "agent_preferences"),
+            "ai_ledger_consent": prefs["ai_enabled"],
             "connection": str(connection.updated_at) if connection else None,
         },
         sort_keys=True,
