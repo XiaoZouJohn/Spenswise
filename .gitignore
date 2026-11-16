@@ -8,6 +8,8 @@ packaging/__pycache__/
 frontend/node_modules/
 frontend/.pnpm-store/
 frontend/dist/
+!frontend/dist/
+!frontend/dist/**
 frontend/.playwright-dist/
 frontend/test-results/
 backend/.vendor/

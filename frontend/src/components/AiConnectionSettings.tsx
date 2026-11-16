@@ -8,7 +8,7 @@ import {
 } from '../lib/aiConnection'
 import { Badge, Button, Card, SectionTitle, State } from './ui'
 
-export function AiConnectionSettings() {
+export function AiConnectionSettings({ onConfigured }: { onConfigured?: () => void }) {
   const cache = useQueryClient()
   const connection = useQuery({ queryKey: ['ai-connection'], queryFn: getAiConnection })
   const [model, setModel] = useState<DeepSeekModel>('deepseek-flash')
@@ -26,6 +26,7 @@ export function AiConnectionSettings() {
       void cache.invalidateQueries({ queryKey: ['ai-status'] })
       setApiKey('')
       setConfirmClear(false)
+      if (stored.configured) onConfigured?.()
     },
   })
   const test = useMutation({ mutationFn: testAiConnection })
