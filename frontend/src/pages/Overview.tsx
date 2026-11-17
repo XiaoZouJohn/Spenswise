@@ -4,6 +4,7 @@ import { api, json } from '../lib/api'
 import type { OverviewData, ScenarioResult } from '../types'
 import { Badge, Card, SectionTitle, State } from '../components/ui'
 import { MetricCard, Money } from '../components/business'
+import { ForecastEvidence } from '../components/ForecastOptions'
 import { Chart } from '../components/Chart'
 import { money, nextMonthRange, today } from '../lib/format'
 import { categoryChartColors } from '../lib/tokens'
@@ -27,17 +28,18 @@ function Outlook({ dataVersion }: { dataVersion: string }) {
     {query.isLoading ? <State kind="loading" message="正在计算未来收支…"/> :
       query.isError ? <State kind="error" message="未来收支暂时无法显示" retry={() => query.refetch()}/> :
         query.data && <div className="space-y-4">
+          <ForecastEvidence result={query.data}/>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-control bg-canvas p-3">
               <div className="text-sm text-muted">预计总支出</div>
-              <div className="mt-1 text-2xl font-semibold"><Money cents={query.data.expected_expense_cents ?? 0}/></div>
+              <div className="mt-1 text-2xl font-semibold">{query.data.data_quality === "insufficient" ? "暂无法可靠估计" : <Money cents={query.data.expected_expense_cents ?? 0}/>}</div>
             </div>
             <div className="rounded-control bg-canvas p-3">
               <div className="text-sm text-muted">预计预算剩余</div>
               <div className="mt-1 text-2xl font-semibold"><Money cents={query.data.expected_budget_remaining_cents ?? 0}/></div>
             </div>
             <div className="rounded-control bg-canvas p-3">
-              <div className="text-sm text-muted">预计账户最低余额</div>
+              <div className="text-sm text-muted">最低累计净现金流</div>
               <div className="mt-1 text-2xl font-semibold"><Money cents={query.data.minimum_after_cents}/></div>
             </div>
           </div>

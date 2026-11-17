@@ -188,11 +188,21 @@ export type CashflowDay = {
     lower_cents: number;
     upper_cents: number;
     bill_cents: number;
+    adjusted_cents?: (number | null);
+    planned_income_cents?: number;
+    planned_expense_cents?: number;
 };
 
 export type CategoryBudgetIn = {
     category: string;
     limit_cents: number;
+};
+
+export type CategoryConstraint = {
+    category: string;
+    minimum_cents?: number;
+    max_cut_percent?: number;
+    disruption_weight?: number;
 };
 
 export type CategorySpend = {
@@ -430,6 +440,11 @@ export type GoalImpact = {
     delay_months: (number | null);
 };
 
+export type HistoryCoverage = {
+    start_date: string;
+    end_date: string;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -491,6 +506,10 @@ export type OptimizationResult = {
     feasible: boolean;
     cuts: Array<BudgetCut>;
     total_cuts_cents: number;
+    shortfall_cents?: number;
+    capacity_cents?: number;
+    reason?: string;
+    daily_savings_cents?: Array<(number)>;
 };
 
 export type OverviewOut = {
@@ -517,6 +536,15 @@ export type PasswordChangeIn = {
     current_password: string;
     new_password: string;
 };
+
+export type PlannedCashEvent = {
+    date: string;
+    amount_cents: number;
+    kind: 'income' | 'expense';
+    label?: string;
+};
+
+export type kind2 = 'income' | 'expense';
 
 export type ProposalCommentIn = {
     content: string;
@@ -596,6 +624,10 @@ export type ScenarioIn = {
     protected_categories?: Array<(string)>;
     horizon_days?: number;
     use_ai_review?: boolean;
+    balance_cents?: (number | null);
+    balance_date?: (string | null);
+    cash_events?: Array<PlannedCashEvent>;
+    category_constraints?: Array<CategoryConstraint>;
 };
 
 export type ScenarioResult = {
@@ -621,9 +653,22 @@ export type ScenarioResult = {
     forecast_upper_expense_cents?: (number | null);
     expected_budget_remaining_cents?: (number | null);
     ai_review?: (ForecastAiReview | null);
+    fixed_expense_cents?: (number | null);
+    variable_expense_cents?: (number | null);
+    planned_expense_cents?: number;
+    ai_delta_cents?: number;
+    data_quality?: string;
+    coverage_status?: string;
+    warnings?: Array<(string)>;
+    balance_basis?: 'confirmed_snapshot' | 'net_cashflow';
+    bridge_change_cents?: number;
+    minimum_adjusted_cents?: (number | null);
+    interval_method?: string;
 };
 
 export type currency = 'CNY';
+
+export type balance_basis = 'confirmed_snapshot' | 'net_cashflow';
 
 export type SessionOut = {
     user: UserOut;
@@ -636,6 +681,7 @@ export type SettingsIn = {
     opening_balance_cents: number;
     ai_consent?: boolean;
     category_budgets?: (Array<CategoryBudgetIn> | null);
+    history_coverage?: (Array<HistoryCoverage> | null);
 };
 
 export type SettingsOut = {
@@ -645,6 +691,7 @@ export type SettingsOut = {
     category_budgets: Array<CategoryBudgetIn>;
     currency: 'CNY';
     timezone: 'Asia/Shanghai';
+    history_coverage?: Array<HistoryCoverage>;
 };
 
 export type timezone = 'Asia/Shanghai';

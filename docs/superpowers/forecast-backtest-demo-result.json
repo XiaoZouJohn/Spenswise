@@ -1,0 +1,309 @@
+{
+  "owner_id": 1,
+  "as_of": "2026-10-31",
+  "folds": [
+    {
+      "month": "2026-03",
+      "train_through": "2026-02-28",
+      "actual_cents": 131000,
+      "predictions": {
+        "last-month": {
+          "expected_cents": 128000,
+          "lower_cents": 128000,
+          "upper_cents": 128000
+        },
+        "three-month-mean": {
+          "expected_cents": 129500,
+          "lower_cents": 129500,
+          "upper_cents": 129500
+        },
+        "legacy-ensemble": {
+          "expected_cents": 130100,
+          "lower_cents": 104080,
+          "upper_cents": 156120
+        },
+        "fixed-variable": {
+          "expected_cents": 131000,
+          "lower_cents": 123250,
+          "upper_cents": 138750
+        }
+      }
+    },
+    {
+      "month": "2026-04",
+      "train_through": "2026-03-31",
+      "actual_cents": 130000,
+      "predictions": {
+        "last-month": {
+          "expected_cents": 131000,
+          "lower_cents": 131000,
+          "upper_cents": 131000
+        },
+        "three-month-mean": {
+          "expected_cents": 130000,
+          "lower_cents": 130000,
+          "upper_cents": 130000
+        },
+        "legacy-ensemble": {
+          "expected_cents": 129554,
+          "lower_cents": 119189,
+          "upper_cents": 139918
+        },
+        "fixed-variable": {
+          "expected_cents": 130000,
+          "lower_cents": 127000,
+          "upper_cents": 133000
+        }
+      }
+    },
+    {
+      "month": "2026-05",
+      "train_through": "2026-04-30",
+      "actual_cents": 131000,
+      "predictions": {
+        "last-month": {
+          "expected_cents": 130000,
+          "lower_cents": 130000,
+          "upper_cents": 130000
+        },
+        "three-month-mean": {
+          "expected_cents": 129667,
+          "lower_cents": 129667,
+          "upper_cents": 129667
+        },
+        "legacy-ensemble": {
+          "expected_cents": 130258,
+          "lower_cents": 119838,
+          "upper_cents": 140679
+        },
+        "fixed-variable": {
+          "expected_cents": 131000,
+          "lower_cents": 127900,
+          "upper_cents": 134100
+        }
+      }
+    },
+    {
+      "month": "2026-06",
+      "train_through": "2026-05-31",
+      "actual_cents": 130000,
+      "predictions": {
+        "last-month": {
+          "expected_cents": 131000,
+          "lower_cents": 131000,
+          "upper_cents": 131000
+        },
+        "three-month-mean": {
+          "expected_cents": 130667,
+          "lower_cents": 130667,
+          "upper_cents": 130667
+        },
+        "legacy-ensemble": {
+          "expected_cents": 130349,
+          "lower_cents": 119921,
+          "upper_cents": 140777
+        },
+        "fixed-variable": {
+          "expected_cents": 130000,
+          "lower_cents": 127000,
+          "upper_cents": 133000
+        }
+      }
+    },
+    {
+      "month": "2026-07",
+      "train_through": "2026-06-30",
+      "actual_cents": 131000,
+      "predictions": {
+        "last-month": {
+          "expected_cents": 130000,
+          "lower_cents": 130000,
+          "upper_cents": 130000
+        },
+        "three-month-mean": {
+          "expected_cents": 130333,
+          "lower_cents": 130333,
+          "upper_cents": 130333
+        },
+        "legacy-ensemble": {
+          "expected_cents": 130494,
+          "lower_cents": 120054,
+          "upper_cents": 140934
+        },
+        "fixed-variable": {
+          "expected_cents": 131000,
+          "lower_cents": 127900,
+          "upper_cents": 134100
+        }
+      }
+    },
+    {
+      "month": "2026-08",
+      "train_through": "2026-07-31",
+      "actual_cents": 131000,
+      "predictions": {
+        "last-month": {
+          "expected_cents": 131000,
+          "lower_cents": 131000,
+          "upper_cents": 131000
+        },
+        "three-month-mean": {
+          "expected_cents": 130667,
+          "lower_cents": 130667,
+          "upper_cents": 130667
+        },
+        "legacy-ensemble": {
+          "expected_cents": 130437,
+          "lower_cents": 120002,
+          "upper_cents": 140872
+        },
+        "fixed-variable": {
+          "expected_cents": 131000,
+          "lower_cents": 127900,
+          "upper_cents": 134100
+        }
+      }
+    },
+    {
+      "month": "2026-09",
+      "train_through": "2026-08-31",
+      "actual_cents": 130000,
+      "predictions": {
+        "last-month": {
+          "expected_cents": 131000,
+          "lower_cents": 131000,
+          "upper_cents": 131000
+        },
+        "three-month-mean": {
+          "expected_cents": 130667,
+          "lower_cents": 130667,
+          "upper_cents": 130667
+        },
+        "legacy-ensemble": {
+          "expected_cents": 130650,
+          "lower_cents": 120198,
+          "upper_cents": 141102
+        },
+        "fixed-variable": {
+          "expected_cents": 130000,
+          "lower_cents": 127000,
+          "upper_cents": 133000
+        }
+      }
+    },
+    {
+      "month": "2026-10",
+      "train_through": "2026-09-30",
+      "actual_cents": 131000,
+      "predictions": {
+        "last-month": {
+          "expected_cents": 130000,
+          "lower_cents": 130000,
+          "upper_cents": 130000
+        },
+        "three-month-mean": {
+          "expected_cents": 130667,
+          "lower_cents": 130667,
+          "upper_cents": 130667
+        },
+        "legacy-ensemble": {
+          "expected_cents": 130671,
+          "lower_cents": 120217,
+          "upper_cents": 141125
+        },
+        "fixed-variable": {
+          "expected_cents": 131000,
+          "lower_cents": 127900,
+          "upper_cents": 134100
+        }
+      }
+    }
+  ],
+  "coverage_status": "confirmed",
+  "notes": [
+    "每次预测仅使用目标月之前的记录；回测不调用 AI。",
+    "点预测基线区间宽度为零；历史偏差区间未经概率校准。",
+    "缺少覆盖确认时只评估有记录的月份，结果可能有选择偏差。"
+  ],
+  "status": "ok",
+  "selected_model": "fixed-variable",
+  "validation": {
+    "last-month": {
+      "months": 6,
+      "mae_cents": 1166.67,
+      "bias_cents": -500.0,
+      "interval_coverage": 0.16666666666666666,
+      "mean_interval_width_cents": 0.0
+    },
+    "three-month-mean": {
+      "months": 6,
+      "mae_cents": 750.0,
+      "bias_cents": -527.67,
+      "interval_coverage": 0.16666666666666666,
+      "mean_interval_width_cents": 0.0
+    },
+    "legacy-ensemble": {
+      "months": 6,
+      "mae_cents": 584.33,
+      "bias_cents": -468.0,
+      "interval_coverage": 1.0,
+      "mean_interval_width_cents": 26036.0
+    },
+    "fixed-variable": {
+      "months": 6,
+      "mae_cents": 0.0,
+      "bias_cents": 0.0,
+      "interval_coverage": 1.0,
+      "mean_interval_width_cents": 7683.33
+    }
+  },
+  "test": {
+    "last-month": {
+      "months": 2,
+      "mae_cents": 1000.0,
+      "bias_cents": 0.0,
+      "interval_coverage": 0.0,
+      "mean_interval_width_cents": 0.0
+    },
+    "three-month-mean": {
+      "months": 2,
+      "mae_cents": 500.0,
+      "bias_cents": 167.0,
+      "interval_coverage": 0.0,
+      "mean_interval_width_cents": 0.0
+    },
+    "legacy-ensemble": {
+      "months": 2,
+      "mae_cents": 489.5,
+      "bias_cents": 160.5,
+      "interval_coverage": 1.0,
+      "mean_interval_width_cents": 20906.0
+    },
+    "fixed-variable": {
+      "months": 2,
+      "mae_cents": 0.0,
+      "bias_cents": 0.0,
+      "interval_coverage": 1.0,
+      "mean_interval_width_cents": 6100.0
+    }
+  },
+  "validation_months": [
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08"
+  ],
+  "test_months": [
+    "2026-09",
+    "2026-10"
+  ],
+  "selected_test": {
+    "months": 2,
+    "mae_cents": 0.0,
+    "bias_cents": 0.0,
+    "interval_coverage": 1.0,
+    "mean_interval_width_cents": 6100.0
+  }
+}
