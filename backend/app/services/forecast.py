@@ -8,19 +8,18 @@ from statistics import median
 
 import httpx
 import numpy as np
-from scipy.optimize import linprog
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Transaction
 from app.schemas import ScenarioIn
 
-from . import ai, ai_connection
+from . import ai, ai_connection, forecast_math
 from .budget import get_settings, summary
+from .forecast_math import monthly_projection, optimize_cuts, recurring
 from .ledger import version
 
 _AI_FORECAST_CACHE: dict[tuple[int, str, str], dict] = {}
-_INFERRED_RECURRING_CATEGORIES = {"居住", "通讯", "教育", "娱乐"}
 
 
 def next_calendar_month(as_of: date) -> tuple[date, date]:
@@ -44,7 +43,7 @@ def _net_expense(rows: Sequence[Transaction]) -> int:
     return max(0, expense - refunds)
 
 
-def monthly_projection(
+def legacy_monthly_projection(
     rows: Sequence[Transaction], as_of: date, period_start: date, period_end: date
 ) -> dict:
     """Forecast a calendar month's total spend from complete monthly history.
@@ -155,15 +154,7 @@ def monthly_projection(
 
 
 def _category_monthly_averages(rows: Sequence[Transaction], as_of: date) -> dict[str, int]:
-    start = _shift_month(date(as_of.year, as_of.month, 1), -6)
-    totals: dict[str, int] = defaultdict(int)
-    for row in rows:
-        if start <= row.tx_date < date(as_of.year, as_of.month, 1):
-            if row.tx_type == "expense":
-                totals[row.category] += row.amount_cents
-            elif row.tx_type == "refund":
-                totals[row.category] -= row.amount_cents
-    return {category: max(0, round(amount / 6)) for category, amount in totals.items()}
+    return forecast_math.category_monthly_averages(rows, as_of)
 
 
 def _ai_review(
@@ -309,206 +300,143 @@ def baseline(
     }
 
 
-def recurring(rows: Sequence[Transaction], as_of: date, horizon: int) -> list[dict]:
-    groups = defaultdict(list)
-    for r in rows:
-        if r.tx_type == "expense" and r.merchant and r.tx_date < as_of:
-            groups[r.merchant.lower().strip()].append(r)
-    result = []
-    for items in groups.values():
-        items.sort(key=lambda item: (item.tx_date, item.id))
-        by_month = defaultdict(list)
-        for row in items:
-            by_month[row.tx_date.strftime("%Y-%m")].append(row)
-        explicitly_fixed = any(x.is_fixed for x in items)
-        monthly_amounts = [sum(x.amount_cents for x in month) for month in by_month.values()]
-        monthly_counts = [len(month) for month in by_month.values()]
-        amount_center = float(median(monthly_amounts)) if monthly_amounts else 0
-        amount_deviation = (
-            max(abs(value - amount_center) for value in monthly_amounts) / amount_center
-            if amount_center > 0
-            else 1
-        )
-        monthly_days = [month[0].tx_date.day for month in by_month.values() if len(month) == 1]
-        day_center = float(median(monthly_days)) if monthly_days else 0
-        day_deviation = max((abs(value - day_center) for value in monthly_days), default=99)
-        inferred_fixed = (
-            len(by_month) >= 3
-            and items[-1].category in _INFERRED_RECURRING_CATEGORIES
-            and max(monthly_counts, default=0) == 1
-            and amount_deviation <= 0.2
-            and day_deviation <= 5
-        )
-        if len(by_month) < 2 or not (explicitly_fixed or inferred_fixed):
-            continue
-        amount = round(median(monthly_amounts))
-        day = round(
-            median([round(median([x.tx_date.day for x in month])) for month in by_month.values()])
-        )
-        paid_month = {
-            (r.tx_date.year, r.tx_date.month)
-            for r in items
-            if r.tx_date.month == as_of.month and r.tx_date.year == as_of.year
-        }
-        for offset in range(horizon):
-            target = as_of + timedelta(days=offset)
-            if target.day == day and (target.year, target.month) not in paid_month:
-                result.append(
-                    {
-                        "date": target.isoformat(),
-                        "amount_cents": amount,
-                        "merchant": items[-1].merchant,
-                        "category": items[-1].category,
-                        "source_ids": [x.id for x in items],
-                    }
-                )
-    return result
-
-
-def optimize_cuts(
-    category_daily: dict[str, int], protected: list[str], required_cents: int, horizon: int
-) -> dict:
-    candidates = [
-        (k, v * horizon) for k, v in category_daily.items() if k not in protected and v > 0
-    ]
-    if required_cents <= 0:
-        return {"feasible": True, "cuts": [], "total_cuts_cents": 0}
-    if not candidates:
-        return {"feasible": False, "cuts": [], "total_cuts_cents": 0}
-    # Minimize proportional disruption, capped at 40% per flexible category.
-    result = linprog(
-        c=[1 / max(1, amount) for _, amount in candidates],
-        A_ub=[[-1] * len(candidates)],
-        b_ub=[-required_cents],
-        bounds=[(0, amount * 0.4) for _, amount in candidates],
-        method="highs",
-    )
-    if not result.success:
-        return {"feasible": False, "cuts": [], "total_cuts_cents": 0}
-    cuts = [
-        {"category": name, "amount_cents": round(value)}
-        for (name, _), value in zip(candidates, result.x, strict=False)
-        if value > 0.5
-    ]
-    return {
-        "feasible": True,
-        "cuts": cuts,
-        "total_cuts_cents": sum(x["amount_cents"] for x in cuts),
-    }
-
-
 def simulate(db: Session, request: ScenarioIn, as_of: date | None = None, *, owner_id: int) -> dict:
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
+    from .money import signed_amount
+
     today = as_of or datetime.now(ZoneInfo("Asia/Shanghai")).date()
+    period_start, period_end = next_calendar_month(today)
+    if not period_start <= request.purchase_date <= period_end:
+        raise ValueError(f"购买日期必须位于下个月（{period_start} 至 {period_end}）")
+    if request.balance_date and request.balance_date > today:
+        raise ValueError("余额快照不能晚于试算日期")
+    if any(not today < e.date <= period_end for e in request.cash_events):
+        raise ValueError("额外收支日期须晚于今日且不晚于预测月末")
     rows = db.scalars(
         select(Transaction).where(Transaction.owner_id == owner_id, Transaction.tx_date <= today)
     ).all()
-    period_start, period_end = next_calendar_month(today)
-    horizon_days = (period_end - period_start).days + 1
+    settings = get_settings(db, owner_id)
     data_version = version(db, owner_id)
-    projection = monthly_projection(rows, today, period_start, period_end)
-    category_monthly = _category_monthly_averages(rows, today)
-    ai_review = _ai_review(
+    projection = monthly_projection(
+        rows, today, period_start, period_end, settings["history_coverage"]
+    )
+    horizon = (period_end - period_start).days + 1
+    review = _ai_review(
         db,
         owner_id,
         data_version,
         period_start,
         projection,
-        category_monthly,
+        forecast_math.category_monthly_averages(rows, today, settings["history_coverage"]),
         request.use_ai_review,
     )
-    adjustment = ai_review["adjustment_percent"] / 100
-    deterministic_expected = projection["expected_cents"]
-    expected_expense = max(0, round(deterministic_expected * (1 + adjustment)))
-    ai_delta = expected_expense - deterministic_expected
-    lower_expense = max(0, projection["lower_cents"] + ai_delta)
-    upper_expense = max(expected_expense, projection["upper_cents"] + ai_delta)
-    bills = recurring(rows, period_start, horizon_days)
-    recurring_total = sum(item["amount_cents"] for item in bills)
-    expected_expense = max(expected_expense, recurring_total)
-    lower_expense = min(expected_expense, max(lower_expense, recurring_total))
-    upper_expense = max(expected_expense, upper_expense, recurring_total)
-    variable_expected = max(0, expected_expense - recurring_total)
-    variable_lower = max(0, lower_expense - recurring_total)
-    variable_upper = max(0, upper_expense - recurring_total)
-    base = {
-        "daily_cents": round(variable_expected / horizon_days),
-        "lower_daily_cents": round(variable_lower / horizon_days),
-        "upper_daily_cents": round(variable_upper / horizon_days),
-        "method": projection["method"]
-        + ("+deepseek-review" if ai_review["status"] == "applied" else ""),
-        "sample_days": projection["sample_days"],
-        "history_start": projection["history_start"],
-        "assumptions": [
-            "以最近最多 12 个完整自然月的净支出为主，近期月份权重更高",
-            "本月进度和受限趋势仅作小幅校正，预算上限不充当预计支出",
-            "周期账单从总预测中拆分展示，不与历史月均重复相加",
-            "预测区间来自历史月度偏差，不是概率保证",
-        ],
-        "parameters": {
-            "history_months": len(projection["history_months"]),
-            "recent_month_weight_decay": 0.82,
-            "current_pace_weight": 0.1,
-            "trend_weight": 0.15,
-            "ai_adjustment_limit_percent": 8,
-        },
-    }
-    opening = summary(db, today, owner_id)["account_balance_cents"]
-    category_daily: dict[str, int] = defaultdict(int)
-    historical = [
-        r
-        for r in rows
-        if today - timedelta(days=90) <= r.tx_date < today and r.tx_type == "expense"
-    ]
-    for row in historical:
-        category_daily[row.category] += round(row.amount_cents / 90)
-    purchase_offset = (request.purchase_date - period_start).days
-    if request.purchase_date < period_start or request.purchase_date > period_end:
-        raise ValueError(
-            f"购买日期必须位于下个月（{period_start.isoformat()} 至 {period_end.isoformat()}）"
+    # AI can adjust the flexible component only. Fixed bills keep their known amounts.
+    ai_delta = round(projection["variable_cents"] * review["adjustment_percent"] / 100)
+    variable = max(0, projection["variable_cents"] + ai_delta)
+    fixed = projection["fixed_cents"]
+    variable_lower = max(0, projection["lower_cents"] - fixed + ai_delta)
+    variable_upper = max(variable, projection["upper_cents"] - fixed + ai_delta)
+    bills = projection["recurring_bills"]
+    warnings_list = list(projection["warnings"])
+    if request.balance_cents is not None and request.balance_date is not None:
+        current = request.balance_cents + sum(
+            signed_amount(r.tx_type, r.amount_cents)
+            for r in rows
+            if request.balance_date < r.tx_date <= today
         )
+        basis = "confirmed_snapshot"
+        if request.balance_date < today and not forecast_math.covered(
+            request.balance_date + timedelta(days=1), today, settings["history_coverage"]
+        ):
+            warnings_list.append("快照日后的账本覆盖未确认，余额推算可能遗漏交易。")
+    else:
+        current = 0
+        basis = "net_cashflow"
+        warnings_list.append("未提供余额快照：时间轴显示从今日起累计净现金流变化，不代表账户余额。")
+    warnings_list.append("仅计入手动确认的未来收入；额外支出须排除已包含的日常消费和周期账单。")
+    bridge_days = (period_start - today).days - 1
+    bridge_bills = recurring(rows, today + timedelta(days=1), bridge_days, observed_through=today)
+    bridge_variable = round(variable * bridge_days / horizon)
+    bridge_events = sum(
+        e.amount_cents * (1 if e.kind == "income" else -1)
+        for e in request.cash_events
+        if e.date < period_start
+    )
+    bridge_change = bridge_events - bridge_variable - sum(b["amount_cents"] for b in bridge_bills)
+    opening = current + bridge_change
+    monthly_events = [e for e in request.cash_events if e.date >= period_start]
+    planned_expense = sum(e.amount_cents for e in monthly_events if e.kind == "expense")
+    expected = fixed + variable + planned_expense
+    lower_expense = fixed + variable_lower + planned_expense
+    upper_expense = fixed + variable_upper + planned_expense
     timeline = []
-    before = after = lower = upper = opening
-
-    def daily_share(total: int, offset: int) -> int:
-        return total // horizon_days + (1 if offset < total % horizon_days else 0)
-
-    for offset in range(horizon_days):
+    before = after = low = high = opening
+    for offset in range(horizon):
         day = period_start + timedelta(days=offset)
-        bill_amount = sum(x["amount_cents"] for x in bills if x["date"] == day.isoformat())
-        expected_daily = daily_share(variable_expected, offset)
-        lower_daily = daily_share(variable_lower, offset)
-        upper_daily = daily_share(variable_upper, offset)
-        before -= expected_daily + bill_amount
-        after -= (
-            expected_daily
-            + bill_amount
-            + (request.amount_cents if offset == purchase_offset else 0)
-        )
-        lower -= (
-            upper_daily + bill_amount + (request.amount_cents if offset == purchase_offset else 0)
-        )
-        upper -= (
-            lower_daily + bill_amount + (request.amount_cents if offset == purchase_offset else 0)
-        )
+        bill = sum(b["amount_cents"] for b in bills if b["date"] == day.isoformat())
+        income = sum(e.amount_cents for e in monthly_events if e.date == day and e.kind == "income")
+        extra = sum(e.amount_cents for e in monthly_events if e.date == day and e.kind == "expense")
+        purchase = request.amount_cents if day == request.purchase_date else 0
+        common = income - extra - bill
+        before += common - forecast_math.share(variable, offset, horizon)
+        after += common - forecast_math.share(variable, offset, horizon) - purchase
+        low += common - forecast_math.share(variable_upper, offset, horizon) - purchase
+        high += common - forecast_math.share(variable_lower, offset, horizon) - purchase
         timeline.append(
             {
                 "date": day.isoformat(),
                 "before_cents": before,
                 "after_cents": after,
-                "lower_cents": lower,
-                "upper_cents": upper,
-                "bill_cents": bill_amount,
+                "lower_cents": low,
+                "upper_cents": high,
+                "bill_cents": bill,
+                "planned_income_cents": income,
+                "planned_expense_cents": extra,
             }
         )
-    minimum = min(x["after_cents"] for x in timeline)
+    minimum = min(opening, *(x["after_cents"] for x in timeline))
     required = max(0, request.reserve_cents - minimum)
+    deficits = [max(0, request.reserve_cents - x["after_cents"]) for x in timeline]
     optimization = optimize_cuts(
-        category_daily, request.protected_categories, required, horizon_days
+        {},
+        request.protected_categories,
+        required,
+        horizon,
+        category_totals=forecast_math.allocate(variable, projection["category_variable_cents"]),
+        constraints=[c.model_dump() for c in request.category_constraints],
+        daily_deficits=deficits,
     )
-    monthly_budget = get_settings(db, owner_id)["monthly_budget_cents"]
+    saved = 0
+    for item, saving in zip(timeline, optimization["daily_savings_cents"], strict=True):
+        saved += saving
+        item["adjusted_cents"] = item["after_cents"] + saved
+    if opening < request.reserve_cents:
+        optimization["feasible"] = False
+        optimization["shortfall_cents"] = max(
+            optimization["shortfall_cents"], request.reserve_cents - opening
+        )
+        optimization["reason"] = "预测月初已低于目标；需提前补充资金或调整计划"
+    base = {
+        "daily_cents": round(variable / horizon),
+        "lower_daily_cents": round(variable_lower / horizon),
+        "upper_daily_cents": round(variable_upper / horizon),
+        "method": projection["method"],
+        "sample_days": projection["sample_days"],
+        "history_start": projection["history_start"],
+        "assumptions": [
+            "固定账单与可变消费分开预测，金额按分分配",
+            "空白月份仅在确认完整覆盖后按零消费处理",
+            "预测范围为历史偏差范围，未校准为置信区间",
+            "今日至预测月初按预计日常支出、账单和确认收支衔接",
+        ]
+        + warnings_list,
+        "parameters": {
+            "history_months": len(projection["history_months"]),
+            "recent_month_weight_decay": 0.82,
+        },
+    }
     return {
         "data_version": data_version,
         "as_of": today.isoformat(),
@@ -517,6 +445,8 @@ def simulate(db: Session, request: ScenarioIn, as_of: date | None = None, *, own
         "currency": "CNY",
         "baseline": base,
         "opening_balance_cents": opening,
+        "balance_basis": basis,
+        "bridge_change_cents": bridge_change,
         "budget_remaining_cents": summary(db, today, owner_id)["budget_remaining_cents"],
         "purchase_amount_cents": request.amount_cents,
         "minimum_after_cents": minimum,
@@ -525,11 +455,22 @@ def simulate(db: Session, request: ScenarioIn, as_of: date | None = None, *, own
         "optimization": optimization,
         "timeline": timeline,
         "recurring_bills": bills,
-        "source_transaction_ids": [r.id for r in historical],
-        "expected_expense_cents": expected_expense,
-        "expected_expense_after_purchase_cents": expected_expense + request.amount_cents,
+        "source_transaction_ids": sorted(r.id for r in rows),
+        "expected_expense_cents": expected,
+        "expected_expense_after_purchase_cents": expected + request.amount_cents,
         "forecast_lower_expense_cents": lower_expense,
         "forecast_upper_expense_cents": upper_expense,
-        "expected_budget_remaining_cents": monthly_budget - expected_expense - request.amount_cents,
-        "ai_review": ai_review,
+        "expected_budget_remaining_cents": settings["monthly_budget_cents"]
+        - expected
+        - request.amount_cents,
+        "ai_review": review,
+        "ai_delta_cents": ai_delta,
+        "fixed_expense_cents": fixed,
+        "variable_expense_cents": variable,
+        "planned_expense_cents": planned_expense,
+        "data_quality": projection["data_quality"],
+        "coverage_status": projection["coverage_status"],
+        "warnings": warnings_list,
+        "interval_method": projection["interval_method"],
+        "minimum_adjusted_cents": min(opening, *(x["adjusted_cents"] for x in timeline)),
     }

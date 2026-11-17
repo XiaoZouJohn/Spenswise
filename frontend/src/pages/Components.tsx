@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react'
+import { ForecastOptions } from '../components/ForecastOptions'
 import { AmountInput, CategoryPicker, DateRange, MetricCard, ScenarioComparison, TransactionDetail } from '../components/business'
 import { FamilyCashflowRunway, FamilyGoalTracks, FamilyScenarioPreview, FamilySpendMap } from '../components/family'
 import { Badge, Button, Card, DetailDialog, SectionTitle, State } from '../components/ui'
@@ -6,7 +7,7 @@ import { TransactionTable } from '../components/TransactionTable'
 import { AgentCards } from '../components/AgentReminder'
 import { today } from '../lib/format'
 import type { ProposalPreview } from '../lib/familyApi'
-import type { Transaction } from '../types'
+import type { ScenarioInput, Transaction } from '../types'
 
 type ShowcaseState = 'normal' | 'loading' | 'empty' | 'error'
 const sample: Transaction = { id: 1, tx_date: today(), amount_cents: 2380, tx_type: 'expense', merchant: '示例咖啡馆', description: '午间咖啡', category: '餐饮', is_fixed: false, source: '组件示例', confidence: 100, classification_reason: '组件示例' }
@@ -26,6 +27,7 @@ const preview: ProposalPreview = {
 }
 
 export function ComponentsPage() {
+  const [forecastInput, setForecastInput] = useState<ScenarioInput>({ name: "组件试算", amount_cents: 0, purchase_date: today(), reserve_cents: 0, protected_categories: [] })
   const [amount, setAmount] = useState(12000)
   const [category, setCategory] = useState('餐饮')
   const [from, setFrom] = useState(today())
@@ -41,6 +43,7 @@ export function ComponentsPage() {
     <div className="grid-metrics"><MetricCard label="指标卡片" cents={142800} detail="统一金额格式"/><MetricCard label="负值语义" cents={-2800} tone="negative"/></div>
     <Card><SectionTitle title="输入与筛选"/><div className="grid gap-4 md:grid-cols-3"><AmountInput label="金额输入" value={amount} onChange={setAmount}/><div className="field"><label>分类选择</label><CategoryPicker value={category} onChange={setCategory} categories={['餐饮', '交通', '购物']}/></div><DateRange from={from} to={to} onFrom={setFrom} onTo={setTo}/></div><div className="mt-5 flex gap-2"><Badge tone="success">已完成</Badge><Badge tone="warning">待审核</Badge><Badge tone="danger">失败</Badge></div></Card>
     <Card><SectionTitle title="交易表格与详情"/>{showcaseState === 'loading' ? <State kind="loading"/> : showcaseState === 'error' ? <State kind="error" retry={() => setShowcaseState('normal')}/> : <TransactionTable items={showing ? [sample] : []} selected={selected} onSelect={setSelected} onDetail={setDetail}/>}</Card>
+    <Card><SectionTitle title="预测输入"/>{showcaseState === "loading" ? <State kind="loading"/> : showcaseState === "error" ? <State kind="error"/> : showcaseState === "empty" ? <State kind="empty" message="尚未设置预测条件"/> : <ForecastOptions value={forecastInput} onChange={setForecastInput} categories={["餐饮", "娱乐"]}/>}</Card>
     <Card><SectionTitle title="消费方案对比"/><ScenarioComparison before={300000} after={180000} minimum={85000} reserve={50000}/></Card>
     <Card><SectionTitle title="Agent 简报卡片"/>{showcaseState === 'loading' ? <State kind="loading" message="正在生成 AI 建议…"/> : showcaseState === 'error' ? <State kind="error" message="AI 不可用时保留本地提醒" retry={() => setShowcaseState('normal')}/> : <AgentCards cards={showing ? [{ id: 'demo', tone: 'warning', title: '本月总预算接近上限', evidence: '虚构示例：净支出 2400 元，限额 3000 元。', message: '可以检查本月剩余的弹性消费。', href: '/settings' }] : [{ id: 'start', tone: 'info', title: '从记录开始', evidence: '虚构示例：本月没有账单。', message: '记下一笔或导入账单，逐步了解收支。', href: '/import' }]}/>}</Card>
     <div className="grid gap-5 xl:grid-cols-2">

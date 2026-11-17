@@ -167,7 +167,7 @@ def test_monthly_plan_loads_with_varying_history(tmp_path):
             ScenarioIn(amount_cents=0, purchase_date=date(2026, 11, 1), reserve_cents=0),
             as_of=anchor,
         )
-        assert result["baseline"]["method"] == "hybrid-monthly-ensemble"
+        assert result["baseline"]["method"] == "fixed-variable-monthly"
         assert len(result["timeline"]) == 30
         assert result["period_start"] == "2026-11-01"
         assert result["period_end"] == "2026-11-30"

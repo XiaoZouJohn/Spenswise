@@ -1,0 +1,411 @@
+{
+  "description": "Synthetic fixture only: fixed rent plus constant daily variable spending; owner 2 is contamination control, not real personal data.",
+  "transactions": [
+    {
+      "id": 1002,
+      "owner_id": 1,
+      "tx_date": "2026-01-01",
+      "amount_cents": 100000,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 1003,
+      "owner_id": 1,
+      "tx_date": "2026-01-01",
+      "amount_cents": 31000,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 1004,
+      "owner_id": 1,
+      "tx_date": "2026-02-01",
+      "amount_cents": 100000,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 1005,
+      "owner_id": 1,
+      "tx_date": "2026-02-01",
+      "amount_cents": 28000,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 1006,
+      "owner_id": 1,
+      "tx_date": "2026-03-01",
+      "amount_cents": 100000,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 1007,
+      "owner_id": 1,
+      "tx_date": "2026-03-01",
+      "amount_cents": 31000,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 1008,
+      "owner_id": 1,
+      "tx_date": "2026-04-01",
+      "amount_cents": 100000,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 1009,
+      "owner_id": 1,
+      "tx_date": "2026-04-01",
+      "amount_cents": 30000,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 1010,
+      "owner_id": 1,
+      "tx_date": "2026-05-01",
+      "amount_cents": 100000,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 1011,
+      "owner_id": 1,
+      "tx_date": "2026-05-01",
+      "amount_cents": 31000,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 1012,
+      "owner_id": 1,
+      "tx_date": "2026-06-01",
+      "amount_cents": 100000,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 1013,
+      "owner_id": 1,
+      "tx_date": "2026-06-01",
+      "amount_cents": 30000,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 1014,
+      "owner_id": 1,
+      "tx_date": "2026-07-01",
+      "amount_cents": 100000,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 1015,
+      "owner_id": 1,
+      "tx_date": "2026-07-01",
+      "amount_cents": 31000,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 1016,
+      "owner_id": 1,
+      "tx_date": "2026-08-01",
+      "amount_cents": 100000,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 1017,
+      "owner_id": 1,
+      "tx_date": "2026-08-01",
+      "amount_cents": 31000,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 1018,
+      "owner_id": 1,
+      "tx_date": "2026-09-01",
+      "amount_cents": 100000,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 1019,
+      "owner_id": 1,
+      "tx_date": "2026-09-01",
+      "amount_cents": 30000,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 1020,
+      "owner_id": 1,
+      "tx_date": "2026-10-01",
+      "amount_cents": 100000,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 1021,
+      "owner_id": 1,
+      "tx_date": "2026-10-01",
+      "amount_cents": 31000,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 2002,
+      "owner_id": 2,
+      "tx_date": "2026-01-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 2003,
+      "owner_id": 2,
+      "tx_date": "2026-01-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 2004,
+      "owner_id": 2,
+      "tx_date": "2026-02-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 2005,
+      "owner_id": 2,
+      "tx_date": "2026-02-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 2006,
+      "owner_id": 2,
+      "tx_date": "2026-03-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 2007,
+      "owner_id": 2,
+      "tx_date": "2026-03-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 2008,
+      "owner_id": 2,
+      "tx_date": "2026-04-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 2009,
+      "owner_id": 2,
+      "tx_date": "2026-04-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 2010,
+      "owner_id": 2,
+      "tx_date": "2026-05-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 2011,
+      "owner_id": 2,
+      "tx_date": "2026-05-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 2012,
+      "owner_id": 2,
+      "tx_date": "2026-06-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 2013,
+      "owner_id": 2,
+      "tx_date": "2026-06-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 2014,
+      "owner_id": 2,
+      "tx_date": "2026-07-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 2015,
+      "owner_id": 2,
+      "tx_date": "2026-07-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 2016,
+      "owner_id": 2,
+      "tx_date": "2026-08-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 2017,
+      "owner_id": 2,
+      "tx_date": "2026-08-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 2018,
+      "owner_id": 2,
+      "tx_date": "2026-09-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 2019,
+      "owner_id": 2,
+      "tx_date": "2026-09-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    },
+    {
+      "id": 2020,
+      "owner_id": 2,
+      "tx_date": "2026-10-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "居住",
+      "merchant": "demo-rent",
+      "is_fixed": true
+    },
+    {
+      "id": 2021,
+      "owner_id": 2,
+      "tx_date": "2026-10-01",
+      "amount_cents": 9999999,
+      "tx_type": "expense",
+      "category": "餐饮",
+      "merchant": "demo-food",
+      "is_fixed": false
+    }
+  ],
+  "coverage": [
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-10-31"
+    }
+  ]
+}
