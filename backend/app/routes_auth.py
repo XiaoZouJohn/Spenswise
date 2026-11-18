@@ -311,9 +311,10 @@ def claim_legacy(
         )
     if not secrets.compare_digest(claim.code_hash, token_hash(value.code)):
         raise HTTPException(403, detail={"code": "INVALID_CLAIM_CODE", "message": "认领码无效"})
+    from .services.village_journey import KEY as JOURNEY_KEY, LOGIN_KEY
+
     private_tables: list[Any] = [
         Transaction,
-        Setting,
         CategoryBudget,
         MerchantRule,
         Scenario,
@@ -322,14 +323,20 @@ def claim_legacy(
         ChatConversation,
         AssetSnapshot,
     ]
-    if any(
+    has_private_settings = db.scalar(
+        select(Setting).where(
+            Setting.owner_id == user.id,
+            Setting.key.notin_((JOURNEY_KEY, LOGIN_KEY)),
+        ).limit(1)
+    )
+    if has_private_settings or any(
         db.scalar(select(table).where(table.owner_id == user.id).limit(1))
         for table in private_tables
     ):
         raise HTTPException(
             409, detail={"code": "ACCOUNT_NOT_EMPTY", "message": "请用新注册的空账号认领"}
         )
-    for table in private_tables:
+    for table in [*private_tables, Setting]:
         db.execute(update(table).where(table.owner_id == 1).values(owner_id=user.id))
     claim.code_hash = ""
     claim.claimed_at = datetime.now(timezone.utc)
