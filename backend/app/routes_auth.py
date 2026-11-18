@@ -311,7 +311,8 @@ def claim_legacy(
         )
     if not secrets.compare_digest(claim.code_hash, token_hash(value.code)):
         raise HTTPException(403, detail={"code": "INVALID_CLAIM_CODE", "message": "认领码无效"})
-    from .services.village_journey import KEY as JOURNEY_KEY, LOGIN_KEY
+    from .services.village_journey import KEY as JOURNEY_KEY
+    from .services.village_journey import LOGIN_KEY
 
     private_tables: list[Any] = [
         Transaction,
