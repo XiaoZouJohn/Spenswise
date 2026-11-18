@@ -157,3 +157,47 @@
 .market-page .forecast-options summary { color:var(--forest); font-family:var(--font-display); font-size:17px; }
 .market-page .forecast-options input,.market-page .forecast-options select { background:var(--paper); color:var(--ink); }
 .market-page .forecast-evidence { border-left:3px solid var(--forest); padding:4px 0 4px 16px; line-height:1.7; }
+
+/* Mobile: the animated village is the landscape entry; workspaces remain readable in portrait. */
+.mobile-map-rotate,.mobile-workspace-rotate { display:none; }
+@media (max-width:1100px) {
+  .village-v2 { min-height:100dvh; overflow:hidden; }
+  .village-v2 .village-scene { position:fixed; inset:0; width:100%; height:100dvh; }
+  .village-v2 .village-poster,.village-v2 .village-video { object-position:center center; }
+  .village-v2.is-home[data-compact-mode=places] .village-spatial-layer:not([hidden]) { display:block; }
+  .village-v2.is-home .village-scene:not(.is-playing) .village-poster { filter:saturate(.88) contrast(1.04); }
+  .village-v2.is-home .village-scene:not(.is-playing) .village-light { background:linear-gradient(135deg,rgba(104,157,177,.22),rgba(247,223,169,.08) 48%,rgba(78,135,103,.24)); }
+  .village-v2.is-home[data-compact-mode=places] .village-scene { pointer-events:auto; }
+  .village-v2.is-home[data-compact-mode=places] .village-topbar { background:linear-gradient(180deg,rgba(248,245,232,.96),rgba(248,245,232,.72)); }
+  .village-v2 .compact-navigation { position:fixed; z-index:38; left:50%; bottom:max(12px,env(safe-area-inset-bottom)); transform:translateX(-50%); width:max-content; max-width:calc(100vw - 24px); height:48px; gap:2px; padding:4px; border:1px solid var(--line); border-radius:7px; background:var(--paper-soft); box-shadow:var(--shadow-float); }
+  .village-v2 .compact-navigation button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-width:110px; padding:6px 12px; font-size:13px; white-space:nowrap; }
+  .village-v2 .village-main { height:calc(100dvh - 64px); padding:12px 12px 76px; }
+  .village-v2[data-compact-mode=places] .village-story-slot { display:none; }
+  .village-v2[data-compact-mode=places] .compact-places { display:none; }
+  .village-v2[data-compact-mode=story] .village-story-slot { display:block; animation:mobile-panel-enter .32s ease-out both; }
+  .village-v2[data-compact-mode=workspace] .building-workspace { display:flex; height:100%; animation:mobile-panel-enter .32s ease-out both; }
+  .village-v2.has-workspace .village-video { opacity:0; }
+  .village-v2.has-workspace .village-poster { filter:blur(8px) saturate(.7); transform:scale(1.04); }
+  .village-v2.has-workspace .village-light { background:linear-gradient(135deg,rgba(225,238,229,.83),rgba(247,239,216,.85) 55%,rgba(204,226,224,.82)); }
+  .village-v2 .building-sign strong { font-size:30px; -webkit-text-stroke-width:4px; }
+  .village-v2 .building-sign small { font-size:15px; -webkit-text-stroke-width:3px; }
+  .village-v2 .building-sign { min-width:150px; max-width:190px; padding:6px 10px; }
+  .village-v2 .building-workspace { width:100%; max-width:none; margin:0; }
+  .village-v2 .workspace-content { overflow:auto; }
+  .village-v2 .village-budget-strip { display:none; }
+  .village-v2 .scene-financial-focus { display:none; }
+}
+@media (max-width:700px) and (orientation:portrait) {
+  .village-v2.is-home[data-compact-mode=places] .building-sign { display:none; }
+  .village-v2.is-home[data-compact-mode=places] .compact-places { display:flex; position:fixed; z-index:3; left:0; right:0; bottom:72px; width:auto; height:auto; max-height:68px; flex-direction:row; justify-content:center; gap:0; margin:0; padding:8px 10px; overflow-x:auto; overflow-y:hidden; background:linear-gradient(0deg,rgba(248,245,232,.94),rgba(248,245,232,.76)); }
+  .village-v2.is-home[data-compact-mode=places] .compact-places a { flex:1 0 auto; min-width:72px; justify-content:center; padding:5px 8px; gap:0; border:0; border-right:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+  .village-v2.is-home[data-compact-mode=places] .compact-places a:last-child { border-right:0; }
+  .village-v2.is-home[data-compact-mode=places] .compact-places .village-illustration,.village-v2.is-home[data-compact-mode=places] .compact-places small,.village-v2.is-home[data-compact-mode=places] .compact-places a>span:last-child { display:none; }
+  .village-v2.is-home[data-compact-mode=places] .compact-places strong { font-size:15px; }
+  .mobile-map-rotate { display:block; position:fixed; z-index:3; top:74px; right:12px; padding:7px 10px; background:var(--paper-soft); color:var(--forest); font-size:12px; border:1px solid var(--line); }
+}
+@media (max-width:1100px) and (orientation:landscape) {
+  .mobile-workspace-rotate { display:block; position:fixed; z-index:39; right:12px; bottom:74px; padding:7px 10px; background:var(--paper-soft); color:var(--forest); font-size:12px; border:1px solid var(--line); }
+}
+@keyframes mobile-panel-enter { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+@media (prefers-reduced-motion:reduce) { .village-v2[data-compact-mode=story] .village-story-slot,.village-v2[data-compact-mode=workspace] .building-workspace { animation:none; } }
