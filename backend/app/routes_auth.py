@@ -60,7 +60,7 @@ from .schemas import (
     UserOut,
     UserUpdate,
 )
-from .services import account, households
+from .services import account, households, village_journey
 
 router = APIRouter(prefix="/api")
 
@@ -311,9 +311,6 @@ def claim_legacy(
         )
     if not secrets.compare_digest(claim.code_hash, token_hash(value.code)):
         raise HTTPException(403, detail={"code": "INVALID_CLAIM_CODE", "message": "认领码无效"})
-    from .services.village_journey import KEY as JOURNEY_KEY
-    from .services.village_journey import LOGIN_KEY
-
     private_tables: list[Any] = [
         Transaction,
         CategoryBudget,
@@ -328,7 +325,7 @@ def claim_legacy(
         select(Setting)
         .where(
             Setting.owner_id == user.id,
-            Setting.key.notin_((JOURNEY_KEY, LOGIN_KEY)),
+            Setting.key.notin_((village_journey.KEY, village_journey.LOGIN_KEY)),
         )
         .limit(1)
     )
