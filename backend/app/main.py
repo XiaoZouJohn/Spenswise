@@ -23,6 +23,8 @@ from .models import (
 from .routes_agent import router as agent_router
 from .routes_auth import router as auth_router
 from .routes_family import router as family_router
+from .routes_review import router as review_router
+from .routes_village import router as village_router
 from .schemas import (
     AiCategoryApplyIn,
     AiConnectionIn,
@@ -74,6 +76,8 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(family_router)
 app.include_router(agent_router)
+app.include_router(review_router)
+app.include_router(village_router)
 
 
 @app.middleware("http")
@@ -150,6 +154,7 @@ def transactions(
     date_from: date | None = None,
     date_to: date | None = None,
     review: bool = False,
+    account_key: str | None = None,
     ids: str | None = None,
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
@@ -176,6 +181,7 @@ def transactions(
             date_from=date_from,
             date_to=date_to,
             review=review,
+            account_key=account_key,
             ids=selected_ids,
         )
     except ValueError as exc:
@@ -187,6 +193,8 @@ def transactions(
         page_size=page_size,
         expense_cents=totals["expense_cents"],
         income_cents=totals["income_cents"],
+        category_spend=totals["category_spend"],
+        net_flow_cents=totals["net_flow_cents"],
     )
 
 
@@ -194,7 +202,11 @@ def transactions(
 def create_transaction(
     item: TransactionIn, user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> TransactionOut:
-    row, inserted = ledger.add_transaction(db, item, owner_id=user.id)
+    try:
+        row, inserted = ledger.add_transaction(db, item, owner_id=user.id)
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(422, str(exc)) from exc
     db.commit()
     if not inserted:
         raise HTTPException(
@@ -395,7 +407,12 @@ def confirm_import(
     if os.getenv("CELERY_ALWAYS_EAGER") == "1":
         imports.process_import(db, job, data)
     else:
-        import_task.delay(job.id)
+        try:
+            import_task.apply_async(args=[job.id], retry=False)
+        except Exception:
+            job.status = "failed"
+            job.error_message = "导入任务未能送达队列，请稍后重试；账单文件仍保留。"
+            db.commit()
     return {
         "id": job.id,
         "status": job.status,

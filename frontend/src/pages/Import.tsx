@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge, Button, Card, SectionTitle, State } from '../components/ui'
 import { api, json } from '../lib/api'
+import { useSearchParams } from 'react-router-dom'
+import { useSession } from '../lib/session'
+import { lifeApi } from '../lib/lifeApi'
+import { today } from '../lib/format'
+import { journeyKey } from '../lib/journeyApi'
 
 type Mapping = { date: string; amount: string; merchant: string | null; description: string | null; type: string | null; category: string | null }
 type Preview = { token: string; columns: string[]; sample: Record<string, unknown>[]; mapping: Mapping; total: number }
@@ -19,10 +24,15 @@ const fields: { key: keyof Mapping; label: string; required?: boolean }[] = [
 
 export function ImportPanel() {
   const cache = useQueryClient()
+  const [params] = useSearchParams()
+  const owner = useSession().data?.user.id
+  const key = `spendwise-import:${owner}`
+  const history = useQuery({ queryKey: ['village-state', 'imports', owner], queryFn: () => lifeApi.state(today().slice(0, 7)) })
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
   const [mapping, setMapping] = useState<Mapping>({ date: '', amount: '', merchant: null, description: null, type: null, category: null })
-  const [jobId, setJobId] = useState('')
+  const [jobId, setJobId] = useState(() => params.get('job') || sessionStorage.getItem(key) || '')
+  useEffect(() => { if (jobId) sessionStorage.setItem(key, jobId) }, [jobId, key])
   const upload = useMutation({
     mutationFn: async () => {
       const data = new FormData()
@@ -44,12 +54,14 @@ export function ImportPanel() {
 
   useEffect(() => {
     if (job.data?.status !== 'completed') return
-    for (const queryKey of ['budget-status', 'budget-preview', 'overview', 'cashflow-outlook', 'transactions']) {
+    for (const queryKey of ['budget-status', 'budget-preview', 'overview', 'cashflow-outlook', 'transactions', 'chronicle', 'village-state', 'market-review']) {
       void cache.invalidateQueries({ queryKey: [queryKey] })
     }
+    if (job.data.inserted > 0) void cache.invalidateQueries({ queryKey: journeyKey })
   }, [job.data?.status, cache])
 
   return <div className="space-y-5">
+    {!!history.data?.jobs.length && <details className="import-history"><summary>继续查看导入任务 · {history.data.jobs.length}</summary>{history.data.jobs.map(item => <button key={item.id} className="life-reference" onClick={() => setJobId(item.id)}><span>{item.filename}</span><span>{jobStatusLabel[item.status] || item.status} · 新增 {item.inserted} · 重复 {item.duplicates} · 异常 {item.errors?.length ?? 0}</span></button>)}</details>}
     <div className="rounded-panel border border-line bg-canvas/50 p-4">
       <SectionTitle title="选择文件"/>
       <p className="text-sm text-muted">支持微信、支付宝等 CSV、TXT、XLSX 账单。系统会自动寻找表头并匹配常见字段，导入前仍可手动调整。</p>
@@ -81,6 +93,7 @@ export function ImportPanel() {
     {jobId && <div className="rounded-panel border border-line p-4">
       <SectionTitle title="导入任务" action={<Badge tone={job.data?.status === 'completed' ? 'success' : job.data?.status === 'failed' ? 'danger' : 'warning'}>{jobStatusLabel[job.data?.status || ''] || '查询中'}</Badge>}/>
       {job.isLoading ? <State kind="loading"/> : job.isError ? <State kind="error" retry={() => job.refetch()}/> : job.data && <div className="space-y-2 text-sm"><p>新增 {job.data.inserted} 笔 · 重复 {job.data.duplicates} 笔 · 异常 {job.data.errors.length} 行</p>{job.data.error_message && <p className="text-danger">{job.data.error_message}</p>}{job.data.errors.map(error => <p key={error.row} className="text-danger">第 {error.row} 行：{error.message}</p>)}</div>}
+      {job.data?.status === 'completed' && <Button variant="secondary" onClick={() => { window.location.assign('/ledger?review=1') }}>核对待处理记录</Button>}
     </div>}
   </div>
 }

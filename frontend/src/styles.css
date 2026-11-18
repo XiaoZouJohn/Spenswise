@@ -1,7 +1,63 @@
-/* Local builds must not wait for external font downloads; the existing font stack falls back locally. */
+/* Locally hosted, subset OFL fonts. No runtime font-service requests. */
+@font-face { font-family:'SpendWise Noto Sans SC'; src:url('/fonts/noto-sans-sc.woff2') format('woff2'); font-style:normal; font-weight:100 900; font-display:swap; }
+@font-face { font-family:'SpendWise Noto Serif SC'; src:url('/fonts/noto-serif-sc.woff2') format('woff2'); font-style:normal; font-weight:200 900; font-display:swap; }
+@font-face { font-family:'SpendWise Lora'; src:url('/fonts/lora-500.woff2') format('woff2'); font-style:normal; font-weight:500; font-display:swap; }
 @tailwind base; @tailwind components; @tailwind utilities;
-:root{--canvas:#f3f4f2;--surface:#ffffff;--ink:#1d2a25;--muted:#64716a;--line:#dce2dc;--accent:#155e47;--success:#167447;--danger:#a33a32;--warning:#9b671c;--chart-1:#155e47;--chart-2:#a6bc96;--chart-3:#d6aa72;--chart-4:#728ea2;--chart-5:#ca8374;--radius-panel:14px;--radius-control:8px;--shadow-panel:0 8px 30px rgba(27,45,35,.045);--shadow-dialog:0 24px 72px rgba(29,42,37,.22);--shadow-float:0 14px 32px rgba(21,94,71,.25);--space-page:32px;--space-section:24px;--chat-sidebar-width:244px}
-*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--canvas);font-family:Inter,'Noto Sans SC',Arial,sans-serif}button,input,select{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted);font-weight:600}input,select{outline:none}input:focus,select:focus{border-color:var(--accent)}.field{display:flex;flex-direction:column;gap:7px}.field label{font-size:12px;font-weight:600;color:var(--muted)}.field input,.field select{height:40px;border:1px solid var(--line);border-radius:var(--radius-control);padding:0 12px;background:#fff}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel);box-shadow:var(--shadow-panel)}.page{max-width:1500px;margin:auto;padding:var(--space-page)}.grid-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.two-col{display:grid;grid-template-columns:1.35fr 1fr;gap:var(--space-section)}@media(max-width:1000px){.grid-metrics{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}@media(max-width:650px){.page{padding:16px}.grid-metrics{grid-template-columns:1fr}}
+
+:root {
+  --paper: #F9F4E8;
+  --paper-deep: #EFE5CF;
+  --paper-soft: #FFFDF6;
+  --ink: #354C40;
+  --ink-secondary: #728274;
+  --forest: #47775B;
+  --forest-light: #A8C38B;
+  --gold: #D7A34F;
+  --terracotta: #C9795E;
+  --water: #79B8C7;
+  --line: #DED5BF;
+  --canvas: var(--paper);
+  --surface: var(--paper-soft);
+  --muted: var(--ink-secondary);
+  --accent: var(--forest);
+  --success: var(--forest);
+  --danger: #AE4F3C;
+  --warning: #87612D;
+  --village-gold: var(--gold);
+  --village-paper: rgba(249,244,232,.97);
+  --village-glass: rgba(255,253,246,.94);
+  --village-sky: #C9DFDE;
+  --village-asset: var(--forest);
+  --village-debt: var(--terracotta);
+  --chart-1: var(--forest);
+  --chart-2: var(--terracotta);
+  --chart-3: var(--gold);
+  --chart-4: var(--water);
+  --chart-5: var(--forest-light);
+  --font-body: 'SpendWise Noto Sans SC','Noto Sans SC','Microsoft YaHei','PingFang SC',sans-serif;
+  --font-display: 'SpendWise Noto Serif SC','Noto Serif SC','STSong',serif;
+  --font-numeral: 'SpendWise Lora','Lora',Georgia,serif;
+  --font-size-body: 15px;
+  --font-size-control: 14px;
+  --font-size-meta: 12px;
+  --control-height: 40px;
+  --radius-panel: 10px;
+  --radius-control: 7px;
+  --shadow-panel: 0 8px 28px #354C4010;
+  --shadow-dialog: 0 16px 48px #354C4026;
+  --shadow-float: 0 6px 20px #354C4020;
+  --space-page: 28px;
+  --space-section: 24px;
+  --chat-sidebar-width: 244px;
+  --village-assistant-width: 390px;
+  --village-workspace-gap: 24px;
+  --village-story-width: 440px;
+  --village-layout-gap: 20px;
+}
+
+
+
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--canvas);font-family:var(--font-body);font-weight:400}button,input,select{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted);font-weight:600}input,select{outline:none}input:focus,select:focus{border-color:var(--accent)}.field{display:flex;flex-direction:column;gap:7px}.field label{font-size:12px;font-weight:600;color:var(--muted)}.field input,.field select{height:40px;border:1px solid var(--line);border-radius:var(--radius-control);padding:0 12px;background:#fff}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel);box-shadow:var(--shadow-panel)}.page{max-width:1500px;margin:auto;padding:var(--space-page)}.grid-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.two-col{display:grid;grid-template-columns:1.35fr 1fr;gap:var(--space-section)}@media(max-width:1000px){.grid-metrics{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}@media(max-width:650px){.page{padding:16px}.grid-metrics{grid-template-columns:1fr}}
 
 .field input.amount-input{padding-left:36px}
 

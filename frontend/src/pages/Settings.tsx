@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, json } from '../lib/api'
 import type { OverviewData, SettingsData, BudgetStatusData } from '../types'
@@ -6,12 +6,12 @@ import { AmountInput, Money } from '../components/business'
 import { HistoryCoverageEditor } from '../components/ForecastOptions'
 import { BudgetLimitsEditor } from '../components/BudgetLimitsEditor'
 import { AiConnectionSettings } from '../components/AiConnectionSettings'
+import { AgentReminderSettings } from '../components/AgentReminder'
 import { agentApi } from '../lib/agent'
 import { getAiConnection } from '../lib/aiConnection'
 import { useSession } from '../lib/session'
 import { Badge, Button, Card, CenterDialog, Disclosure, SectionTitle, State } from '../components/ui'
 
-const draftKey = 'spendwise-settings-draft-v1'
 
 function sameSettings(left: SettingsData, right: SettingsData) {
   return left.monthly_budget_cents === right.monthly_budget_cents &&
@@ -22,7 +22,7 @@ function sameSettings(left: SettingsData, right: SettingsData) {
     left.category_budgets.every(item => right.category_budgets.some(saved => saved.category === item.category && saved.limit_cents === item.limit_cents))
 }
 
-function readDraft(): SettingsData | null {
+function readDraft(draftKey: string): SettingsData | null {
   try {
     const stored = localStorage.getItem(draftKey)
     if (!stored) return null
@@ -40,6 +40,7 @@ function readDraft(): SettingsData | null {
 export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: BudgetStatusData | null) => void }) {
   const cache = useQueryClient()
   const session = useSession()
+  const draftKey = `spendwise-settings-draft-v1:${session.data?.user.id ?? 'anonymous'}`
   const query = useQuery({ queryKey: ['settings'], queryFn: () => api<SettingsData>('/settings') })
   const overview = useQuery({ queryKey: ['overview'], queryFn: () => api<OverviewData>('/overview') })
   const connection = useQuery({ queryKey: ['ai-connection'], queryFn: getAiConnection })
@@ -71,8 +72,8 @@ export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: B
 
   useEffect(() => {
     if (!query.data || dirtyNow.current) return
-    const storedDraft = readDraft()
-    const draft = storedDraft ? { ...storedDraft, history_coverage: storedDraft.history_coverage ?? query.data.history_coverage } : null
+    const storedDraft = readDraft(draftKey)
+    const draft = storedDraft ? { ...storedDraft, history_coverage: storedDraft.history_coverage ?? query.data!.history_coverage } : null
     if (draft && !sameSettings(draft, query.data)) {
       latestForm.current = draft
       dirtyNow.current = true
@@ -163,7 +164,7 @@ export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: B
   }
 
   return <div className="page space-y-6">
-    <header><p className="mb-1 text-sm text-muted">每月沿用的消费标准</p><h1 className="m-0 text-3xl font-semibold">预算与设置</h1></header>
+    <header id="budget"><p className="mb-1 text-sm text-muted">商会大厅 / 每月沿用的消费标准</p><h1 className="m-0 text-3xl font-semibold">预算与设置</h1></header>
     {query.isLoading ? <State kind="loading"/> : query.isError ? <State kind="error" retry={() => query.refetch()}/> : form && <>
       <Card>
         <SectionTitle title="总预算与账户"/>
@@ -193,6 +194,7 @@ export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: B
         setAgreementOpen(true)
       }}/>
       <div className="flex items-center gap-3"><Button onClick={() => save.mutate(form)} disabled={save.isPending}>立即保存</Button><span role="status" className="text-sm text-muted">{save.isPending ? '正在保存…' : save.isError ? '保存失败，草稿已保留' : dirty ? '修改已暂存，正在自动保存' : '已保存'}</span></div>
+      <AgentReminderSettings/>
       {save.isError && <p role="alert" className="text-sm text-danger">保存失败，修改仍保留在本机。请稍后点击“立即保存”重试。{save.error.message}</p>}
     </>}
     <CenterDialog open={agreementOpen} onOpenChange={() => {}} title="同意 AI 服务协议" dismissible={false}>

@@ -1,10 +1,19 @@
 import hashlib
 from datetime import date
 
-from sqlalchemy import case, delete, func, select
+from sqlalchemy import case, delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
-from app.models import CategoryBudget, HouseholdProposal, MerchantRule, Setting, Transaction
+from app.models import (
+    AssetSnapshot,
+    CategoryBudget,
+    ConsumptionEvent,
+    HouseholdProposal,
+    LifeLogTransaction,
+    MerchantRule,
+    Setting,
+    Transaction,
+)
 from app.schemas import TransactionIn
 
 
@@ -43,6 +52,16 @@ def add_transaction(
     if existing:
         return existing, False
     category, confidence, reason = classify(db, item.merchant, item.category, owner_id)
+    if item.account_key:
+        account_snapshot = db.scalar(
+            select(AssetSnapshot)
+            .where(
+                AssetSnapshot.owner_id == owner_id, AssetSnapshot.account_key == item.account_key
+            )
+            .order_by(AssetSnapshot.as_of.desc(), AssetSnapshot.id.desc())
+        )
+        if account_snapshot is None or account_snapshot.archived:
+            raise ValueError("账户不存在、已归档或不属于当前用户")
     row = Transaction(
         owner_id=owner_id,
         **item.model_dump(exclude={"category"}),
@@ -51,6 +70,7 @@ def add_transaction(
         classification_reason=reason,
         source=source,
         fingerprint=fp,
+        reviewed=confidence >= 80,
     )
     db.add(row)
     db.flush()
@@ -69,8 +89,9 @@ def list_transactions(
     date_from: date | None = None,
     date_to: date | None = None,
     review: bool = False,
+    account_key: str | None = None,
     ids: list[int] | None = None,
-) -> tuple[list[Transaction], int, dict[str, int]]:
+) -> tuple[list[Transaction], int, dict]:
     if date_from and date_to and date_from > date_to:
         raise ValueError("开始日期不能晚于结束日期")
 
@@ -89,7 +110,14 @@ def list_transactions(
     if date_to:
         statement = statement.where(Transaction.tx_date <= date_to)
     if review:
-        statement = statement.where(Transaction.category == "待确认")
+        statement = statement.where(
+            or_(
+                Transaction.category == "待确认",
+                (Transaction.reviewed.is_(False) & (Transaction.confidence < 80)),
+            )
+        )
+    if account_key:
+        statement = statement.where(Transaction.account_key == account_key)
 
     filtered = statement.subquery()
     totals = db.execute(
@@ -112,6 +140,22 @@ def list_transactions(
         ).select_from(filtered)
     ).one()
     expense_cents, income_cents, total = (int(value or 0) for value in totals)
+    category_expression = func.sum(
+        case(
+            (filtered.c.tx_type == "expense", filtered.c.amount_cents),
+            (filtered.c.tx_type == "refund", -filtered.c.amount_cents),
+            else_=0,
+        )
+    )
+    category_spend = [
+        {"category": category, "amount_cents": int(amount)}
+        for category, amount in db.execute(
+            select(filtered.c.category, category_expression)
+            .group_by(filtered.c.category)
+            .having(category_expression != 0)
+            .order_by(category_expression.desc())
+        )
+    ]
     items = list(
         db.scalars(
             statement.order_by(Transaction.tx_date.desc(), Transaction.id.desc())
@@ -125,6 +169,8 @@ def list_transactions(
         {
             "expense_cents": expense_cents,
             "income_cents": income_cents,
+            "category_spend": category_spend,
+            "net_flow_cents": income_cents - expense_cents,
         },
     )
 
@@ -139,6 +185,16 @@ def delete_transaction(db: Session, transaction_id: int, owner_id: int) -> bool:
         )
     ):
         raise ValueError("请先解除议事提案的账单关联")
+    db.execute(
+        delete(LifeLogTransaction).where(
+            LifeLogTransaction.owner_id == owner_id, LifeLogTransaction.transaction_id == row.id
+        )
+    )
+    db.execute(
+        update(ConsumptionEvent)
+        .where(ConsumptionEvent.owner_id == owner_id, ConsumptionEvent.transaction_id == row.id)
+        .values(transaction_id=None)
+    )
     db.delete(row)
     return True
 
@@ -152,6 +208,12 @@ def delete_all_transactions(db: Session, owner_id: int) -> int:
     )
     if linked_count:
         raise ValueError(f"有 {linked_count} 笔账单关联了家庭议事，请先解除关联")
+    db.execute(delete(LifeLogTransaction).where(LifeLogTransaction.owner_id == owner_id))
+    db.execute(
+        update(ConsumptionEvent)
+        .where(ConsumptionEvent.owner_id == owner_id)
+        .values(transaction_id=None)
+    )
     result = db.execute(delete(Transaction).where(Transaction.owner_id == owner_id))
     return int(result.rowcount or 0)
 
@@ -201,7 +263,9 @@ def version(db: Session, owner_id: int) -> str:
     for setting in db.scalars(
         select(Setting).where(Setting.owner_id == owner_id).order_by(Setting.key)
     ):
-        if setting.key != "ai_consent":
+        if setting.key != "ai_consent" and not setting.key.startswith(
+            ("monthly_review:", "chat_log_sources:", "agent_")
+        ):
             digest.update(f"{setting.key}:{setting.value}".encode("utf-8"))
     for item in db.scalars(
         select(CategoryBudget)

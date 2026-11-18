@@ -8,7 +8,7 @@ export function ForecastOptions({ value, onChange, categories }: {
 }) {
   const events = value.cash_events ?? []
   const rules = value.category_constraints ?? []
-  return <div className="mt-5 space-y-5">
+  return <div className="forecast-options mt-5 space-y-5">
     <Disclosure title="余额与确认收支" description="填写后可试算账户余额；不填则展示净现金流变化">
       <label className="flex gap-2 text-sm"><input type="checkbox" checked={value.balance_cents != null} onChange={e => onChange({ ...value, balance_cents: e.target.checked ? 0 : null, balance_date: e.target.checked ? today() : null })}/>使用余额快照</label>
       {value.balance_cents != null && <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -39,7 +39,7 @@ export function ForecastOptions({ value, onChange, categories }: {
 }
 
 export function ForecastEvidence({ result }: { result: ScenarioResult }) {
-  return <div className="space-y-2 text-sm" data-testid="forecast-evidence">
+  return <div className="forecast-evidence space-y-2 text-sm" data-testid="forecast-evidence">
     <Badge tone={result.data_quality === 'usable' ? 'neutral' : 'warning'}>{result.data_quality === 'insufficient' ? '历史不足 · 仅供试算' : result.data_quality === 'limited' ? '历史较少' : result.data_quality === 'usable' ? '历史预测' : '旧版结果 · 建议重新试算'}</Badge>
     {result.fixed_expense_cents != null && <p>预计支出构成：固定账单 <Money cents={result.fixed_expense_cents}/>，可变消费 <Money cents={result.variable_expense_cents ?? 0}/>，额外支出 <Money cents={result.planned_expense_cents ?? 0}/>。可变消费中 AI 调整 <Money cents={result.ai_delta_cents ?? 0}/>。</p>}
     <p className="text-muted">历史偏差范围尚未校准为置信区间。{result.coverage_status === 'confirmed' ? '已使用你确认的完整记录区间。' : '历史完整性尚未确认，空白月份未按零消费处理。'}</p>
@@ -50,7 +50,7 @@ export function ForecastEvidence({ result }: { result: ScenarioResult }) {
 export function HistoryCoverageEditor({ value, onChange }: {
   value: NonNullable<SettingsData['history_coverage']>; onChange: (value: NonNullable<SettingsData['history_coverage']>) => void
 }) {
-  return <div className="space-y-3">
+  return <div className="forecast-options space-y-3">
     <p className="text-sm text-muted">只添加确认已完整记录所有收支的时间段。该区间内没有账单的月份将按零消费参与预测。</p>
     {value.map((item, i) => <div key={i} className="grid gap-3 sm:grid-cols-3">
       <div className="field"><label>完整记录开始日期</label><input aria-label={`覆盖开始 ${i + 1}`} type="date" max={item.end_date} value={item.start_date} onChange={e => { if (e.target.value) onChange(value.map((x, j) => j === i ? { ...x, start_date: e.target.value } : x)) }}/></div>

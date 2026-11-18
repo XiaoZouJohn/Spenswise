@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { RegisterApiAuthRegisterPostData, RegisterApiAuthRegisterPostResponse, LoginApiAuthLoginPostData, LoginApiAuthLoginPostResponse, MeApiAuthMeGetResponse, LogoutApiAuthLogoutPostResponse, UserProfileApiUsersMeGetResponse, UpdateProfileApiUsersMePutData, UpdateProfileApiUsersMePutResponse, DeleteMyAccountApiUsersMeDeleteData, DeleteMyAccountApiUsersMeDeleteResponse, ChangePasswordApiUsersMePasswordPostData, ChangePasswordApiUsersMePasswordPostResponse, SessionsApiAuthSessionsGetResponse, RevokeSessionApiAuthSessionsSessionIdDeleteData, RevokeSessionApiAuthSessionsSessionIdDeleteResponse, ExportMyDataApiUsersMeExportGetResponse, ClaimLegacyApiAuthClaimLegacyPostData, ClaimLegacyApiAuthClaimLegacyPostResponse, GetFamilyApiFamiliesGetResponse, CreateFamilyApiFamiliesPostData, CreateFamilyApiFamiliesPostResponse, DissolveApiFamiliesDeleteResponse, GetMembersApiFamiliesMembersGetResponse, CreateInvitationApiFamiliesInvitationsPostData, CreateInvitationApiFamiliesInvitationsPostResponse, PreviewInvitationApiFamiliesInvitationsPreviewGetData, PreviewInvitationApiFamiliesInvitationsPreviewGetResponse, AcceptInvitationApiFamiliesInvitationsAcceptPostData, AcceptInvitationApiFamiliesInvitationsAcceptPostResponse, GetSharingApiFamiliesSharingGetResponse, PutSharingApiFamiliesSharingPutData, PutSharingApiFamiliesSharingPutResponse, LeaveApiFamiliesLeavePostResponse, RemoveMemberApiFamiliesMembersUserIdDeleteData, RemoveMemberApiFamiliesMembersUserIdDeleteResponse, TransferApiFamiliesTransferPostData, TransferApiFamiliesTransferPostResponse, TransactionsApiFamiliesTransactionsGetData, TransactionsApiFamiliesTransactionsGetResponse, SetSharedApiTransactionsTransactionIdFamilySharingPatchData, SetSharedApiTransactionsTransactionIdFamilySharingPatchResponse, SetInternalApiTransactionsTransactionIdFamilyInternalPatchData, SetInternalApiTransactionsTransactionIdFamilyInternalPatchResponse, GetBudgetApiFamiliesBudgetGetResponse, PutBudgetApiFamiliesBudgetPutData, PutBudgetApiFamiliesBudgetPutResponse, DashboardApiFamiliesDashboardGetData, DashboardApiFamiliesDashboardGetResponse, ProposalsApiFamiliesProposalsGetResponse, CreateProposalApiFamiliesProposalsPostData, CreateProposalApiFamiliesProposalsPostResponse, PreviewProposalApiFamiliesProposalsPreviewPostData, PreviewProposalApiFamiliesProposalsPreviewPostResponse, CommentProposalApiFamiliesProposalsProposalIdCommentsPostData, CommentProposalApiFamiliesProposalsProposalIdCommentsPostResponse, DecideProposalApiFamiliesProposalsProposalIdConfirmPostData, DecideProposalApiFamiliesProposalsProposalIdConfirmPostResponse, LinkTransactionApiFamiliesProposalsProposalIdLinkTransactionPostData, LinkTransactionApiFamiliesProposalsProposalIdLinkTransactionPostResponse, UnlinkTransactionApiFamiliesProposalsProposalIdLinkTransactionDeleteData, UnlinkTransactionApiFamiliesProposalsProposalIdLinkTransactionDeleteResponse, GoalsApiFamiliesGoalsGetResponse, CreateGoalApiFamiliesGoalsPostData, CreateGoalApiFamiliesGoalsPostResponse, UpdateGoalApiFamiliesGoalsGoalIdPutData, UpdateGoalApiFamiliesGoalsGoalIdPutResponse, AssetsApiUsersMeAssetsGetResponse, CreateAssetApiUsersMeAssetsPostData, CreateAssetApiUsersMeAssetsPostResponse, ArchiveAssetApiUsersMeAssetsAccountKeyArchivePostData, ArchiveAssetApiUsersMeAssetsAccountKeyArchivePostResponse, AssetCoverageApiUsersMeAssetsCoverageGetResponse, SetAssetCoverageApiUsersMeAssetsCoveragePutData, SetAssetCoverageApiUsersMeAssetsCoveragePutResponse, GetAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyGetResponse, PutAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyPutData, PutAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyPutResponse, AgentPreferencesApiAgentPreferencesGetResponse, UpdateAgentPreferencesApiAgentPreferencesPutData, UpdateAgentPreferencesApiAgentPreferencesPutResponse, AgentStatusApiAgentStatusGetResponse, AgentBriefApiAgentBriefPostResponse, HealthApiHealthGetResponse, GetSettingsApiSettingsGetResponse, PutSettingsApiSettingsPutData, PutSettingsApiSettingsPutResponse, OverviewApiOverviewGetData, OverviewApiOverviewGetResponse, GetBudgetStatusApiBudgetStatusGetData, GetBudgetStatusApiBudgetStatusGetResponse, PreviewBudgetApiBudgetPreviewPostData, PreviewBudgetApiBudgetPreviewPostResponse, TransactionsApiTransactionsGetData, TransactionsApiTransactionsGetResponse, CreateTransactionApiTransactionsPostData, CreateTransactionApiTransactionsPostResponse, DeleteAllTransactionsApiTransactionsDeleteResponse, DeleteTransactionApiTransactionsTransactionIdDeleteData, DeleteTransactionApiTransactionsTransactionIdDeleteResponse, UpdateCategoriesApiTransactionsBatchCategoryPostData, UpdateCategoriesApiTransactionsBatchCategoryPostResponse, UndoCategoriesApiTransactionsUndoCategoryPostData, UndoCategoriesApiTransactionsUndoCategoryPostResponse, SimulateApiSimulatePostData, SimulateApiSimulatePostResponse, ScenariosApiScenariosGetResponse, SaveScenarioApiScenariosPostData, SaveScenarioApiScenariosPostResponse, PreviewImportApiImportPreviewPostData, PreviewImportApiImportPreviewPostResponse, ConfirmImportApiImportConfirmPostData, ConfirmImportApiImportConfirmPostResponse, ImportStatusApiImportJobsJobIdGetData, ImportStatusApiImportJobsJobIdGetResponse, TaskStatusApiTasksTaskIdGetData, TaskStatusApiTasksTaskIdGetResponse, AiStatusApiAiStatusGetResponse, GetAiConnectionApiAiConnectionGetResponse, PutAiConnectionApiAiConnectionPutData, PutAiConnectionApiAiConnectionPutResponse, ListAiConversationsApiAiConversationsGetResponse, GetChatLedgerConsentApiAiChatLedgerConsentGetResponse, PutChatLedgerConsentApiAiChatLedgerConsentPutData, PutChatLedgerConsentApiAiChatLedgerConsentPutResponse, GetAiConversationApiAiConversationsConversationIdGetData, GetAiConversationApiAiConversationsConversationIdGetResponse, DeleteAiConversationApiAiConversationsConversationIdDeleteData, DeleteAiConversationApiAiConversationsConversationIdDeleteResponse, StreamAiChatApiAiChatStreamPostData, StreamAiChatApiAiChatStreamPostResponse, AiExplainApiAiExplainPostData, AiExplainApiAiExplainPostResponse, TestAiApiAiTestPostResponse, ReviewAiApiAiReviewTransactionsPostData, ReviewAiApiAiReviewTransactionsPostResponse, ReviewAllAiApiAiReviewAllTransactionsPostResponse, ApplyAiCategoriesApiAiApplyTransactionCategoriesPostData, ApplyAiCategoriesApiAiApplyTransactionCategoriesPostResponse } from './types.gen';
+import type { RegisterApiAuthRegisterPostData, RegisterApiAuthRegisterPostResponse, LoginApiAuthLoginPostData, LoginApiAuthLoginPostResponse, MeApiAuthMeGetResponse, LogoutApiAuthLogoutPostResponse, UserProfileApiUsersMeGetResponse, UpdateProfileApiUsersMePutData, UpdateProfileApiUsersMePutResponse, DeleteMyAccountApiUsersMeDeleteData, DeleteMyAccountApiUsersMeDeleteResponse, ChangePasswordApiUsersMePasswordPostData, ChangePasswordApiUsersMePasswordPostResponse, SessionsApiAuthSessionsGetResponse, RevokeSessionApiAuthSessionsSessionIdDeleteData, RevokeSessionApiAuthSessionsSessionIdDeleteResponse, ExportMyDataApiUsersMeExportGetResponse, ClaimLegacyApiAuthClaimLegacyPostData, ClaimLegacyApiAuthClaimLegacyPostResponse, GetFamilyApiFamiliesGetResponse, CreateFamilyApiFamiliesPostData, CreateFamilyApiFamiliesPostResponse, DissolveApiFamiliesDeleteResponse, GetMembersApiFamiliesMembersGetResponse, CreateInvitationApiFamiliesInvitationsPostData, CreateInvitationApiFamiliesInvitationsPostResponse, PreviewInvitationApiFamiliesInvitationsPreviewGetData, PreviewInvitationApiFamiliesInvitationsPreviewGetResponse, AcceptInvitationApiFamiliesInvitationsAcceptPostData, AcceptInvitationApiFamiliesInvitationsAcceptPostResponse, GetSharingApiFamiliesSharingGetResponse, PutSharingApiFamiliesSharingPutData, PutSharingApiFamiliesSharingPutResponse, LeaveApiFamiliesLeavePostResponse, RemoveMemberApiFamiliesMembersUserIdDeleteData, RemoveMemberApiFamiliesMembersUserIdDeleteResponse, TransferApiFamiliesTransferPostData, TransferApiFamiliesTransferPostResponse, TransactionsApiFamiliesTransactionsGetData, TransactionsApiFamiliesTransactionsGetResponse, SetSharedApiTransactionsTransactionIdFamilySharingPatchData, SetSharedApiTransactionsTransactionIdFamilySharingPatchResponse, SetInternalApiTransactionsTransactionIdFamilyInternalPatchData, SetInternalApiTransactionsTransactionIdFamilyInternalPatchResponse, GetBudgetApiFamiliesBudgetGetResponse, PutBudgetApiFamiliesBudgetPutData, PutBudgetApiFamiliesBudgetPutResponse, DashboardApiFamiliesDashboardGetData, DashboardApiFamiliesDashboardGetResponse, ProposalsApiFamiliesProposalsGetResponse, CreateProposalApiFamiliesProposalsPostData, CreateProposalApiFamiliesProposalsPostResponse, PreviewProposalApiFamiliesProposalsPreviewPostData, PreviewProposalApiFamiliesProposalsPreviewPostResponse, CommentProposalApiFamiliesProposalsProposalIdCommentsPostData, CommentProposalApiFamiliesProposalsProposalIdCommentsPostResponse, DecideProposalApiFamiliesProposalsProposalIdConfirmPostData, DecideProposalApiFamiliesProposalsProposalIdConfirmPostResponse, LinkTransactionApiFamiliesProposalsProposalIdLinkTransactionPostData, LinkTransactionApiFamiliesProposalsProposalIdLinkTransactionPostResponse, UnlinkTransactionApiFamiliesProposalsProposalIdLinkTransactionDeleteData, UnlinkTransactionApiFamiliesProposalsProposalIdLinkTransactionDeleteResponse, GoalsApiFamiliesGoalsGetResponse, CreateGoalApiFamiliesGoalsPostData, CreateGoalApiFamiliesGoalsPostResponse, UpdateGoalApiFamiliesGoalsGoalIdPutData, UpdateGoalApiFamiliesGoalsGoalIdPutResponse, AssetsApiUsersMeAssetsGetResponse, CreateAssetApiUsersMeAssetsPostData, CreateAssetApiUsersMeAssetsPostResponse, ArchiveAssetApiUsersMeAssetsAccountKeyArchivePostData, ArchiveAssetApiUsersMeAssetsAccountKeyArchivePostResponse, AssetCoverageApiUsersMeAssetsCoverageGetResponse, SetAssetCoverageApiUsersMeAssetsCoveragePutData, SetAssetCoverageApiUsersMeAssetsCoveragePutResponse, GetAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyGetResponse, PutAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyPutData, PutAssetCoveragePolicyApiUsersMeAssetsCoveragePolicyPutResponse, AgentPreferencesApiAgentPreferencesGetResponse, UpdateAgentPreferencesApiAgentPreferencesPutData, UpdateAgentPreferencesApiAgentPreferencesPutResponse, AgentStatusApiAgentStatusGetResponse, AgentBriefApiAgentBriefPostResponse, GetMonthlyReviewApiMonthlyReviewsMonthGetData, GetMonthlyReviewApiMonthlyReviewsMonthGetResponse, PutMonthlyReviewApiMonthlyReviewsMonthPutData, PutMonthlyReviewApiMonthlyReviewsMonthPutResponse, ClearMonthlyReviewApiMonthlyReviewsMonthClearPostData, ClearMonthlyReviewApiMonthlyReviewsMonthClearPostResponse, JourneyApiVillageJourneyGetResponse, UpdateJourneyApiVillageJourneyPutData, UpdateJourneyApiVillageJourneyPutResponse, LifeLogsApiVillageLogsGetData, LifeLogsApiVillageLogsGetResponse, CreateLifeLogApiVillageLogsPostData, CreateLifeLogApiVillageLogsPostResponse, LifeLogApiVillageLogsLogIdGetData, LifeLogApiVillageLogsLogIdGetResponse, UpdateLifeLogApiVillageLogsLogIdPutData, UpdateLifeLogApiVillageLogsLogIdPutResponse, DeleteLifeLogApiVillageLogsLogIdDeleteData, DeleteLifeLogApiVillageLogsLogIdDeleteResponse, ConsumptionEventsApiVillageEventsGetData, ConsumptionEventsApiVillageEventsGetResponse, ConsumptionEventApiVillageEventsTransactionIdGetData, ConsumptionEventApiVillageEventsTransactionIdGetResponse, UpdateConsumptionEventApiVillageEventsTransactionIdPutData, UpdateConsumptionEventApiVillageEventsTransactionIdPutResponse, ReviewTransactionsApiVillageBatchReviewPostData, ReviewTransactionsApiVillageBatchReviewPostResponse, VillageStateApiVillageStateGetData, VillageStateApiVillageStateGetResponse, VillageMarketApiVillageMarketGetData, VillageMarketApiVillageMarketGetResponse, WorkspaceDraftApiVillageDraftsResourceTypeResourceIdGetData, WorkspaceDraftApiVillageDraftsResourceTypeResourceIdGetResponse, SaveWorkspaceDraftApiVillageDraftsResourceTypeResourceIdPutData, SaveWorkspaceDraftApiVillageDraftsResourceTypeResourceIdPutResponse, ClearWorkspaceDraftApiVillageDraftsResourceTypeResourceIdDeleteData, ClearWorkspaceDraftApiVillageDraftsResourceTypeResourceIdDeleteResponse, MonthlyStoryApiVillageStoryMonthGetData, MonthlyStoryApiVillageStoryMonthGetResponse, GenerateMonthlyStoryApiVillageStoryMonthPostData, GenerateMonthlyStoryApiVillageStoryMonthPostResponse, StoryTaskStatusApiVillageStoryTasksTaskIdGetData, StoryTaskStatusApiVillageStoryTasksTaskIdGetResponse, TransactionStoryApiVillageTransactionStoryTransactionIdGetData, TransactionStoryApiVillageTransactionStoryTransactionIdGetResponse, HealthApiHealthGetResponse, GetSettingsApiSettingsGetResponse, PutSettingsApiSettingsPutData, PutSettingsApiSettingsPutResponse, OverviewApiOverviewGetData, OverviewApiOverviewGetResponse, GetBudgetStatusApiBudgetStatusGetData, GetBudgetStatusApiBudgetStatusGetResponse, PreviewBudgetApiBudgetPreviewPostData, PreviewBudgetApiBudgetPreviewPostResponse, TransactionsApiTransactionsGetData, TransactionsApiTransactionsGetResponse, CreateTransactionApiTransactionsPostData, CreateTransactionApiTransactionsPostResponse, DeleteAllTransactionsApiTransactionsDeleteResponse, DeleteTransactionApiTransactionsTransactionIdDeleteData, DeleteTransactionApiTransactionsTransactionIdDeleteResponse, UpdateCategoriesApiTransactionsBatchCategoryPostData, UpdateCategoriesApiTransactionsBatchCategoryPostResponse, UndoCategoriesApiTransactionsUndoCategoryPostData, UndoCategoriesApiTransactionsUndoCategoryPostResponse, SimulateApiSimulatePostData, SimulateApiSimulatePostResponse, ScenariosApiScenariosGetResponse, SaveScenarioApiScenariosPostData, SaveScenarioApiScenariosPostResponse, PreviewImportApiImportPreviewPostData, PreviewImportApiImportPreviewPostResponse, ConfirmImportApiImportConfirmPostData, ConfirmImportApiImportConfirmPostResponse, ImportStatusApiImportJobsJobIdGetData, ImportStatusApiImportJobsJobIdGetResponse, TaskStatusApiTasksTaskIdGetData, TaskStatusApiTasksTaskIdGetResponse, AiStatusApiAiStatusGetResponse, GetAiConnectionApiAiConnectionGetResponse, PutAiConnectionApiAiConnectionPutData, PutAiConnectionApiAiConnectionPutResponse, ListAiConversationsApiAiConversationsGetResponse, GetChatLedgerConsentApiAiChatLedgerConsentGetResponse, PutChatLedgerConsentApiAiChatLedgerConsentPutData, PutChatLedgerConsentApiAiChatLedgerConsentPutResponse, GetAiConversationApiAiConversationsConversationIdGetData, GetAiConversationApiAiConversationsConversationIdGetResponse, DeleteAiConversationApiAiConversationsConversationIdDeleteData, DeleteAiConversationApiAiConversationsConversationIdDeleteResponse, StreamAiChatApiAiChatStreamPostData, StreamAiChatApiAiChatStreamPostResponse, AiExplainApiAiExplainPostData, AiExplainApiAiExplainPostResponse, TestAiApiAiTestPostResponse, ReviewAiApiAiReviewTransactionsPostData, ReviewAiApiAiReviewTransactionsPostResponse, ReviewAllAiApiAiReviewAllTransactionsPostResponse, ApplyAiCategoriesApiAiApplyTransactionCategoriesPostData, ApplyAiCategoriesApiAiApplyTransactionCategoriesPostResponse } from './types.gen';
 
 /**
  * Register
@@ -887,6 +887,495 @@ export const agentBriefApiAgentBriefPost = (): CancelablePromise<AgentBriefApiAg
 };
 
 /**
+ * Get Monthly Review
+ * @param data The data for the request.
+ * @param data.month
+ * @returns MonthlyReviewOut Successful Response
+ * @throws ApiError
+ */
+export const getMonthlyReviewApiMonthlyReviewsMonthGet = (data: GetMonthlyReviewApiMonthlyReviewsMonthGetData): CancelablePromise<GetMonthlyReviewApiMonthlyReviewsMonthGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/monthly-reviews/{month}',
+        path: {
+            month: data.month
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Put Monthly Review
+ * @param data The data for the request.
+ * @param data.month
+ * @param data.requestBody
+ * @returns MonthlyReviewOut Successful Response
+ * @throws ApiError
+ */
+export const putMonthlyReviewApiMonthlyReviewsMonthPut = (data: PutMonthlyReviewApiMonthlyReviewsMonthPutData): CancelablePromise<PutMonthlyReviewApiMonthlyReviewsMonthPutResponse> => {
+    return __request(OpenAPI, {
+        method: 'PUT',
+        url: '/api/monthly-reviews/{month}',
+        path: {
+            month: data.month
+        },
+        body: data.requestBody,
+        mediaType: 'application/json',
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Clear Monthly Review
+ * @param data The data for the request.
+ * @param data.month
+ * @param data.requestBody
+ * @returns MonthlyReviewOut Successful Response
+ * @throws ApiError
+ */
+export const clearMonthlyReviewApiMonthlyReviewsMonthClearPost = (data: ClearMonthlyReviewApiMonthlyReviewsMonthClearPostData): CancelablePromise<ClearMonthlyReviewApiMonthlyReviewsMonthClearPostResponse> => {
+    return __request(OpenAPI, {
+        method: 'POST',
+        url: '/api/monthly-reviews/{month}/clear',
+        path: {
+            month: data.month
+        },
+        body: data.requestBody,
+        mediaType: 'application/json',
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Journey
+ * @returns JourneyOut Successful Response
+ * @throws ApiError
+ */
+export const journeyApiVillageJourneyGet = (): CancelablePromise<JourneyApiVillageJourneyGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/journey'
+    });
+};
+
+/**
+ * Update Journey
+ * @param data The data for the request.
+ * @param data.requestBody
+ * @returns JourneyOut Successful Response
+ * @throws ApiError
+ */
+export const updateJourneyApiVillageJourneyPut = (data: UpdateJourneyApiVillageJourneyPutData): CancelablePromise<UpdateJourneyApiVillageJourneyPutResponse> => {
+    return __request(OpenAPI, {
+        method: 'PUT',
+        url: '/api/village/journey',
+        body: data.requestBody,
+        mediaType: 'application/json',
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Life Logs
+ * @param data The data for the request.
+ * @param data.month
+ * @param data.transactionId
+ * @returns LifeLogOut Successful Response
+ * @throws ApiError
+ */
+export const lifeLogsApiVillageLogsGet = (data: LifeLogsApiVillageLogsGetData = {}): CancelablePromise<LifeLogsApiVillageLogsGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/logs',
+        query: {
+            month: data.month,
+            transaction_id: data.transactionId
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Create Life Log
+ * @param data The data for the request.
+ * @param data.requestBody
+ * @returns LifeLogOut Successful Response
+ * @throws ApiError
+ */
+export const createLifeLogApiVillageLogsPost = (data: CreateLifeLogApiVillageLogsPostData): CancelablePromise<CreateLifeLogApiVillageLogsPostResponse> => {
+    return __request(OpenAPI, {
+        method: 'POST',
+        url: '/api/village/logs',
+        body: data.requestBody,
+        mediaType: 'application/json',
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Life Log
+ * @param data The data for the request.
+ * @param data.logId
+ * @returns LifeLogOut Successful Response
+ * @throws ApiError
+ */
+export const lifeLogApiVillageLogsLogIdGet = (data: LifeLogApiVillageLogsLogIdGetData): CancelablePromise<LifeLogApiVillageLogsLogIdGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/logs/{log_id}',
+        path: {
+            log_id: data.logId
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Update Life Log
+ * @param data The data for the request.
+ * @param data.logId
+ * @param data.requestBody
+ * @returns LifeLogOut Successful Response
+ * @throws ApiError
+ */
+export const updateLifeLogApiVillageLogsLogIdPut = (data: UpdateLifeLogApiVillageLogsLogIdPutData): CancelablePromise<UpdateLifeLogApiVillageLogsLogIdPutResponse> => {
+    return __request(OpenAPI, {
+        method: 'PUT',
+        url: '/api/village/logs/{log_id}',
+        path: {
+            log_id: data.logId
+        },
+        body: data.requestBody,
+        mediaType: 'application/json',
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Delete Life Log
+ * @param data The data for the request.
+ * @param data.logId
+ * @param data.revision
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const deleteLifeLogApiVillageLogsLogIdDelete = (data: DeleteLifeLogApiVillageLogsLogIdDeleteData): CancelablePromise<DeleteLifeLogApiVillageLogsLogIdDeleteResponse> => {
+    return __request(OpenAPI, {
+        method: 'DELETE',
+        url: '/api/village/logs/{log_id}',
+        path: {
+            log_id: data.logId
+        },
+        query: {
+            revision: data.revision
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Consumption Events
+ * @param data The data for the request.
+ * @param data.month
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const consumptionEventsApiVillageEventsGet = (data: ConsumptionEventsApiVillageEventsGetData): CancelablePromise<ConsumptionEventsApiVillageEventsGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/events',
+        query: {
+            month: data.month
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Consumption Event
+ * @param data The data for the request.
+ * @param data.transactionId
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const consumptionEventApiVillageEventsTransactionIdGet = (data: ConsumptionEventApiVillageEventsTransactionIdGetData): CancelablePromise<ConsumptionEventApiVillageEventsTransactionIdGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/events/{transaction_id}',
+        path: {
+            transaction_id: data.transactionId
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Update Consumption Event
+ * @param data The data for the request.
+ * @param data.transactionId
+ * @param data.requestBody
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const updateConsumptionEventApiVillageEventsTransactionIdPut = (data: UpdateConsumptionEventApiVillageEventsTransactionIdPutData): CancelablePromise<UpdateConsumptionEventApiVillageEventsTransactionIdPutResponse> => {
+    return __request(OpenAPI, {
+        method: 'PUT',
+        url: '/api/village/events/{transaction_id}',
+        path: {
+            transaction_id: data.transactionId
+        },
+        body: data.requestBody,
+        mediaType: 'application/json',
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Review Transactions
+ * @param data The data for the request.
+ * @param data.requestBody
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const reviewTransactionsApiVillageBatchReviewPost = (data: ReviewTransactionsApiVillageBatchReviewPostData): CancelablePromise<ReviewTransactionsApiVillageBatchReviewPostResponse> => {
+    return __request(OpenAPI, {
+        method: 'POST',
+        url: '/api/village/batch-review',
+        body: data.requestBody,
+        mediaType: 'application/json',
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Village State
+ * @param data The data for the request.
+ * @param data.month
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const villageStateApiVillageStateGet = (data: VillageStateApiVillageStateGetData): CancelablePromise<VillageStateApiVillageStateGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/state',
+        query: {
+            month: data.month
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Village Market
+ * @param data The data for the request.
+ * @param data.month
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const villageMarketApiVillageMarketGet = (data: VillageMarketApiVillageMarketGetData): CancelablePromise<VillageMarketApiVillageMarketGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/market',
+        query: {
+            month: data.month
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Workspace Draft
+ * @param data The data for the request.
+ * @param data.resourceType
+ * @param data.resourceId
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const workspaceDraftApiVillageDraftsResourceTypeResourceIdGet = (data: WorkspaceDraftApiVillageDraftsResourceTypeResourceIdGetData): CancelablePromise<WorkspaceDraftApiVillageDraftsResourceTypeResourceIdGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/drafts/{resource_type}/{resource_id}',
+        path: {
+            resource_type: data.resourceType,
+            resource_id: data.resourceId
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Save Workspace Draft
+ * @param data The data for the request.
+ * @param data.resourceType
+ * @param data.resourceId
+ * @param data.requestBody
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const saveWorkspaceDraftApiVillageDraftsResourceTypeResourceIdPut = (data: SaveWorkspaceDraftApiVillageDraftsResourceTypeResourceIdPutData): CancelablePromise<SaveWorkspaceDraftApiVillageDraftsResourceTypeResourceIdPutResponse> => {
+    return __request(OpenAPI, {
+        method: 'PUT',
+        url: '/api/village/drafts/{resource_type}/{resource_id}',
+        path: {
+            resource_type: data.resourceType,
+            resource_id: data.resourceId
+        },
+        body: data.requestBody,
+        mediaType: 'application/json',
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Clear Workspace Draft
+ * @param data The data for the request.
+ * @param data.resourceType
+ * @param data.resourceId
+ * @param data.revision
+ * @param data.expectedOwnerId
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const clearWorkspaceDraftApiVillageDraftsResourceTypeResourceIdDelete = (data: ClearWorkspaceDraftApiVillageDraftsResourceTypeResourceIdDeleteData): CancelablePromise<ClearWorkspaceDraftApiVillageDraftsResourceTypeResourceIdDeleteResponse> => {
+    return __request(OpenAPI, {
+        method: 'DELETE',
+        url: '/api/village/drafts/{resource_type}/{resource_id}',
+        path: {
+            resource_type: data.resourceType,
+            resource_id: data.resourceId
+        },
+        query: {
+            revision: data.revision,
+            expected_owner_id: data.expectedOwnerId
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Monthly Story
+ * @param data The data for the request.
+ * @param data.month
+ * @param data.editionId
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const monthlyStoryApiVillageStoryMonthGet = (data: MonthlyStoryApiVillageStoryMonthGetData): CancelablePromise<MonthlyStoryApiVillageStoryMonthGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/story/{month}',
+        path: {
+            month: data.month
+        },
+        query: {
+            edition_id: data.editionId
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Generate Monthly Story
+ * @param data The data for the request.
+ * @param data.month
+ * @param data.requestBody
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const generateMonthlyStoryApiVillageStoryMonthPost = (data: GenerateMonthlyStoryApiVillageStoryMonthPostData): CancelablePromise<GenerateMonthlyStoryApiVillageStoryMonthPostResponse> => {
+    return __request(OpenAPI, {
+        method: 'POST',
+        url: '/api/village/story/{month}',
+        path: {
+            month: data.month
+        },
+        body: data.requestBody,
+        mediaType: 'application/json',
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Story Task Status
+ * @param data The data for the request.
+ * @param data.taskId
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const storyTaskStatusApiVillageStoryTasksTaskIdGet = (data: StoryTaskStatusApiVillageStoryTasksTaskIdGetData): CancelablePromise<StoryTaskStatusApiVillageStoryTasksTaskIdGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/story-tasks/{task_id}',
+        path: {
+            task_id: data.taskId
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
+ * Transaction Story
+ * @param data The data for the request.
+ * @param data.transactionId
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const transactionStoryApiVillageTransactionStoryTransactionIdGet = (data: TransactionStoryApiVillageTransactionStoryTransactionIdGetData): CancelablePromise<TransactionStoryApiVillageTransactionStoryTransactionIdGetResponse> => {
+    return __request(OpenAPI, {
+        method: 'GET',
+        url: '/api/village/transaction-story/{transaction_id}',
+        path: {
+            transaction_id: data.transactionId
+        },
+        errors: {
+            422: 'Validation Error'
+        }
+    });
+};
+
+/**
  * Health
  * @returns unknown Successful Response
  * @throws ApiError
@@ -999,6 +1488,7 @@ export const previewBudgetApiBudgetPreviewPost = (data: PreviewBudgetApiBudgetPr
  * @param data.dateFrom
  * @param data.dateTo
  * @param data.review
+ * @param data.accountKey
  * @param data.ids
  * @returns Page Successful Response
  * @throws ApiError
@@ -1016,6 +1506,7 @@ export const transactionsApiTransactionsGet = (data: TransactionsApiTransactions
             date_from: data.dateFrom,
             date_to: data.dateTo,
             review: data.review,
+            account_key: data.accountKey,
             ids: data.ids
         },
         errors: {

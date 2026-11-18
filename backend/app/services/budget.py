@@ -76,6 +76,7 @@ def summary(db: Session, as_of: date, owner_id: int) -> dict:
         "month": month,
         "income_cents": income,
         "expense_cents": expenses - refunds,
+        "net_flow_cents": income - expenses + refunds,
         "budget_remaining_cents": settings["monthly_budget_cents"] - expenses + refunds,
         "account_balance_cents": settings["opening_balance_cents"]
         + sum(signed_amount(r.tx_type, r.amount_cents) for r in rows),

@@ -30,17 +30,23 @@ from .models import (
     CategoryBudget,
     ChatConversation,
     ChatMessage,
+    ConsumptionEvent,
     HouseholdMember,
     HouseholdProposal,
     ImportJob,
     LegacyClaim,
+    LifeLog,
+    LifeLogTransaction,
     MerchantRule,
     ProposalComment,
     Scenario,
     Setting,
+    StoryEdition,
+    StoryPart,
     Transaction,
     User,
     UserSession,
+    WorkspaceDraft,
 )
 from .schemas import (
     AccountDeleteIn,
@@ -54,7 +60,7 @@ from .schemas import (
     UserOut,
     UserUpdate,
 )
-from .services import account, households
+from .services import account, households, village_journey
 
 router = APIRouter(prefix="/api")
 
@@ -237,6 +243,12 @@ def export_my_data(
     user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> JSONResponse:
     tables: dict[str, Any] = {
+        "life_logs": LifeLog,
+        "life_log_transactions": LifeLogTransaction,
+        "consumption_events": ConsumptionEvent,
+        "story_editions": StoryEdition,
+        "story_parts": StoryPart,
+        "workspace_drafts": WorkspaceDraft,
         "transactions": Transaction,
         "settings": Setting,
         "category_budgets": CategoryBudget,
@@ -301,7 +313,6 @@ def claim_legacy(
         raise HTTPException(403, detail={"code": "INVALID_CLAIM_CODE", "message": "认领码无效"})
     private_tables: list[Any] = [
         Transaction,
-        Setting,
         CategoryBudget,
         MerchantRule,
         Scenario,
@@ -310,14 +321,22 @@ def claim_legacy(
         ChatConversation,
         AssetSnapshot,
     ]
-    if any(
+    has_private_settings = db.scalar(
+        select(Setting)
+        .where(
+            Setting.owner_id == user.id,
+            Setting.key.notin_((village_journey.KEY, village_journey.LOGIN_KEY)),
+        )
+        .limit(1)
+    )
+    if has_private_settings or any(
         db.scalar(select(table).where(table.owner_id == user.id).limit(1))
         for table in private_tables
     ):
         raise HTTPException(
             409, detail={"code": "ACCOUNT_NOT_EMPTY", "message": "请用新注册的空账号认领"}
         )
-    for table in private_tables:
+    for table in [*private_tables, Setting]:
         db.execute(update(table).where(table.owner_id == 1).values(owner_id=user.id))
     claim.code_hash = ""
     claim.claimed_at = datetime.now(timezone.utc)

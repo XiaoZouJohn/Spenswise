@@ -88,9 +88,9 @@ export function AiClassificationPanel({
   ).sort((left, right) => right[1] - left[1])
 
   return <>
-    <div className="mb-4 flex flex-col gap-4 rounded-panel border border-violet-200 bg-gradient-to-r from-violet-50 to-white p-4 md:flex-row md:items-center md:justify-between">
+    <div className="mb-4 flex flex-col gap-4 rounded-panel border border-line bg-canvas p-4 md:flex-row md:items-center md:justify-between">
       <div className="flex min-w-0 items-start gap-3">
-        <div className="mt-0.5 rounded-control bg-violet-100 p-2 text-violet-700"><Sparkles size={19}/></div>
+        <div className="mt-0.5 rounded-control bg-canvas p-2 text-accent"><Sparkles size={19}/></div>
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <strong>DeepSeek 智能分类</strong>

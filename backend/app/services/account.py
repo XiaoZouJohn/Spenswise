@@ -15,18 +15,24 @@ from app.models import (
     CategoryBudget,
     ChatConversation,
     ChatMessage,
+    ConsumptionEvent,
     HouseholdInvitation,
     HouseholdMember,
     HouseholdProposal,
     ImportJob,
+    LifeLog,
+    LifeLogTransaction,
     MerchantRule,
     ProposalComment,
     Scenario,
     Setting,
+    StoryEdition,
+    StoryPart,
     Transaction,
     UploadToken,
     User,
     UserSession,
+    WorkspaceDraft,
 )
 
 from .imports import UPLOAD_DIR
@@ -52,6 +58,14 @@ def delete_account(db: Session, user: User, password: str) -> list[str]:
     import_jobs = db.scalars(
         select(ImportJob).where(ImportJob.owner_id == user.id).with_for_update()
     ).all()
+    if db.scalar(
+        select(StoryEdition.id).where(
+            StoryEdition.owner_id == user.id, StoryEdition.status == "running"
+        )
+    ):
+        raise HTTPException(
+            409, detail={"code": "STORY_IN_PROGRESS", "message": "请等待纪事生成结束后再注销"}
+        )
     if any(job.status not in ("pending", "completed", "failed") for job in import_jobs):
         raise HTTPException(
             409, detail={"code": "IMPORT_IN_PROGRESS", "message": "请等待导入结束后再注销"}
@@ -90,6 +104,12 @@ def delete_account(db: Session, user: User, password: str) -> list[str]:
     db.execute(delete(ChatMessage).where(ChatMessage.conversation_id.in_(own_conversations)))
 
     for table in (
+        LifeLogTransaction,
+        ConsumptionEvent,
+        StoryPart,
+        StoryEdition,
+        WorkspaceDraft,
+        LifeLog,
         ChatConversation,
         AiConnection,
         AssetSnapshot,

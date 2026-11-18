@@ -33,6 +33,8 @@ class Transaction(Base):
     is_fixed: Mapped[bool] = mapped_column(Boolean, default=False)
     source: Mapped[str] = mapped_column(String(80), default="manual")
     fingerprint: Mapped[str] = mapped_column(String(64))
+    account_key: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    reviewed: Mapped[bool] = mapped_column(Boolean, default=False)
     family_shared: Mapped[bool] = mapped_column(Boolean, default=False)
     family_internal: Mapped[bool] = mapped_column(Boolean, default=False)
     shared_household_id: Mapped[int | None] = mapped_column(
@@ -307,3 +309,86 @@ class ChatMessage(Base):
     reasoning: Mapped[str] = mapped_column(Text, default="")
     thinking: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class LifeLog(Base):
+    __tablename__ = "life_logs"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    event_date: Mapped[date] = mapped_column(Date)
+    title: Mapped[str] = mapped_column(String(100), default="")
+    content: Mapped[str] = mapped_column(Text, default="")
+    visibility: Mapped[str] = mapped_column(String(16), default="private")
+    ai_allowed: Mapped[bool] = mapped_column(Boolean, default=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class LifeLogTransaction(Base):
+    __tablename__ = "life_log_transactions"
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    log_id: Mapped[str] = mapped_column(
+        ForeignKey("life_logs.id", ondelete="CASCADE"), primary_key=True
+    )
+    transaction_id: Mapped[int] = mapped_column(
+        ForeignKey("transactions.id", ondelete="CASCADE"), primary_key=True
+    )
+
+
+class ConsumptionEvent(Base):
+    __tablename__ = "consumption_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    transaction_id: Mapped[int | None] = mapped_column(
+        ForeignKey("transactions.id", ondelete="SET NULL"), nullable=True
+    )
+    origin: Mapped[str] = mapped_column(String(16), default="user")
+    reason: Mapped[str] = mapped_column(String(200), default="")
+    purpose: Mapped[str] = mapped_column(String(200), default="")
+    feeling: Mapped[str] = mapped_column(String(80), default="")
+    note: Mapped[str] = mapped_column(Text, default="")
+    deferred: Mapped[bool] = mapped_column(Boolean, default=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (
+        UniqueConstraint("owner_id", "transaction_id", name="uq_event_owner_transaction"),
+    )
+
+
+class StoryEdition(Base):
+    __tablename__ = "story_editions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    month: Mapped[str] = mapped_column(String(7))
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    source_version: Mapped[str] = mapped_column(String(64))
+    use_logs: Mapped[bool] = mapped_column(Boolean, default=False)
+    error_message: Mapped[str] = mapped_column(String(300), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class StoryPart(Base):
+    __tablename__ = "story_parts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    edition_id: Mapped[str] = mapped_column(
+        ForeignKey("story_editions.id", ondelete="CASCADE"), index=True
+    )
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    chapter: Mapped[str] = mapped_column(String(24))
+    title: Mapped[str] = mapped_column(String(100))
+    body: Mapped[str] = mapped_column(Text)
+    facts: Mapped[list] = mapped_column(JSON, default=list)
+    sources: Mapped[list] = mapped_column(JSON, default=list)
+
+
+class WorkspaceDraft(Base):
+    __tablename__ = "workspace_drafts"
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    resource_type: Mapped[str] = mapped_column(String(40), primary_key=True)
+    resource_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    content: Mapped[dict] = mapped_column(JSON, default=dict)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

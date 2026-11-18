@@ -13,13 +13,14 @@ const reasons: Record<string, string> = {
   ready: '当前为本地分析，可点“更新分析”获取 AI 建议。',
 }
 
-export function AgentReminder({ ownerId }: { ownerId: number }) {
+export function AgentReminder({ ownerId, quiet = false }: { ownerId: number; quiet?: boolean }) {
   const client = useQueryClient()
   const [report, setReport] = useState<AgentBrief | null>(null)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const request = useRef<(manual?: boolean) => void>(() => {})
+  useEffect(() => { client.setQueryData(['agent-report', ownerId], report) }, [client, ownerId, report])
 
   useEffect(() => {
     let alive = true
@@ -70,7 +71,7 @@ export function AgentReminder({ ownerId }: { ownerId: number }) {
         for (const [key, level] of Object.entries(status.risks)) opening.risks[key] = Math.max(level, opening.risks[key] || 0)
         writeOpening(storageKey, opening)
         automaticPopup = !manual
-        setOpen(true)
+        if (manual || !quiet) setOpen(true)
         if (status.pending_import || !status.preferences.ai_enabled) return
         setBusy(true)
         const analysis = await agentApi.brief()
@@ -119,7 +120,7 @@ export function AgentReminder({ ownerId }: { ownerId: number }) {
       clearTimeout(timer); clearInterval(interval); unsubscribe()
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [client, ownerId])
+  }, [client, ownerId, quiet])
 
   return <div className="agent-entry">
     <Button variant="ghost" aria-label="查看财务简报" aria-expanded={open} aria-controls="agent-briefing" onClick={() => request.current(true)}>
@@ -180,7 +181,7 @@ export function AgentReminderSettings() {
     <SectionTitle title="Agent 自动提醒"/>
     {query.isPending ? <State kind="loading"/> : query.isError ? <State kind="error" retry={() => query.refetch()}/> : <div className="space-y-4 text-sm">
       <label className="flex items-start gap-3"><input type="checkbox" className="mt-1" checked={save.isPending ? save.variables.automatic_enabled ?? query.data.automatic_enabled : query.data.automatic_enabled} disabled={save.isPending} onChange={event => save.mutate({ automatic_enabled: event.target.checked })}/>打开软件和重要变化时自动提醒</label>
-      <p className="m-0 leading-6 text-muted">每次打开给出一份简报；达到预算预警线或风险升级时追加提醒。刷新、切页和同等级的小额变化不重复弹出。关闭后仍能从顶部手动查看。</p>
+      <p className="m-0 leading-6 text-muted">打开软件和风险升级时更新简报，洞察进入 Story；村庄界面不自动弹窗抢占阅读。刷新、切页和同等级的小额变化不重复生成。关闭后仍能从顶部手动查看。</p>
       <p className="m-0 leading-6 text-muted">Agent 简报仅发送本人账本汇总和提醒依据；聊天按需读取最新账单。无连接或分析失败时仍提供本地提醒。</p>
     </div>}
     {save.isPending && <p role="status" className="mb-0 text-sm text-muted">正在保存；若有进行中的 AI 请求，需等待它结束。</p>}

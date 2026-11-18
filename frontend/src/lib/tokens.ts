@@ -1,6 +1,6 @@
-export const chartColors = ['#155e47', '#a6bc96', '#d6aa72', '#728ea2', '#ca8374']
+export const chartColors = ['#47775B', '#C9795E', '#D7A34F', '#79B8C7', '#A8C38B']
 export const categoryChartColors = [
-  '#2563eb', '#14b8a6', '#f59e0b', '#f97316', '#8b5cf6', '#ec4899',
-  '#22c55e', '#06b6d4', '#eab308', '#ef4444', '#6366f1', '#84cc16',
+  '#47775B', '#A8C38B', '#D7A34F', '#79B8C7', '#C9795E', '#7e8466',
+  '#9a6d58', '#637b86', '#c2ab79', '#a28b85', '#6e8a76', '#adba99',
 ]
-export const chartSemanticColors = { danger: '#a33a32', warning: '#9b671c', muted: '#9aa9a0', line: '#dce2dc', surface: '#ffffff', area: 'rgba(21,94,71,.08)' }
+export const chartSemanticColors = { danger: '#AE4F3C', warning: '#87612D', muted: '#8f9d8c', line: '#DED5BF', surface: '#FFFDF6', area: 'rgba(51,94,81,.08)' }

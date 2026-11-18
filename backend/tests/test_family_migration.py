@@ -66,7 +66,15 @@ def test_old_ledger_survives_family_and_asset_migrations(tmp_path, monkeypatch):
 
     command.upgrade(config, "head")
     with sqlite3.connect(database) as db:
-        assert db.execute("SELECT version_num FROM alembic_version").fetchone() == ("0007",)
+        assert db.execute("SELECT version_num FROM alembic_version").fetchone() == ("0008",)
+        assert db.execute("SELECT COUNT(*),SUM(amount_cents) FROM transactions").fetchone() == (
+            1,
+            12345,
+        )
+        assert db.execute(
+            "SELECT account_key,reviewed FROM transactions WHERE id=7"
+        ).fetchone() == (None, 0)
+        assert db.execute("SELECT COUNT(*) FROM life_logs").fetchone() == (0,)
         assert db.execute(
             "SELECT ownership,shared_account_key FROM asset_snapshots "
             "WHERE account_key='old-account'"

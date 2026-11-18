@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AmountInput, MetricCard, ScenarioComparison } from '../components/business'
 import { ForecastOptions, ForecastEvidence } from '../components/ForecastOptions'
 import { Chart } from '../components/Chart'
@@ -9,13 +9,25 @@ import { api, json } from '../lib/api'
 import { money, nextMonthRange } from '../lib/format'
 import { chartColors } from '../lib/tokens'
 import type { ScenarioInput, ScenarioResult } from '../types'
+import { getVillageOverview, safeEvidenceHref } from '../lib/village'
+import { useWorkspaceDraft } from '../lib/useWorkspaceDraft'
+import { ConsumptionReview } from '../components/village/ConsumptionReview'
 
 const categories = ['餐饮', '交通', '购物', '居住', '医疗健康', '娱乐', '旅行', '通讯', '教育', '日用品', '人情往来']
 
 export function Simulate() {
+  const [params, setParams] = useSearchParams()
+  const view = params.get('view') === 'simulation' ? 'simulation' : 'spending'
+  return <div className="page market-page"><header className="workspace-title"><div><p>集市 / 消费与选择</p><h1>集市</h1></div></header><nav className="building-tabs" aria-label="集市功能">{(['spending', 'simulation'] as const).map((item, index) => <button key={item} aria-pressed={view === item} onClick={() => { const next = new URLSearchParams(params); next.set('view', item); next.delete('category'); setParams(next) }}>{['消费回看', '消费模拟'][index]}</button>)}</nav>{view === 'spending' ? <ConsumptionReview/> : <SimulationWorkspace key={params.get('category') || ''}/>}</div>
+}
+
+function SimulationWorkspace() {
+  const [params] = useSearchParams()
+  const sourceCategory = params.get('category') || ''
+  const sourceHref = params.get('from')
   const nextMonth = nextMonthRange()
-  const [input, updateInput] = useState<ScenarioInput>({
-    name: '下个月消费方案',
+  const [input, setInput] = useWorkspaceDraft<ScenarioInput>(`market-${sourceCategory}`, {
+    name: sourceCategory ? `${sourceCategory.slice(0, 50)} · 下月方案` : '下个月消费方案',
     amount_cents: 0,
     purchase_date: nextMonth.start,
     reserve_cents: 50000,
@@ -23,11 +35,14 @@ export function Simulate() {
     use_ai_review: true,
   })
   const [result, setResult] = useState<ScenarioResult | null>(null)
-  function setInput(next: ScenarioInput) { updateInput(next); setResult(null) }
+  const [resultInput, setResultInput] = useState('')
+  const [viewingSaved, setViewingSaved] = useState(false)
+  const overview = useQuery({ queryKey: ['overview'], queryFn: getVillageOverview })
+  const stale = !!result && (viewingSaved || resultInput !== JSON.stringify(input) || (!!overview.data && result.data_version !== overview.data.data_version))
   const [message, setMessage] = useState('')
   const mutation = useMutation({
     mutationFn: (value: ScenarioInput) => api<ScenarioResult>('/simulate', json('POST', value)),
-    onSuccess: setResult,
+    onSuccess: (data, variables) => { setResult(data); setResultInput(JSON.stringify(variables)); setViewingSaved(false) },
   })
   const save = useMutation({
     mutationFn: () => api<{ id: number }>('/scenarios', json('POST', input)),
@@ -53,13 +68,14 @@ export function Simulate() {
     ],
   } as import('echarts').EChartsOption : undefined, [result])
 
-  return <div className="page space-y-6">
+  return <div className="page market-page space-y-6">
     <header>
       <p className="mb-1 text-sm text-muted">下月决策工作区</p>
-      <h1 className="m-0 text-3xl font-semibold">消费前，先看下个月的结果</h1>
+      <h1 className="m-0 text-3xl font-semibold">消费模拟</h1>
       <p className="text-sm text-muted">模拟区间固定为 {nextMonth.start} 至 {nextMonth.end}，即下个月第一天到最后一天。</p>
     </header>
-    <div className="two-col">
+    {sourceCategory && <div className="scenario-source"><span>来自账房：{sourceCategory}。调整计划金额，查看下一步的影响。</span>{sourceHref && <Link to={safeEvidenceHref(sourceHref)}>返回来源账册 →</Link>}</div>}
+    <div className="market-layout"><aside className="market-conditions"><div className="two-col">
       <Card>
         <SectionTitle title="下个月模拟条件"/>
         <div className="mb-4 rounded-control bg-canvas p-3 text-sm text-muted">自然月周期：{nextMonth.start} — {nextMonth.end}</div>
@@ -76,17 +92,21 @@ export function Simulate() {
           className={`rounded-control border px-3 py-2 text-xs ${input.protected_categories.includes(item) ? 'border-accent bg-accent text-white' : 'border-line'}`}
           onClick={() => setInput({ ...input, protected_categories: input.protected_categories.includes(item) ? input.protected_categories.filter(value => value !== item) : [...input.protected_categories, item] })}
         >{item}</button>)}</div>
-        <ForecastOptions value={input} onChange={value => { setInput(value); setResult(null) }} categories={categories}/>
-        <div className="mt-6 flex gap-2"><Button onClick={() => mutation.mutate(input)} disabled={mutation.isPending}>运行下月模拟</Button><Button variant="secondary" onClick={() => save.mutate()} disabled={!result || save.isPending}>保存方案</Button></div>
+        <ForecastOptions value={input} onChange={setInput} categories={categories}/>
+        <div className="mt-6 flex gap-2"><Button onClick={() => mutation.mutate(input)} disabled={mutation.isPending}>{mutation.isPending ? '计算中…' : '运行下月模拟'}</Button></div>
         {mutation.isError && <p className="text-sm text-danger">{mutation.error.message}</p>}
         {save.isError && <p role="alert" className="text-sm text-danger">{save.error.message}</p>}
         {message && <p role="status" className="text-sm text-success">{message}</p>}
       </Card>
       <Card>
         <SectionTitle title="已保存方案"/>
-        {saved.isLoading ? <State kind="loading"/> : saved.isError ? <State kind="error" retry={() => saved.refetch()}/> : saved.data?.length ? <div className="space-y-2">{saved.data.map(item => <button key={item.id} className="flex w-full items-center justify-between rounded-control border border-line p-3 text-left text-sm hover:bg-canvas" onClick={() => { setInput(item.input); setResult(item.result); setMessage(`正在查看「${item.name}」`) }}><span>{item.name}</span><span>{money(item.result.minimum_after_cents)}</span></button>)}</div> : <State kind="empty" message="还没有保存的方案"/>}
+        {saved.isLoading ? <State kind="loading"/> : saved.isError ? <State kind="error" retry={() => saved.refetch()}/> : saved.data?.length ? <div className="space-y-2">{saved.data.map(item => <button key={item.id} className="flex w-full items-center justify-between rounded-control border border-line p-3 text-left text-sm hover:bg-canvas" onClick={() => { setInput(item.input); setResult(item.result); setResultInput(JSON.stringify(item.input)); setViewingSaved(true); setMessage(`正在查看「${item.name}」`) }}><span>{item.name}</span><span>{money(item.result.minimum_after_cents)}</span></button>)}</div> : <State kind="empty" message="还没有保存的方案"/>}
       </Card>
     </div>
+    </aside><section className="market-results"><header className="market-results-head"><h2>方案结果</h2><Button variant="secondary" onClick={() => save.mutate()} disabled={!result || stale || mutation.isPending || save.isPending}>保存方案</Button></header>
+    {stale && <p role="status" className="scenario-source">{viewingSaved ? '正在查看历史方案，当前条件独立显示。运行模拟可生成新结果。' : '条件已修改，以下为上次计算结果，请重新运行。'}</p>}
+    {save.isError && <p role="alert" className="text-danger">保存失败，请重试。</p>}
+    {!result && !mutation.isPending && <State kind="empty" message="填写条件后运行模拟，比较计划对下个月的影响"/>}
     {mutation.isPending && <State kind="loading" message="正在计算下个月现金流与约束方案…"/>}
     {result && <>
       <div className="grid-metrics">
@@ -106,6 +126,6 @@ export function Simulate() {
         <Card><SectionTitle title="调整建议"/>{result.required_saving_cents === 0 ? <p className="text-sm">按当前假设，无需削减其他类别即可满足逐日目标。</p> : result.optimization.feasible ? <><p className="text-sm">下个月需减少 {money(result.required_saving_cents)} 的支出。</p>{result.optimization.cuts.map(item => <div key={item.category} className="flex justify-between border-b border-line py-2 text-sm"><span>{item.category}</span><span>{money(item.amount_cents)}</span></div>)}</> : <State kind="empty" message={`${result.optimization.reason || "当前约束下无可行方案"}。未解决缺口 ${money(result.optimization.shortfall_cents ?? result.required_saving_cents)}。`}/>}</Card>
         <Card><SectionTitle title="预计下月周期账单"/>{result.recurring_bills.length ? result.recurring_bills.map((item, index) => <div key={index} className="flex justify-between border-b border-line py-2 text-sm"><Link className="text-accent" to={`/ledger?ids=${item.source_ids.join(',')}`}>{item.date} · {item.merchant}</Link><span>{money(item.amount_cents)}</span></div>) : <State kind="empty" message="下个月没有识别出周期账单"/>}</Card>
       </div>
-    </>}
+    </>}</section></div>
   </div>
 }

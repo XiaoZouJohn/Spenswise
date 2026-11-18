@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { ForecastOptions } from '../components/ForecastOptions'
 import { AmountInput, CategoryPicker, DateRange, MetricCard, ScenarioComparison, TransactionDetail } from '../components/business'
 import { FamilyCashflowRunway, FamilyGoalTracks, FamilyScenarioPreview, FamilySpendMap } from '../components/family'
@@ -8,6 +8,9 @@ import { AgentCards } from '../components/AgentReminder'
 import { today } from '../lib/format'
 import type { ProposalPreview } from '../lib/familyApi'
 import type { ScenarioInput, Transaction } from '../types'
+import { LedgerPortrait, AccountsPortrait } from '../components/village/FinancialPortraits'
+import { VillageDesignSystem } from '../components/village/VillageDesignSystem'
+import { Paper, CharacterHint, SourceLink, DraftStatus } from '../components/village/LifeWidgets'
 
 type ShowcaseState = 'normal' | 'loading' | 'empty' | 'error'
 const sample: Transaction = { id: 1, tx_date: today(), amount_cents: 2380, tx_type: 'expense', merchant: '示例咖啡馆', description: '午间咖啡', category: '餐饮', is_fixed: false, source: '组件示例', confidence: 100, classification_reason: '组件示例' }
@@ -38,14 +41,17 @@ export function ComponentsPage() {
   const showing = showcaseState === 'normal'
 
   return <div className="page space-y-6">
-    <header><h1 className="m-0 text-3xl font-semibold">组件展示</h1><p className="mt-2 text-sm text-muted">开发时核对公共组件的用法与正常、加载、空数据、失败状态。本页数据不进入账本。</p></header>
+    <VillageDesignSystem/>
+    <Paper title="V2 · 生活记录与来源">{showcaseState === 'loading' ? <State kind="loading"/> : showcaseState === 'error' ? <State kind="error" retry={() => setShowcaseState('normal')}/> : !showing ? <State kind="empty" message="这个月还没有生活记录"/> : <><CharacterHint text="账房还有3笔账待整理"/><p className="life-log-content">一段值得回顾的生活记录。</p><SourceLink source={{ type: 'ledger', id: 'example', label: '查看账本依据', href: '/ledger' }}/><SourceLink source={{ type: 'life_log', id: 'deleted', label: '来源已删除', href: '', deleted: true }}/><DraftStatus status="草稿已保存" retry={() => {}}/></>}</Paper>
+    <header><h1 className="m-0 text-3xl font-semibold">组件展示</h1></header>
     <Card><SectionTitle title="状态切换"/><div className="flex flex-wrap gap-2">{(['normal', 'loading', 'empty', 'error'] as const).map(item => <Button key={item} variant={showcaseState === item ? 'primary' : 'secondary'} onClick={() => setShowcaseState(item)}>{({ normal: '正常', loading: '加载', empty: '空数据', error: '失败' })[item]}</Button>)}</div></Card>
+    <Card><SectionTitle title="村庄 · 财务对照"/>{showcaseState === 'loading' ? <State kind="loading"/> : showcaseState === 'error' ? <State kind="error" retry={() => setShowcaseState('normal')}/> : <><LedgerPortrait data={{ items: showing ? [sample] : [], total: showing ? 1 : 0, page: 1, page_size: 25, income_cents: 0, expense_cents: showing ? 2380 : 0 }}/><AccountsPortrait confirmed={false} onEdit={() => setDetail(sample)} assets={showing ? [{ id: 1, account_key: 'showcase', name: '示例现金账户', kind: 'asset', ownership: 'individual', balance_cents: 200000, as_of: today(), is_cash_account: true, include_in_family: false, archived: false, shared_account_key: null }] : []}/>{!showing && <State kind="empty" message="尚未记录资产快照"/>}</>}</Card>
     <div className="grid-metrics"><MetricCard label="指标卡片" cents={142800} detail="统一金额格式"/><MetricCard label="负值语义" cents={-2800} tone="negative"/></div>
     <Card><SectionTitle title="输入与筛选"/><div className="grid gap-4 md:grid-cols-3"><AmountInput label="金额输入" value={amount} onChange={setAmount}/><div className="field"><label>分类选择</label><CategoryPicker value={category} onChange={setCategory} categories={['餐饮', '交通', '购物']}/></div><DateRange from={from} to={to} onFrom={setFrom} onTo={setTo}/></div><div className="mt-5 flex gap-2"><Badge tone="success">已完成</Badge><Badge tone="warning">待审核</Badge><Badge tone="danger">失败</Badge></div></Card>
     <Card><SectionTitle title="交易表格与详情"/>{showcaseState === 'loading' ? <State kind="loading"/> : showcaseState === 'error' ? <State kind="error" retry={() => setShowcaseState('normal')}/> : <TransactionTable items={showing ? [sample] : []} selected={selected} onSelect={setSelected} onDetail={setDetail}/>}</Card>
     <Card><SectionTitle title="预测输入"/>{showcaseState === "loading" ? <State kind="loading"/> : showcaseState === "error" ? <State kind="error"/> : showcaseState === "empty" ? <State kind="empty" message="尚未设置预测条件"/> : <ForecastOptions value={forecastInput} onChange={setForecastInput} categories={["餐饮", "娱乐"]}/>}</Card>
     <Card><SectionTitle title="消费方案对比"/><ScenarioComparison before={300000} after={180000} minimum={85000} reserve={50000}/></Card>
-    <Card><SectionTitle title="Agent 简报卡片"/>{showcaseState === 'loading' ? <State kind="loading" message="正在生成 AI 建议…"/> : showcaseState === 'error' ? <State kind="error" message="AI 不可用时保留本地提醒" retry={() => setShowcaseState('normal')}/> : <AgentCards cards={showing ? [{ id: 'demo', tone: 'warning', title: '本月总预算接近上限', evidence: '虚构示例：净支出 2400 元，限额 3000 元。', message: '可以检查本月剩余的弹性消费。', href: '/settings' }] : [{ id: 'start', tone: 'info', title: '从记录开始', evidence: '虚构示例：本月没有账单。', message: '记下一笔或导入账单，逐步了解收支。', href: '/import' }]}/>}</Card>
+    <Card><SectionTitle title="Agent 简报卡片"/>{showcaseState === 'loading' ? <State kind="loading" message="正在生成 AI 建议…"/> : showcaseState === 'error' ? <State kind="error" message="可查看本地提醒" retry={() => setShowcaseState('normal')}/> : <AgentCards cards={showing ? [{ id: 'demo', tone: 'warning', title: '本月总预算接近上限', evidence: '净支出 2400 元，限额 3000 元。', message: '可以检查本月剩余的弹性消费。', href: '/settings' }] : [{ id: 'start', tone: 'info', title: '从记录开始', evidence: '本月没有账单。', message: '记下一笔或导入账单，逐步了解收支。', href: '/import' }]}/>}</Card>
     <div className="grid gap-5 xl:grid-cols-2">
       {showcaseState === 'loading' ? <Card><State kind="loading"/></Card> : showcaseState === 'error' ? <Card><State kind="error" retry={() => setShowcaseState('normal')}/></Card> : <>
         <FamilyCashflowRunway days={showing ? [{ date: nextDay(0), cumulative_change_cents: 0 }, { date: nextDay(7), cumulative_change_cents: -20000 }, { date: nextDay(14), cumulative_change_cents: -30000 }] : []} events={[]}/>

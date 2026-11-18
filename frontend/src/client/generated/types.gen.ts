@@ -147,6 +147,15 @@ export type BatchCategory = {
     create_rule?: boolean;
 };
 
+export type BatchReviewIn = {
+    ids: Array<(number)>;
+    category?: (string | null);
+    tx_date?: (string | null);
+    account_key?: (string | null);
+    clear_account?: boolean;
+    confirmed?: boolean;
+};
+
 export type Body_preview_import_api_import_preview_post = {
     file: (Blob | File);
 };
@@ -253,6 +262,22 @@ export type DeviceSessionOut = {
     current: boolean;
     created_at: string;
     expires_at: string;
+};
+
+export type DraftIn = {
+    content: {
+        [key: string]: unknown;
+    };
+    revision?: number;
+    expected_owner_id?: (number | null);
+};
+
+export type EventIn = {
+    purpose?: string;
+    feeling?: string;
+    note?: string;
+    deferred?: boolean;
+    revision?: number;
 };
 
 export type FamilyBudgetIn = {
@@ -484,8 +509,62 @@ export type InvitationPreviewOut = {
     expires_at: string;
 };
 
+export type JourneyAchievement = {
+    code: 'login_3' | 'login_7' | 'logs_1' | 'logs_5' | 'plan_2' | 'plan_3';
+    unlocked_at: (string | null);
+};
+
+export type code = 'login_3' | 'login_7' | 'logs_1' | 'logs_5' | 'plan_2' | 'plan_3';
+
+export type JourneyOut = {
+    revision: number;
+    welcome_dismissed: boolean;
+    show_welcome: boolean;
+    tour_step: number;
+    seen_tips: Array<('ledger' | 'story' | 'assistant')>;
+    has_transactions: boolean;
+    login_streak: number;
+    log_count: number;
+    plan_streak: number;
+    achievements: Array<JourneyAchievement>;
+};
+
+export type JourneyUpdateIn = {
+    revision: number;
+    dismiss_welcome?: boolean;
+    seen_tip?: ('ledger' | 'story' | 'assistant' | null);
+    replay?: boolean;
+    tour_step?: (number | null);
+};
+
 export type LegacyClaimIn = {
     code: string;
+};
+
+export type LifeLogIn = {
+    event_date: string;
+    title?: string;
+    content: string;
+    visibility?: 'private';
+    ai_allowed?: boolean;
+    transaction_ids?: Array<(number)>;
+    revision?: number;
+};
+
+export type visibility = 'private';
+
+export type LifeLogOut = {
+    event_date: string;
+    title?: string;
+    content: string;
+    visibility?: 'private';
+    ai_allowed?: boolean;
+    transaction_ids?: Array<(number)>;
+    revision?: number;
+    id: string;
+    created_at: string;
+    updated_at: string;
+    deleted?: boolean;
 };
 
 export type MemberOut = {
@@ -502,6 +581,37 @@ export type MembersOut = {
     members: Array<MemberOut>;
 };
 
+export type MonthlyReviewIn = {
+    revision: number;
+    ledger_version: string;
+    notes?: string;
+    constraints?: string;
+    differences?: string;
+    life_log_ids?: Array<(string)>;
+};
+
+export type MonthlyReviewOut = {
+    revision: number;
+    ledger_version: string;
+    notes?: string;
+    constraints?: string;
+    differences?: string;
+    life_log_ids?: Array<(string)>;
+    month: string;
+    saved_at: (string | null);
+    saved_ledger_version: (string | null);
+    ledger_changed: boolean;
+    saved_facts: ({
+    [key: string]: unknown;
+} | null);
+    facts: {
+        [key: string]: unknown;
+    };
+    life_logs?: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
 export type OptimizationResult = {
     feasible: boolean;
     cuts: Array<BudgetCut>;
@@ -516,6 +626,7 @@ export type OverviewOut = {
     month: string;
     income_cents: number;
     expense_cents: number;
+    net_flow_cents?: number;
     budget_remaining_cents: number;
     account_balance_cents: number;
     category_spend: Array<CategorySpend>;
@@ -524,6 +635,10 @@ export type OverviewOut = {
 };
 
 export type Page = {
+    category_spend?: Array<{
+        [key: string]: unknown;
+    }>;
+    net_flow_cents?: number;
     items: Array<TransactionOut>;
     total: number;
     page: number;
@@ -701,6 +816,11 @@ export type SharingIn = {
     share_transactions: boolean;
 };
 
+export type StoryGenerateIn = {
+    use_logs?: boolean;
+    force?: boolean;
+};
+
 export type TransactionIn = {
     tx_date: string;
     amount_cents: number;
@@ -709,6 +829,7 @@ export type TransactionIn = {
     description?: string;
     category?: string;
     is_fixed?: boolean;
+    account_key?: (string | null);
 };
 
 export type tx_type = 'expense' | 'income' | 'transfer' | 'refund';
@@ -727,6 +848,8 @@ export type TransactionOut = {
     classification_reason: string;
     family_shared?: boolean;
     family_internal?: boolean;
+    account_key?: (string | null);
+    reviewed?: boolean;
 };
 
 export type TransferIn = {
@@ -1006,6 +1129,154 @@ export type AgentStatusApiAgentStatusGetResponse = (AgentBrief);
 
 export type AgentBriefApiAgentBriefPostResponse = (AgentBrief);
 
+export type GetMonthlyReviewApiMonthlyReviewsMonthGetData = {
+    month: string;
+};
+
+export type GetMonthlyReviewApiMonthlyReviewsMonthGetResponse = (MonthlyReviewOut);
+
+export type PutMonthlyReviewApiMonthlyReviewsMonthPutData = {
+    month: string;
+    requestBody: MonthlyReviewIn;
+};
+
+export type PutMonthlyReviewApiMonthlyReviewsMonthPutResponse = (MonthlyReviewOut);
+
+export type ClearMonthlyReviewApiMonthlyReviewsMonthClearPostData = {
+    month: string;
+    requestBody: MonthlyReviewIn;
+};
+
+export type ClearMonthlyReviewApiMonthlyReviewsMonthClearPostResponse = (MonthlyReviewOut);
+
+export type JourneyApiVillageJourneyGetResponse = (JourneyOut);
+
+export type UpdateJourneyApiVillageJourneyPutData = {
+    requestBody: JourneyUpdateIn;
+};
+
+export type UpdateJourneyApiVillageJourneyPutResponse = (JourneyOut);
+
+export type LifeLogsApiVillageLogsGetData = {
+    month?: (string | null);
+    transactionId?: (number | null);
+};
+
+export type LifeLogsApiVillageLogsGetResponse = (Array<LifeLogOut>);
+
+export type CreateLifeLogApiVillageLogsPostData = {
+    requestBody: LifeLogIn;
+};
+
+export type CreateLifeLogApiVillageLogsPostResponse = (LifeLogOut);
+
+export type LifeLogApiVillageLogsLogIdGetData = {
+    logId: string;
+};
+
+export type LifeLogApiVillageLogsLogIdGetResponse = (LifeLogOut);
+
+export type UpdateLifeLogApiVillageLogsLogIdPutData = {
+    logId: string;
+    requestBody: LifeLogIn;
+};
+
+export type UpdateLifeLogApiVillageLogsLogIdPutResponse = (LifeLogOut);
+
+export type DeleteLifeLogApiVillageLogsLogIdDeleteData = {
+    logId: string;
+    revision: number;
+};
+
+export type DeleteLifeLogApiVillageLogsLogIdDeleteResponse = (unknown);
+
+export type ConsumptionEventsApiVillageEventsGetData = {
+    month: string;
+};
+
+export type ConsumptionEventsApiVillageEventsGetResponse = (unknown);
+
+export type ConsumptionEventApiVillageEventsTransactionIdGetData = {
+    transactionId: number;
+};
+
+export type ConsumptionEventApiVillageEventsTransactionIdGetResponse = (unknown);
+
+export type UpdateConsumptionEventApiVillageEventsTransactionIdPutData = {
+    requestBody: EventIn;
+    transactionId: number;
+};
+
+export type UpdateConsumptionEventApiVillageEventsTransactionIdPutResponse = (unknown);
+
+export type ReviewTransactionsApiVillageBatchReviewPostData = {
+    requestBody: BatchReviewIn;
+};
+
+export type ReviewTransactionsApiVillageBatchReviewPostResponse = (unknown);
+
+export type VillageStateApiVillageStateGetData = {
+    month: string;
+};
+
+export type VillageStateApiVillageStateGetResponse = (unknown);
+
+export type VillageMarketApiVillageMarketGetData = {
+    month: string;
+};
+
+export type VillageMarketApiVillageMarketGetResponse = (unknown);
+
+export type WorkspaceDraftApiVillageDraftsResourceTypeResourceIdGetData = {
+    resourceId: string;
+    resourceType: string;
+};
+
+export type WorkspaceDraftApiVillageDraftsResourceTypeResourceIdGetResponse = (unknown);
+
+export type SaveWorkspaceDraftApiVillageDraftsResourceTypeResourceIdPutData = {
+    requestBody: DraftIn;
+    resourceId: string;
+    resourceType: string;
+};
+
+export type SaveWorkspaceDraftApiVillageDraftsResourceTypeResourceIdPutResponse = (unknown);
+
+export type ClearWorkspaceDraftApiVillageDraftsResourceTypeResourceIdDeleteData = {
+    expectedOwnerId?: (number | null);
+    resourceId: string;
+    resourceType: string;
+    revision: number;
+};
+
+export type ClearWorkspaceDraftApiVillageDraftsResourceTypeResourceIdDeleteResponse = (unknown);
+
+export type MonthlyStoryApiVillageStoryMonthGetData = {
+    editionId?: (string | null);
+    month: string;
+};
+
+export type MonthlyStoryApiVillageStoryMonthGetResponse = (unknown);
+
+export type GenerateMonthlyStoryApiVillageStoryMonthPostData = {
+    month: string;
+    requestBody: StoryGenerateIn;
+};
+
+export type GenerateMonthlyStoryApiVillageStoryMonthPostResponse = (unknown);
+
+export type StoryTaskStatusApiVillageStoryTasksTaskIdGetData = {
+    taskId: string;
+};
+
+export type StoryTaskStatusApiVillageStoryTasksTaskIdGetResponse = (unknown);
+
+export type TransactionStoryApiVillageTransactionStoryTransactionIdGetData = {
+    transactionId: number;
+};
+
+export type TransactionStoryApiVillageTransactionStoryTransactionIdGetResponse = (unknown);
+
 export type HealthApiHealthGetResponse = ({
     [key: string]: unknown;
 });
@@ -1037,6 +1308,7 @@ export type PreviewBudgetApiBudgetPreviewPostData = {
 export type PreviewBudgetApiBudgetPreviewPostResponse = (BudgetStatus);
 
 export type TransactionsApiTransactionsGetData = {
+    accountKey?: (string | null);
     category?: (string | null);
     dateFrom?: (string | null);
     dateTo?: (string | null);

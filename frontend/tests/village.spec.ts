@@ -1,0 +1,88 @@
+import { expect, test } from './fixtures'
+
+test('建筑标签可直接点击，工作区与助手并排且切换保留草稿', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto('/overview')
+  await expect(page.locator('body')).toHaveCSS('font-size', '16px')
+  const destinations = [
+    ['账房', '/ledger'], ['钱庄', '/accounts'], ['集市', '/simulate'], ['商会大厅', '/review'],
+  ]
+  for (const [name, path] of destinations) {
+    await page.locator('.building-sign').filter({ hasText: name }).click()
+    await expect(page).toHaveURL(new RegExp(`${path}$`))
+    const assistant = page.getByTestId('ai-chat-window')
+    await expect(assistant).toBeVisible()
+    const workspaceBox = await page.locator('.building-workspace').boundingBox()
+    const assistantBox = await assistant.boundingBox()
+    expect(workspaceBox!.x + workspaceBox!.width).toBeLessThanOrEqual(assistantBox!.x)
+    await page.getByRole('link', { name: '返回 Story', exact: true }).click()
+    await page.getByRole('button', { name: '收起 AI 对话' }).click()
+  }
+  await page.locator('.building-sign').filter({ hasText: '账房' }).click()
+  const composer = page.getByTestId('ai-composer')
+  await composer.fill('请核对本月记录')
+  await page.getByRole('navigation', { name: '地点导航' }).getByRole('link', { name: '钱庄' }).click()
+  await expect(composer).toHaveValue('请核对本月记录')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.getByTestId('ai-chat-window')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  const workspaceBox = await page.locator('.building-workspace').boundingBox()
+  const assistantBox = await page.getByTestId('ai-chat-window').boundingBox()
+  expect(workspaceBox!.y + workspaceBox!.height).toBeLessThanOrEqual(assistantBox!.y)
+})
+
+test('Story 章节联动资金路径，类别下钻并跨建筑模拟，返回保留来源', async ({ page, context }) => {
+  const txDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' })
+  for (const row of [{ tx_type: 'income', amount_cents: 200000, merchant: '测试收入', category: '收入' }, { tx_type: 'expense', amount_cents: 30000, merchant: '餐饮夹具', category: '餐饮' }]) {
+    const response = await context.request.post('http://127.0.0.1:18080/api/transactions', { data: { ...row, tx_date: txDate } })
+    expect(response.ok()).toBeTruthy()
+  }
+  await page.goto('/overview')
+  await expect(page.getByTestId('village-story')).toBeVisible()
+  await expect(page.getByTestId('ai-chat-window')).toHaveCount(0)
+  await page.getByRole('button', { name: '资金去向', exact: true }).click()
+  await expect(page.locator('.village-relations')).toHaveAttribute('data-chapter', 'spending')
+  await expect(page.locator('.flow-caption')).toContainText('¥300.00')
+  await page.getByRole('button', { name: /餐饮.*300/ }).click()
+  await expect(page.locator('.flow-caption')).toContainText('餐饮')
+  await page.getByRole('link', { name: '查看餐饮交易' }).click()
+  await expect(page).toHaveURL(/category=/)
+  await expect(page.getByRole('button', { name: '餐饮夹具', exact: true })).toBeVisible()
+  await page.getByRole('link', { name: /在集市比较一项消费/ }).click()
+  await expect(page.locator('.scenario-source')).toContainText('餐饮')
+  await page.getByRole('link', { name: /返回来源账册/ }).click()
+  await expect(page.getByRole('combobox').filter({ has: page.locator('option[value="餐饮"]') }).first()).toBeVisible()
+})
+
+test('真实导入完成后 Story 使用新事实，无需重新上传再阅读', async ({ page }) => {
+  await page.goto('/ledger?import=1')
+  const date = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' })
+  await page.locator('input[type=file]').setInputFiles({ name: 'village-test.csv', mimeType: 'text/csv', buffer: Buffer.from(`交易时间,金额,交易对方,收支,交易分类\n${date},12.50,导入夹具,支出,餐饮\n`) })
+  await page.getByRole('button', { name: '读取并预览' }).click()
+  await page.getByRole('button', { name: '确认导入', exact: true }).click()
+  await expect(page.getByText('已完成', { exact: true })).toBeVisible()
+  await page.getByRole('link', { name: '返回 Story', exact: true }).click()
+  await page.getByRole('button', { name: '资金去向', exact: true }).click()
+  await expect(page.locator('#story-spending .story-amount')).toHaveText('¥12.50')
+  await page.getByRole('button', { name: '本月结余', exact: true }).click()
+  await expect(page.locator('#story-surplus .story-amount')).toHaveText('-¥12.50')
+})
+
+test('视频失败与减少动态效果不阻断 Story，手机保留所有地点与助手', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.route('**/media/village/*.mp4', route => route.abort())
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/overview')
+  await expect(page.getByTestId('village-story')).toBeVisible()
+  await expect(page.locator('.village-poster')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  await page.getByRole('navigation', { name: '地点导航' }).getByRole('link', { name: '商会大厅' }).click()
+  await expect(page.getByRole('heading', { name: '月度盘点', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '在对话中补充说明' }).click()
+  await expect(page.getByTestId('ai-composer')).toHaveValue(/我想补充本月/)
+  await expect(page.locator('.assistant-context')).toContainText('月度盘点')
+  await page.getByRole('button', { name: '移除提问上下文' }).click()
+  await expect(page.locator('.assistant-context')).toHaveCount(0)
+  await page.getByRole('button', { name: '收起 AI 对话' }).click()
+  await expect(page.getByRole('heading', { name: '月度盘点', exact: true })).toBeVisible()
+})
