@@ -224,6 +224,9 @@ def test_monthly_forecast_tracks_complete_month_spending_not_budget_or_default_p
         assert result["expected_budget_remaining_cents"] == (
             300000 - result["expected_expense_cents"]
         )
+        assert sum(item["amount_cents"] for item in result["category_forecast"]) == result[
+            "expected_expense_cents"
+        ]
         assert result["ai_review"]["status"] == "not_requested"
         assert result["recurring_bills"] == []
         assert result["timeline"][-1]["before_cents"] == (
