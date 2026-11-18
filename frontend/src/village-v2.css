@@ -152,3 +152,8 @@
   .story-generation { padding-inline:12px; grid-template-columns:minmax(0,1fr) 116px; font-size:11px; }
 }
 @media (prefers-reduced-motion:reduce) { .village-v2 *, .sw-drawer { scroll-behavior:auto; animation-duration:.01ms!important; transition-duration:.01ms!important; } }
+.market-page .forecast-options { border-top:1px solid var(--line); padding-top:18px; color:var(--ink); }
+.market-page .forecast-options details { border:1px solid var(--line); background:var(--paper-soft); }
+.market-page .forecast-options summary { color:var(--forest); font-family:var(--font-display); font-size:17px; }
+.market-page .forecast-options input,.market-page .forecast-options select { background:var(--paper); color:var(--ink); }
+.market-page .forecast-evidence { border-left:3px solid var(--forest); padding:4px 0 4px 16px; line-height:1.7; }

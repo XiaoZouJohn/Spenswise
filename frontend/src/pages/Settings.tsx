@@ -1,8 +1,9 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, json } from '../lib/api'
 import type { OverviewData, SettingsData, BudgetStatusData } from '../types'
 import { AmountInput, Money } from '../components/business'
+import { HistoryCoverageEditor } from '../components/ForecastOptions'
 import { BudgetLimitsEditor } from '../components/BudgetLimitsEditor'
 import { AiConnectionSettings } from '../components/AiConnectionSettings'
 import { AgentReminderSettings } from '../components/AgentReminder'
@@ -16,6 +17,7 @@ function sameSettings(left: SettingsData, right: SettingsData) {
   return left.monthly_budget_cents === right.monthly_budget_cents &&
     left.opening_balance_cents === right.opening_balance_cents &&
     left.ai_consent === right.ai_consent &&
+    JSON.stringify(left.history_coverage ?? []) === JSON.stringify(right.history_coverage ?? []) &&
     left.category_budgets.length === right.category_budgets.length &&
     left.category_budgets.every(item => right.category_budgets.some(saved => saved.category === item.category && saved.limit_cents === item.limit_cents))
 }
@@ -30,6 +32,7 @@ function readDraft(draftKey: string): SettingsData | null {
     if (!Number.isSafeInteger(draft.monthly_budget_cents) || !Number.isSafeInteger(draft.opening_balance_cents) ||
       typeof draft.ai_consent !== 'boolean' || !Array.isArray(draft.category_budgets) ||
       !draft.category_budgets.every(item => typeof item.category === 'string' && Number.isSafeInteger(item.limit_cents))) return null
+    if (draft.history_coverage != null && (!Array.isArray(draft.history_coverage) || !draft.history_coverage.every(item => typeof item.start_date === "string" && typeof item.end_date === "string"))) return null
     return draft
   } catch { return null }
 }
@@ -69,7 +72,8 @@ export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: B
 
   useEffect(() => {
     if (!query.data || dirtyNow.current) return
-    const draft = readDraft(draftKey)
+    const storedDraft = readDraft(draftKey)
+    const draft = storedDraft ? { ...storedDraft, history_coverage: storedDraft.history_coverage ?? query.data!.history_coverage } : null
     if (draft && !sameSettings(draft, query.data)) {
       latestForm.current = draft
       dirtyNow.current = true
@@ -169,6 +173,10 @@ export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: B
           <AmountInput label="账户期初余额" value={form.opening_balance_cents} onChange={value => changeForm({ ...form, opening_balance_cents: value })}/>
         </div>
         <p className="mb-0 text-xs text-muted">消费上限按当月支出扣除退款计算；收入和转账不抵扣消费。账户余额单独计算。</p>
+      </Card>
+      <Card>
+        <SectionTitle title="历史记录覆盖"/>
+        <HistoryCoverageEditor value={form.history_coverage ?? []} onChange={history_coverage => changeForm({ ...form, history_coverage })}/>
       </Card>
       <Card>
         <Disclosure title="分类预算" description="展开后设置餐饮、交通等分类的每月上限" badge={<Badge>{form.category_budgets.length} 个分类已设限</Badge>}>

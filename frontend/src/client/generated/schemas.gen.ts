@@ -776,6 +776,27 @@ export const CashflowDaySchema = {
         bill_cents: {
             type: 'integer',
             title: 'Bill Cents'
+        },
+        adjusted_cents: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Adjusted Cents'
+        },
+        planned_income_cents: {
+            type: 'integer',
+            title: 'Planned Income Cents',
+            default: 0
+        },
+        planned_expense_cents: {
+            type: 'integer',
+            title: 'Planned Expense Cents',
+            default: 0
         }
     },
     type: 'object',
@@ -800,6 +821,40 @@ export const CategoryBudgetInSchema = {
     type: 'object',
     required: ['category', 'limit_cents'],
     title: 'CategoryBudgetIn'
+} as const;
+
+export const CategoryConstraintSchema = {
+    properties: {
+        category: {
+            type: 'string',
+            maxLength: 80,
+            minLength: 1,
+            title: 'Category'
+        },
+        minimum_cents: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Minimum Cents',
+            default: 0
+        },
+        max_cut_percent: {
+            type: 'integer',
+            maximum: 100,
+            minimum: 0,
+            title: 'Max Cut Percent',
+            default: 40
+        },
+        disruption_weight: {
+            type: 'number',
+            maximum: 100,
+            exclusiveMinimum: 0,
+            title: 'Disruption Weight',
+            default: 1
+        }
+    },
+    type: 'object',
+    required: ['category'],
+    title: 'CategoryConstraint'
 } as const;
 
 export const CategorySpendSchema = {
@@ -1874,6 +1929,24 @@ export const HTTPValidationErrorSchema = {
     title: 'HTTPValidationError'
 } as const;
 
+export const HistoryCoverageSchema = {
+    properties: {
+        start_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Start Date'
+        },
+        end_date: {
+            type: 'string',
+            format: 'date',
+            title: 'End Date'
+        }
+    },
+    type: 'object',
+    required: ['start_date', 'end_date'],
+    title: 'HistoryCoverage'
+} as const;
+
 export const ImportConfirmSchema = {
     properties: {
         token: {
@@ -2510,6 +2583,28 @@ export const OptimizationResultSchema = {
         total_cuts_cents: {
             type: 'integer',
             title: 'Total Cuts Cents'
+        },
+        shortfall_cents: {
+            type: 'integer',
+            title: 'Shortfall Cents',
+            default: 0
+        },
+        capacity_cents: {
+            type: 'integer',
+            title: 'Capacity Cents',
+            default: 0
+        },
+        reason: {
+            type: 'string',
+            title: 'Reason',
+            default: ''
+        },
+        daily_savings_cents: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            title: 'Daily Savings Cents'
         }
     },
     type: 'object',
@@ -2630,6 +2725,35 @@ export const PasswordChangeInSchema = {
     type: 'object',
     required: ['current_password', 'new_password'],
     title: 'PasswordChangeIn'
+} as const;
+
+export const PlannedCashEventSchema = {
+    properties: {
+        date: {
+            type: 'string',
+            format: 'date',
+            title: 'Date'
+        },
+        amount_cents: {
+            type: 'integer',
+            exclusiveMinimum: 0,
+            title: 'Amount Cents'
+        },
+        kind: {
+            type: 'string',
+            enum: ['income', 'expense'],
+            title: 'Kind'
+        },
+        label: {
+            type: 'string',
+            maxLength: 80,
+            title: 'Label',
+            default: ''
+        }
+    },
+    type: 'object',
+    required: ['date', 'amount_cents', 'kind'],
+    title: 'PlannedCashEvent'
 } as const;
 
 export const ProposalCommentInSchema = {
@@ -2955,6 +3079,45 @@ export const ScenarioInSchema = {
             type: 'boolean',
             title: 'Use Ai Review',
             default: false
+        },
+        balance_cents: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Balance Cents'
+        },
+        balance_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Balance Date'
+        },
+        cash_events: {
+            items: {
+                '$ref': '#/components/schemas/PlannedCashEvent'
+            },
+            type: 'array',
+            maxItems: 100,
+            title: 'Cash Events'
+        },
+        category_constraints: {
+            items: {
+                '$ref': '#/components/schemas/CategoryConstraint'
+            },
+            type: 'array',
+            maxItems: 50,
+            title: 'Category Constraints'
         }
     },
     type: 'object',
@@ -3118,6 +3281,82 @@ export const ScenarioResultSchema = {
                     type: 'null'
                 }
             ]
+        },
+        fixed_expense_cents: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fixed Expense Cents'
+        },
+        variable_expense_cents: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Variable Expense Cents'
+        },
+        planned_expense_cents: {
+            type: 'integer',
+            title: 'Planned Expense Cents',
+            default: 0
+        },
+        ai_delta_cents: {
+            type: 'integer',
+            title: 'Ai Delta Cents',
+            default: 0
+        },
+        data_quality: {
+            type: 'string',
+            title: 'Data Quality',
+            default: 'legacy'
+        },
+        coverage_status: {
+            type: 'string',
+            title: 'Coverage Status',
+            default: 'unknown'
+        },
+        warnings: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Warnings'
+        },
+        balance_basis: {
+            type: 'string',
+            enum: ['confirmed_snapshot', 'net_cashflow'],
+            title: 'Balance Basis',
+            default: 'net_cashflow'
+        },
+        bridge_change_cents: {
+            type: 'integer',
+            title: 'Bridge Change Cents',
+            default: 0
+        },
+        minimum_adjusted_cents: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Minimum Adjusted Cents'
+        },
+        interval_method: {
+            type: 'string',
+            title: 'Interval Method',
+            default: 'historical-deviation-not-calibrated'
         }
     },
     type: 'object',
@@ -3180,6 +3419,21 @@ export const SettingsInSchema = {
                 }
             ],
             title: 'Category Budgets'
+        },
+        history_coverage: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/HistoryCoverage'
+                    },
+                    type: 'array',
+                    maxItems: 36
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'History Coverage'
         }
     },
     type: 'object',
@@ -3219,6 +3473,13 @@ export const SettingsOutSchema = {
             enum: ['Asia/Shanghai'],
             const: 'Asia/Shanghai',
             title: 'Timezone'
+        },
+        history_coverage: {
+            items: {
+                '$ref': '#/components/schemas/HistoryCoverage'
+            },
+            type: 'array',
+            title: 'History Coverage'
         }
     },
     type: 'object',

@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { AmountInput, MetricCard, ScenarioComparison } from '../components/business'
+import { ForecastOptions, ForecastEvidence } from '../components/ForecastOptions'
 import { Chart } from '../components/Chart'
 import { Badge, Button, Card, SectionTitle, State } from '../components/ui'
 import { api, json } from '../lib/api'
@@ -49,16 +50,17 @@ function SimulationWorkspace() {
   })
   const saved = useQuery({
     queryKey: ['scenarios'],
-    queryFn: () => api<{ id: number; name: string; result: ScenarioResult }[]>('/scenarios'),
+    queryFn: () => api<{ id: number; name: string; input: ScenarioInput; result: ScenarioResult }[]>('/scenarios'),
   })
   const option = useMemo(() => result ? {
     color: [chartColors[3], chartColors[0], chartColors[2], chartColors[4]],
     tooltip: { trigger: 'axis' },
-    legend: { data: ['购买前', '购买后', '区间下界', '区间上界'] },
+    legend: { type: 'scroll', data: ['购买前', '购买后', '区间下界', '区间上界', '执行削减后'] },
     grid: { left: 70, right: 25, top: 40, bottom: 35 },
     xAxis: { type: 'category', data: result.timeline.map(item => item.date.slice(5)) },
     yAxis: { type: 'value', axisLabel: { formatter: (value: number) => `¥${Math.round(value / 100)}` } },
     series: [
+      { name: '执行削减后', type: 'line', showSymbol: false, data: result.timeline.map(item => item.adjusted_cents ?? item.after_cents) },
       { name: '购买前', type: 'line', showSymbol: false, data: result.timeline.map(item => item.before_cents) },
       { name: '购买后', type: 'line', showSymbol: false, data: result.timeline.map(item => item.after_cents) },
       { name: '区间下界', type: 'line', showSymbol: false, lineStyle: { type: 'dashed' }, data: result.timeline.map(item => item.lower_cents) },
@@ -81,7 +83,7 @@ function SimulationWorkspace() {
           <div className="field"><label>方案名称</label><input value={input.name} onChange={event => setInput({ ...input, name: event.target.value })}/></div>
           <div className="field"><label>计划消费日期</label><input type="date" min={nextMonth.start} max={nextMonth.end} value={input.purchase_date} onChange={event => setInput({ ...input, purchase_date: event.target.value })}/></div>
           <AmountInput label="准备额外消费的金额" value={input.amount_cents} onChange={value => setInput({ ...input, amount_cents: value })}/>
-          <AmountInput label="月底最低保留余额" value={input.reserve_cents} onChange={value => setInput({ ...input, reserve_cents: value })}/>
+          <AmountInput label={input.balance_cents != null ? "逐日最低保留余额" : "最低净现金流目标"} value={input.reserve_cents} onChange={value => setInput({ ...input, reserve_cents: value })}/>
         </div>
         <div className="mt-5 text-sm font-semibold">不可削减类别</div>
         <div className="mt-3 flex flex-wrap gap-2">{categories.map(item => <button
@@ -90,13 +92,15 @@ function SimulationWorkspace() {
           className={`rounded-control border px-3 py-2 text-xs ${input.protected_categories.includes(item) ? 'border-accent bg-accent text-white' : 'border-line'}`}
           onClick={() => setInput({ ...input, protected_categories: input.protected_categories.includes(item) ? input.protected_categories.filter(value => value !== item) : [...input.protected_categories, item] })}
         >{item}</button>)}</div>
+        <ForecastOptions value={input} onChange={setInput} categories={categories}/>
         <div className="mt-6 flex gap-2"><Button onClick={() => mutation.mutate(input)} disabled={mutation.isPending}>{mutation.isPending ? '计算中…' : '运行下月模拟'}</Button></div>
         {mutation.isError && <p className="text-sm text-danger">{mutation.error.message}</p>}
+        {save.isError && <p role="alert" className="text-sm text-danger">{save.error.message}</p>}
         {message && <p role="status" className="text-sm text-success">{message}</p>}
       </Card>
       <Card>
         <SectionTitle title="已保存方案"/>
-        {saved.isLoading ? <State kind="loading"/> : saved.isError ? <State kind="error" retry={() => saved.refetch()}/> : saved.data?.length ? <div className="space-y-2">{saved.data.map(item => <button key={item.id} className="flex w-full items-center justify-between rounded-control border border-line p-3 text-left text-sm hover:bg-canvas" onClick={() => { setResult(item.result); setViewingSaved(true); setMessage(`正在查看「${item.name}」`) }}><span>{item.name}</span><span>{money(item.result.minimum_after_cents)}</span></button>)}</div> : <State kind="empty" message="还没有保存的方案"/>}
+        {saved.isLoading ? <State kind="loading"/> : saved.isError ? <State kind="error" retry={() => saved.refetch()}/> : saved.data?.length ? <div className="space-y-2">{saved.data.map(item => <button key={item.id} className="flex w-full items-center justify-between rounded-control border border-line p-3 text-left text-sm hover:bg-canvas" onClick={() => { setInput(item.input); setResult(item.result); setResultInput(JSON.stringify(item.input)); setViewingSaved(true); setMessage(`正在查看「${item.name}」`) }}><span>{item.name}</span><span>{money(item.result.minimum_after_cents)}</span></button>)}</div> : <State kind="empty" message="还没有保存的方案"/>}
       </Card>
     </div>
     </aside><section className="market-results"><header className="market-results-head"><h2>方案结果</h2><Button variant="secondary" onClick={() => save.mutate()} disabled={!result || stale || mutation.isPending || save.isPending}>保存方案</Button></header>
@@ -111,14 +115,15 @@ function SimulationWorkspace() {
         <MetricCard label="预计预算剩余" cents={result.expected_budget_remaining_cents ?? 0} detail="月预算减预计总支出"/>
         <MetricCard label="预测区间下限" cents={result.forecast_lower_expense_cents ?? 0} detail={`上限 ${money(result.forecast_upper_expense_cents ?? 0)}`}/>
       </div>
+      <Card><ForecastEvidence result={result}/></Card>
       {result.ai_review && <Card><div className="flex flex-wrap items-center gap-3"><Badge tone={result.ai_review.status === 'applied' ? 'success' : 'neutral'}>{result.ai_review.status === 'applied' ? 'DeepSeek 已复核' : '本地模型预测'}</Badge><span className="text-sm text-muted">{result.ai_review.reason}</span></div></Card>}
-      <ScenarioComparison before={result.timeline.at(-1)?.before_cents || 0} after={result.timeline.at(-1)?.after_cents || 0} minimum={result.minimum_after_cents} reserve={result.reserve_cents}/>
+      <ScenarioComparison minimumLabel={result.balance_basis === "confirmed_snapshot" ? "最低预计余额" : "最低累计净现金流"} before={result.timeline.at(-1)?.before_cents || 0} after={result.timeline.at(-1)?.after_cents || 0} minimum={result.minimum_after_cents} reserve={result.reserve_cents}/>
       <Card>
-        <SectionTitle title={`下个月购买前后现金流（${result.period_start || result.timeline.at(0)?.date} 至 ${result.period_end || result.timeline.at(-1)?.date}）`} action={<Badge tone={result.optimization.feasible ? 'success' : 'danger'}>{result.optimization.feasible ? '存在可行方案' : '无可行方案'}</Badge>}/>
+        <SectionTitle title={`${result.balance_basis === "confirmed_snapshot" ? "下月预计余额" : "下月累计净现金流变化"}（${result.period_start || result.timeline.at(0)?.date} 至 ${result.period_end || result.timeline.at(-1)?.date}）`} action={<Badge tone={result.optimization.feasible ? 'success' : 'danger'}>{result.optimization.feasible ? '存在可行方案' : '无可行方案'}</Badge>}/>
         {option && <Chart option={option}/>}<Link className="mt-3 inline-block text-sm font-semibold text-accent" to={`/ledger?ids=${result.source_transaction_ids.slice(0, 200).join(',')}`}>查看计算依据的账单 →</Link>
       </Card>
       <div className="two-col">
-        <Card><SectionTitle title="调整建议"/>{result.required_saving_cents === 0 ? <p className="text-sm">无需削减其他类别，月底保留目标已满足。</p> : result.optimization.feasible ? <><p className="text-sm">下个月需减少 {money(result.required_saving_cents)} 的支出。</p>{result.optimization.cuts.map(item => <div key={item.category} className="flex justify-between border-b border-line py-2 text-sm"><span>{item.category}</span><span>{money(item.amount_cents)}</span></div>)}</> : <State kind="empty" message="在保护类别与削减上限下无法满足月底保留余额。请降低消费、延后到其他月份或调整约束。"/>}</Card>
+        <Card><SectionTitle title="调整建议"/>{result.required_saving_cents === 0 ? <p className="text-sm">按当前假设，无需削减其他类别即可满足逐日目标。</p> : result.optimization.feasible ? <><p className="text-sm">下个月需减少 {money(result.required_saving_cents)} 的支出。</p>{result.optimization.cuts.map(item => <div key={item.category} className="flex justify-between border-b border-line py-2 text-sm"><span>{item.category}</span><span>{money(item.amount_cents)}</span></div>)}</> : <State kind="empty" message={`${result.optimization.reason || "当前约束下无可行方案"}。未解决缺口 ${money(result.optimization.shortfall_cents ?? result.required_saving_cents)}。`}/>}</Card>
         <Card><SectionTitle title="预计下月周期账单"/>{result.recurring_bills.length ? result.recurring_bills.map((item, index) => <div key={index} className="flex justify-between border-b border-line py-2 text-sm"><Link className="text-accent" to={`/ledger?ids=${item.source_ids.join(',')}`}>{item.date} · {item.merchant}</Link><span>{money(item.amount_cents)}</span></div>) : <State kind="empty" message="下个月没有识别出周期账单"/>}</Card>
       </div>
     </>}</section></div>

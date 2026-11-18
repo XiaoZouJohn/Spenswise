@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from datetime import date
 
@@ -30,13 +31,19 @@ def get_settings(db: Session, owner_id: int) -> dict:
         ],
         "currency": "CNY",
         "timezone": "Asia/Shanghai",
+        "history_coverage": json.loads(values.get("history_coverage", "[]")),
     }
 
 
 def save_settings(db: Session, data: dict, owner_id: int) -> dict:
+    data = dict(data)
     category_budgets = data.pop("category_budgets", None)
     for key, value in data.items():
+        if key == "history_coverage" and value is None:
+            continue
         encoded = "true" if value is True else "false" if value is False else str(value)
+        if key == "history_coverage":
+            encoded = json.dumps(value, default=str)
         row = db.get(Setting, (owner_id, key))
         if row:
             row.value = encoded

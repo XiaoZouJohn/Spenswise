@@ -203,11 +203,23 @@ class BudgetLimitsIn(BaseModel):
         return value
 
 
+class HistoryCoverage(BaseModel):
+    start_date: date
+    end_date: date
+
+    @model_validator(mode="after")
+    def ordered(self) -> "HistoryCoverage":
+        if self.end_date < self.start_date:
+            raise ValueError("覆盖结束日期不能早于开始日期")
+        return self
+
+
 class SettingsIn(BaseModel):
     monthly_budget_cents: int = Field(ge=0)
     opening_balance_cents: int = Field(ge=0)
     ai_consent: bool = False
     category_budgets: list[CategoryBudgetIn] | None = None
+    history_coverage: list[HistoryCoverage] | None = Field(default=None, max_length=36)
 
     @field_validator("category_budgets")
     @classmethod
@@ -226,6 +238,7 @@ class SettingsOut(BaseModel):
     category_budgets: list[CategoryBudgetIn]
     currency: Literal["CNY"]
     timezone: Literal["Asia/Shanghai"]
+    history_coverage: list[HistoryCoverage] = Field(default_factory=list)
 
 
 class AiConnectionIn(BaseModel):
@@ -315,6 +328,20 @@ class OverviewOut(BaseModel):
     data_version: str
 
 
+class CategoryConstraint(BaseModel):
+    category: str = Field(min_length=1, max_length=80)
+    minimum_cents: int = Field(default=0, ge=0)
+    max_cut_percent: int = Field(default=40, ge=0, le=100)
+    disruption_weight: float = Field(default=1, gt=0, le=100, allow_inf_nan=False)
+
+
+class PlannedCashEvent(BaseModel):
+    date: date
+    amount_cents: int = Field(gt=0)
+    kind: Literal["income", "expense"]
+    label: str = Field(default="", max_length=80)
+
+
 class ScenarioIn(BaseModel):
     name: str = "未命名方案"
     amount_cents: int = Field(ge=0)
@@ -323,6 +350,19 @@ class ScenarioIn(BaseModel):
     protected_categories: list[str] = Field(default_factory=list)
     horizon_days: int = Field(ge=7, le=90, default=30)
     use_ai_review: bool = False
+    balance_cents: int | None = None
+    balance_date: date | None = None
+    cash_events: list[PlannedCashEvent] = Field(default_factory=list, max_length=100)
+    category_constraints: list[CategoryConstraint] = Field(default_factory=list, max_length=50)
+
+    @model_validator(mode="after")
+    def consistent_inputs(self) -> "ScenarioIn":
+        if (self.balance_cents is None) != (self.balance_date is None):
+            raise ValueError("余额快照金额与日期必须同时填写")
+        names = [c.category for c in self.category_constraints]
+        if len(set(names)) != len(names):
+            raise ValueError("分类约束不能重复")
+        return self
 
 
 class ForecastBaseline(BaseModel):
@@ -352,6 +392,10 @@ class OptimizationResult(BaseModel):
     feasible: bool
     cuts: list[BudgetCut]
     total_cuts_cents: int
+    shortfall_cents: int = 0
+    capacity_cents: int = 0
+    reason: str = ""
+    daily_savings_cents: list[int] = Field(default_factory=list)
 
 
 class CashflowDay(BaseModel):
@@ -361,6 +405,9 @@ class CashflowDay(BaseModel):
     lower_cents: int
     upper_cents: int
     bill_cents: int
+    adjusted_cents: int | None = None
+    planned_income_cents: int = 0
+    planned_expense_cents: int = 0
 
 
 class RecurringBill(BaseModel):
@@ -394,6 +441,17 @@ class ScenarioResult(BaseModel):
     forecast_upper_expense_cents: int | None = None
     expected_budget_remaining_cents: int | None = None
     ai_review: ForecastAiReview | None = None
+    fixed_expense_cents: int | None = None
+    variable_expense_cents: int | None = None
+    planned_expense_cents: int = 0
+    ai_delta_cents: int = 0
+    data_quality: str = "legacy"
+    coverage_status: str = "unknown"
+    warnings: list[str] = Field(default_factory=list)
+    balance_basis: Literal["confirmed_snapshot", "net_cashflow"] = "net_cashflow"
+    bridge_change_cents: int = 0
+    minimum_adjusted_cents: int | None = None
+    interval_method: str = "historical-deviation-not-calibrated"
 
 
 class SavedScenario(BaseModel):
