@@ -324,10 +324,12 @@ def claim_legacy(
         AssetSnapshot,
     ]
     has_private_settings = db.scalar(
-        select(Setting).where(
+        select(Setting)
+        .where(
             Setting.owner_id == user.id,
             Setting.key.notin_((JOURNEY_KEY, LOGIN_KEY)),
-        ).limit(1)
+        )
+        .limit(1)
     )
     if has_private_settings or any(
         db.scalar(select(table).where(table.owner_id == user.id).limit(1))
