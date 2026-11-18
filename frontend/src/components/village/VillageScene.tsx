@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { villageMedia } from '../../lib/villageMedia'
 import { Link, useLocation } from 'react-router-dom'
-import { buildings, chapterBuildings, type Building, type StoryChapter } from './VillageContext'
+import { buildings, type Building, type StoryChapter } from './VillageContext'
 import { BuildingLabel } from './BuildingLabel'
 import { money } from '../../lib/format'
 
@@ -18,12 +18,16 @@ export function VillageScene({ chapter, selectedCategory, categoryAmount, worksp
   const [failed, setFailed] = useState(false)
   const [visible, setVisible] = useState(!document.hidden)
   const [hovered, setHovered] = useState<Building | null>(null)
+  const [focused, setFocused] = useState<Building | null>(null)
 
   useEffect(() => {
-    const onVisible = () => setVisible(!document.hidden)
+    const clearInteraction = () => { setHovered(null); setFocused(null) }
+    const onVisible = () => { setVisible(!document.hidden); if (document.hidden) clearInteraction() }
     document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('blur', clearInteraction)
     return () => {
       document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('blur', clearInteraction)
     }
   }, [])
 
@@ -31,6 +35,7 @@ export function VillageScene({ chapter, selectedCategory, categoryAmount, worksp
     const element = host.current
     if (!element) return
     const resize = () => {
+      setHovered(null)
       const { width, height } = element.getBoundingClientRect()
       const scale = Math.max(width / 1920, height / 1080)
       setFit({ scale, x: (width - 1920 * scale) / 2, y: (height - 1080 * scale) / 2 })
@@ -41,14 +46,16 @@ export function VillageScene({ chapter, selectedCategory, categoryAmount, worksp
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => { setHovered(null); setFocused(null) }, [location.pathname, workspace])
+
   const playing = visible && !failed
   useEffect(() => {
     if (playing) void video.current?.play().catch(() => setFailed(true))
     else video.current?.pause()
   }, [playing])
 
-  const selected = workspace ? buildings.find(building => building.href === location.pathname)?.id : undefined
-  const active = hovered ?? selected ?? (hasData ? chapterBuildings[chapter] : undefined)
+  const highlighted = hovered ?? focused
+  const active = highlighted
   const showIncome = hasData && chapter === 'summary' && !!flow && flow.income > 0
   const showExpense = hasData && chapter === 'spending' && !!flow && flow.expense > 0
 
@@ -58,24 +65,23 @@ export function VillageScene({ chapter, selectedCategory, categoryAmount, worksp
         <source src={media.video} type="video/mp4"/>
       </video>
       <div className="village-light"/>
-      <div className="village-spatial-layer" hidden={workspace}>
+      <div className="village-spatial-layer" hidden={workspace} onPointerLeave={() => setHovered(null)}>
         <div className="village-coordinates" style={{ width: 1920, height: 1080, transform: `translate(${fit.x}px, ${fit.y}px) scale(${fit.scale})` }}>
           {buildings.map(building => {
             const polygon = building.outline.split(' ').map(point => {
               const [x, y] = point.split(',').map(Number)
               return `${x / 1920 * 100}% ${y / 1080 * 100}%`
             }).join(',')
-            return <Link key={building.id} to={building.href} className={`building-hotspot ${active === building.id ? 'is-active' : ''}`}
+            return <Link key={building.id} to={building.href} className="building-hotspot"
               style={{ clipPath: `polygon(${polygon})` }} tabIndex={-1} aria-label={`进入${building.name}`}
-              onMouseEnter={() => setHovered(building.id)} onMouseLeave={() => setHovered(null)}>
-              <img className="building-highlight-image" src={media.poster} alt="" aria-hidden="true"/>
-            </Link>
+              onPointerEnter={() => setHovered(building.id)} onPointerLeave={() => setHovered(null)} onPointerCancel={() => setHovered(null)}/>
           })}
         </div>
         {buildings.map(building => <BuildingLabel key={building.id} building={building} active={active === building.id}
-          x={`clamp(90px, ${building.x * 1920 * fit.scale + fit.x}px, calc(100% - 90px))`}
+          x={`clamp(170px, ${building.x * 1920 * fit.scale + fit.x}px, calc(100% - 170px))`}
           y={`clamp(160px, ${building.y * 1080 * fit.scale + fit.y}px, calc(100% - 85px))`}
-          onFocus={() => setHovered(building.id)} onBlur={() => setHovered(null)}/>)}
+          onHover={() => setHovered(building.id)} onLeave={() => setHovered(null)}
+          onFocus={() => setFocused(building.id)} onBlur={() => setFocused(null)}/>)}
         {(showIncome || showExpense) && <div className={`scene-financial-focus ${showIncome ? 'is-income' : 'is-expense'}`} role="status">
           <div>
             <span>{showIncome ? '账房 · 本月收入' : `集市 · ${selectedCategory || '本月消费'}`}</span>

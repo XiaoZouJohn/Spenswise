@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, Building2, Compass, Settings, UserRound, UsersRound } from 'lucide-react'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { ArrowLeft, ArrowUpRight, BookOpen, Building2, Compass, Settings, UserRound, UsersRound } from 'lucide-react'
 import { AgentReminder } from '../AgentReminder'
 import { BudgetWarning } from '../BudgetWarning'
 import { Overview } from '../../pages/Overview'
@@ -12,6 +12,8 @@ import { Illustration } from './Illustration'
 import { buildings, chapterLabels, VillageProvider, type AssistantContext, type AssistantDraft, type StoryChapter } from './VillageContext'
 import { lifeApi } from '../../lib/lifeApi'
 import { today } from '../../lib/format'
+import { JourneyAwardNotice, JourneyTour, tourSteps } from './VillageJourney'
+import { useJourney, useUpdateJourney } from '../../lib/journeyApi'
 import type { Session } from '../../lib/familyApi'
 import type { BudgetStatusData } from '../../types'
 const AiChatWindow = lazy(() => import('../AiChatWindow').then(m => ({ default: m.AiChatWindow })))
@@ -22,10 +24,39 @@ const familyNav = [
 ]
 export function VillageShell({ session, budgetPreview, children }: { session: Session; budgetPreview: BudgetStatusData | null; children: ReactNode }) {
   const location = useLocation()
+  const navigate = useNavigate()
+  const guide = useUpdateJourney()
+  const journey = useJourney()
+  const [tourLocal, setTourLocal] = useState<number | null>(null)
+  const [tourPaused, setTourPaused] = useState(false)
+  const [tourIntro, setTourIntro] = useState(0)
+  const autoGuideStarted = useRef(false)
+  const guideQueue = useRef<Promise<unknown>>(Promise.resolve())
+  const guideSequence = useRef(0)
+  const tourStep = tourLocal ?? journey.data?.tour_step ?? 0
+  function saveGuide(change: { replay?: boolean; dismiss_welcome?: boolean; tour_step?: number }) {
+    const sequence = ++guideSequence.current
+    guideQueue.current = guideQueue.current.catch(() => undefined).then(() => guide.mutateAsync(change))
+      .then(() => { if (guideSequence.current === sequence) setTourLocal(null) })
+    void guideQueue.current.catch(() => undefined)
+  }
+  function moveTour(step: number) {
+    setTourLocal(step)
+    if (step > 0) navigate(tourSteps[step - 1].path)
+    else setTourPaused(false)
+    saveGuide({ tour_step: step })
+  }
   const reducedMotion = useReducedMotion()
   const returnFocus = useRef<HTMLAnchorElement | null>(null)
   const family = location.pathname.startsWith('/family')
   const home = ['/', '/overview', '/ai', '/plan'].includes(location.pathname)
+  useEffect(() => {
+    if (!home || family || !journey.data?.show_welcome || autoGuideStarted.current) return
+    autoGuideStarted.current = true
+    setTourLocal(1)
+    setTourIntro(value => value + 1)
+    saveGuide({ dismiss_welcome: true, tour_step: 1 })
+  }, [home, family, journey.data?.show_welcome])
   const [chapter, setChapter] = useState<StoryChapter>('summary')
   const [selectedCategory, selectCategory] = useState('')
   const [aiOpen, setAiOpen] = useState(false)
@@ -73,7 +104,7 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
       <header className="village-topbar">
         <Link to="/overview" className="village-brand"><Illustration name="village"/><span>富贵村<small>SPENDWISE</small></span></Link>
         <div className="village-space-switch" aria-label="财务空间"><NavLink to="/overview" className={!family ? 'is-active' : ''}>个人空间</NavLink><NavLink to="/family" className={family ? 'is-active' : ''}><UsersRound size={14}/>家庭组</NavLink></div>
-        <div className="village-header-actions"><AgentReminder ownerId={session.user.id} quiet/><Link to="/settings#ai-connection" aria-label="设置" className="village-icon-button"><Settings size={18}/></Link><Link to="/user" className="village-user" aria-label="个人资料"><UserRound size={17}/><span>{session.user.display_name}</span></Link></div>
+        <div className="village-header-actions"><button className="village-guide-trigger" onClick={() => { if (tourStep > 0 && tourPaused) { setTourPaused(false); navigate(tourSteps[tourStep - 1].path); return } autoGuideStarted.current = true; setTourLocal(1); setTourPaused(false); setTourIntro(value => value + 1); navigate('/overview'); saveGuide({ dismiss_welcome: true, tour_step: 1 }) }}><BookOpen size={17}/>{tourStep > 0 && tourPaused ? '继续指引' : '使用指引'}</button><AgentReminder ownerId={session.user.id} quiet/><Link to="/settings#ai-connection" aria-label="设置" className="village-icon-button"><Settings size={18}/></Link><Link to="/user" className="village-user" aria-label="个人资料"><UserRound size={17}/><span>{session.user.display_name}</span></Link></div>
       </header>
       <nav className="village-district-nav" aria-label="地点导航">
         <Link to="/overview" className={home ? 'is-active' : ''}><Illustration name="ledger"/>本月 Story</Link>
@@ -89,7 +120,6 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
         {home && children}
         <div className="village-story-slot"><Overview/></div>
         <nav className="compact-places" aria-label="建筑地点">{buildings.map(building => <Link to={building.href} key={building.id}><Illustration name={building.id}/><span><strong>{building.name}</strong><small>{building.task}</small></span><span>{business.data?.buildings[building.id]?.label}</span></Link>)}</nav>
-        {home && <aside className="village-entry-actions"><Link className="story-action" to={`/overview?month=${month}&chapter=${chapter}`}>继续本月 Story ↗</Link>{business.data && <>{Object.entries(business.data.buildings).filter(([, state]) => state.count > 0).map(([key, state]) => <Link key={key} to={state.href}>{state.label}<strong>{state.count}</strong></Link>)}{business.data.review_completed && <span>本月回顾已完成</span>}</>}<Link to="/logs">生活记录 ↗</Link></aside>}
         <AnimatePresence mode="wait">{workspace && <motion.section key={location.pathname} initial={{ opacity: 0, x: reducedMotion ? 0 : 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: reducedMotion ? 0 : 16 }} transition={{ duration: reducedMotion ? 0 : .28, ease: 'easeOut' }} className="building-workspace" aria-label={`${family ? '家庭空间' : current.name}工作区`}>
           <header className="building-workspace-head"><span><Building2 size={15}/>{family ? '议事厅 · 家庭事务' : `${current.name} · ${current.task}`}</span><Link to="/overview"><ArrowLeft size={16}/>返回村庄</Link></header>
           {family && session.family && <nav className="building-tabs" aria-label="家庭功能">{familyNav.map(([href, label]) => <NavLink key={href} end={href === '/family'} to={href}>{label}</NavLink>)}</nav>}
@@ -104,6 +134,9 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
         ask({ label: home ? chapterLabels[chapter] : current.task, month, building: home ? undefined : current.name, category: selectedCategory || undefined })
       }}/>} 
       {aiMounted && <Suspense fallback={null}><AiChatWindow open={aiOpen && !family} onCollapse={closeAssistant} bubblePosition={bubblePosition} initialConversationId={conversation} villageContext={context} onClearContext={() => setContext(null)} suggestedDraft={draft}/></Suspense>}
+
+      {!family && <JourneyAwardNotice/>}
+      {tourStep > 0 && !tourPaused && <JourneyTour step={tourStep} introToken={tourIntro} onMove={moveTour} onPause={() => setTourPaused(true)}/>}
 
     </div>
   </VillageProvider>

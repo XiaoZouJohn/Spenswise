@@ -1,4 +1,6 @@
 import json
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,8 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.db import Base, get_db
 from app.main import app
-from app.models import StoryEdition, StoryPart, Transaction, WorkspaceDraft
-from app.services import ai, ai_ledger_consent, life_log_skill, village_story
+from app.models import Setting, StoryEdition, StoryPart, Transaction, WorkspaceDraft
+from app.services import ai, ai_ledger_consent, life_log_skill, village_journey, village_story
 
 
 @pytest.fixture
@@ -73,6 +75,72 @@ def record(client, ids=(), **values):
     )
     assert result.status_code == 200, result.text
     return result.json()
+
+
+def test_journey_progress_and_keepsakes_are_account_owned(village):
+    engine, first, other = village
+    initial = first.get("/api/village/journey").json()
+    assert initial["show_welcome"] and not initial["has_transactions"]
+    assert all(not item["unlocked_at"] for item in initial["achievements"])
+    changed = first.put("/api/village/journey", json={"revision": 0, "dismiss_welcome": True})
+    assert changed.status_code == 200
+    assert not changed.json()["show_welcome"]
+    assert (
+        first.put("/api/village/journey", json={"revision": 0, "seen_tip": "ledger"}).status_code
+        == 409
+    )
+    assert other.get("/api/village/journey").json()["show_welcome"]
+
+    transaction(first)
+    record(first)
+    review = first.get("/api/monthly-reviews/2026-10").json()
+    review["notes"] = "这个月第一次认真回看收支。"
+    assert first.put("/api/monthly-reviews/2026-10", json=review).status_code == 200
+    own = first.get("/api/village/journey").json()
+    earned = {item["code"] for item in own["achievements"] if item["unlocked_at"]}
+    assert earned == {"logs_1"}
+    assert own["login_streak"] == 1
+    assert own["log_count"] == 1
+    assert not any(
+        item["unlocked_at"] for item in other.get("/api/village/journey").json()["achievements"]
+    )
+
+    replay = first.put("/api/village/journey", json={"revision": own["revision"], "replay": True})
+    assert replay.status_code == 200 and replay.json()["show_welcome"]
+
+
+def test_journey_login_and_monthly_plan_require_real_evidence(village):
+    engine, first, _ = village
+    user_id = first.get("/api/auth/me").json()["user"]["id"]
+    yesterday = (datetime.now(ZoneInfo("Asia/Shanghai")).date() - timedelta(days=1)).isoformat()
+    with Session(engine) as db:
+        row = db.get(Setting, (user_id, village_journey.LOGIN_KEY))
+        row.value = json.dumps({"last_date": yesterday, "streak": 2, "awards": {}})
+        db.commit()
+        village_journey.record_login(db, user_id)
+        db.commit()
+    assert first.get("/api/village/journey").json()["achievements"][0]["unlocked_at"]
+
+    settings = first.get("/api/settings").json()
+    settings["monthly_budget_cents"] = 10000
+    assert first.put("/api/settings", json=settings).status_code == 200
+    for month in ("2026-08", "2026-09"):
+        transaction(first, tx_date=f"{month}-12", tx_type="income", amount_cents=12000)
+        transaction(first, tx_date=f"{month}-13", tx_type="expense", amount_cents=8000)
+        review = first.get(f"/api/monthly-reviews/{month}").json()
+        review["notes"] = "本月完成收支回顾"
+        saved = first.put(f"/api/monthly-reviews/{month}", json=review)
+        assert saved.status_code == 200, saved.text
+    complete = first.get("/api/village/journey").json()
+    assert complete["plan_streak"] == 2
+    plan_award = next(item for item in complete["achievements"] if item["code"] == "plan_2")
+    assert plan_award["unlocked_at"]
+
+    transaction(first, tx_date="2026-09-20", tx_type="expense", amount_cents=4000)
+    changed = first.get("/api/village/journey").json()
+    assert changed["plan_streak"] == 1
+    plan_award = next(item for item in changed["achievements"] if item["code"] == "plan_2")
+    assert plan_award["unlocked_at"] is None
 
 
 def test_private_links_cas_and_deleted_source(village):

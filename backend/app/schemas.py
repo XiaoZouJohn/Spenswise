@@ -9,6 +9,32 @@ class ErrorBody(BaseModel):
     message: str
 
 
+class JourneyUpdateIn(BaseModel):
+    revision: int = Field(ge=0)
+    dismiss_welcome: bool = False
+    seen_tip: Literal["ledger", "story", "assistant"] | None = None
+    replay: bool = False
+    tour_step: int | None = Field(default=None, ge=0, le=11)
+
+
+class JourneyAchievement(BaseModel):
+    code: Literal["login_3", "login_7", "logs_1", "logs_5", "plan_2", "plan_3"]
+    unlocked_at: datetime | None
+
+
+class JourneyOut(BaseModel):
+    revision: int
+    welcome_dismissed: bool
+    show_welcome: bool
+    tour_step: int
+    seen_tips: list[Literal["ledger", "story", "assistant"]]
+    has_transactions: bool
+    login_streak: int
+    log_count: int
+    plan_streak: int
+    achievements: list[JourneyAchievement]
+
+
 class MonthlyReviewIn(BaseModel):
     revision: int = Field(ge=0)
     ledger_version: str = Field(max_length=80)

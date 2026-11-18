@@ -72,7 +72,7 @@ function SimulationWorkspace() {
       <h1 className="m-0 text-3xl font-semibold">消费模拟</h1>
       <p className="text-sm text-muted">模拟区间固定为 {nextMonth.start} 至 {nextMonth.end}，即下个月第一天到最后一天。</p>
     </header>
-    {sourceCategory && <div className="scenario-source"><span>来自账房：{sourceCategory}。请确认计划金额，历史支出不会自动计为新增消费。</span>{sourceHref && <Link to={safeEvidenceHref(sourceHref)}>返回来源账册 →</Link>}</div>}
+    {sourceCategory && <div className="scenario-source"><span>来自账房：{sourceCategory}。调整计划金额，查看下一步的影响。</span>{sourceHref && <Link to={safeEvidenceHref(sourceHref)}>返回来源账册 →</Link>}</div>}
     <div className="market-layout"><aside className="market-conditions"><div className="two-col">
       <Card>
         <SectionTitle title="下个月模拟条件"/>

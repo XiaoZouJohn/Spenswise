@@ -3,6 +3,7 @@ import { ChevronDown, Grip } from 'lucide-react'
 import type { AiBubblePosition } from './AiLauncher'
 import { AiChat } from '../pages/AiChat'
 import type { AssistantContext, AssistantDraft } from './village/VillageContext'
+import { JourneyTipCard } from './village/VillageJourney'
 
 const bubbleSize = 60
 const margin = 16
@@ -218,6 +219,7 @@ export function AiChatWindow({ open, onCollapse, bubblePosition, initialConversa
       <div className="ai-window-drag-handle" role="button" tabIndex={open ? 0 : -1} aria-label="拖动 AI 助手窗口" data-testid="ai-panel-drag-handle" onPointerDown={dragStart} onPointerMove={dragMove} onPointerUp={dragEnd} onPointerCancel={() => { dragRef.current = null }} onKeyDown={dragKey}><Grip size={15} aria-hidden="true"/><span>富贵村财务助手</span></div>
       <button type="button" className="ai-collapse-button" onClick={onCollapse} aria-label="收起 AI 助手" data-testid="ai-panel-collapse"><ChevronDown size={18}/>收起</button>
     </div>
+    {open && <JourneyTipCard kind="assistant"/>}
     <AiChat mode="panel" initialConversationId={initialConversationId} villageContext={villageContext} onClearContext={onClearContext} suggestedDraft={suggestedDraft}/>
     <div className={`ai-resize-edge ai-resize-horizontal ${horizontal === 'left' ? 'at-right' : 'at-left'}`} role="separator" aria-label="调整对话框宽度" aria-orientation="vertical" tabIndex={open ? 0 : -1} data-testid="ai-panel-resize-horizontal" onPointerDown={event => resizeStart(event, 'horizontal')} onPointerMove={resizeMove} onPointerUp={resizeEnd} onPointerCancel={() => { resizeRef.current = null }} onKeyDown={event => resizeKey(event, 'horizontal')}/>
     <div className={`ai-resize-edge ai-resize-vertical ${vertical === 'top' ? 'at-bottom' : 'at-top'}`} role="separator" aria-label="调整对话框高度" aria-orientation="horizontal" tabIndex={open ? 0 : -1} data-testid="ai-panel-resize-vertical" onPointerDown={event => resizeStart(event, 'vertical')} onPointerMove={resizeMove} onPointerUp={resizeEnd} onPointerCancel={() => { resizeRef.current = null }} onKeyDown={event => resizeKey(event, 'vertical')}/>

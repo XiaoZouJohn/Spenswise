@@ -31,7 +31,7 @@ export function FamilyCashflowRunway({ days, events, assumptions, onEvent }: { d
   return <Card className="min-w-0">
     <SectionTitle title="未来现金流" action={low == null ? undefined : <span className="text-sm text-muted">累计变化低点 <strong className="ml-1 text-ink"><Money cents={low}/></strong></span>}/>
     {days.length && !noMovement ? <>
-      <p className="mb-4 text-sm text-muted">此图表示累计净现金流变化，不代表账户余额；未来收入未计入。点击事件可核对来源账单。</p>
+      <p className="mb-4 text-sm text-muted">图中展示累计净现金流变化。点击事件可核对来源账单。</p>
       <Chart option={option} height={300}/>
       <div className="mt-3 border-t border-line pt-3">
         <div className="mb-2 text-sm font-semibold">关键事件</div>
@@ -100,10 +100,10 @@ export function FamilyScenarioPreview({ preview }: { preview: ProposalPreview })
       { type: 'line', name: '加入提案后', data: preview.timeline.map(item => item.after_cents / 100), showSymbol: false, smooth: false, lineStyle: { width: 3 } },
     ],
   }), [preview.timeline])
-  return <div className="space-y-3">{preview.scope === 'self' && <p className="m-0 border-l-2 border-warning bg-canvas px-3 py-2 text-sm">仅基于本人可见的共担账单，不代表家庭全貌。</p>}<div className="grid gap-3 sm:grid-cols-2"><div className="family-preview-number"><span>{balance ? '原计划最低余额' : '原计划累计变化低点'}</span><strong>{preview.minimum_before_cents == null ? '暂无可计算数据' : <Money cents={preview.minimum_before_cents}/>}</strong></div><div className="family-preview-number"><span>{balance ? '加入提案后最低余额' : '加入提案后累计变化低点'}</span><strong>{preview.minimum_after_cents == null ? '暂无可计算数据' : <Money cents={preview.minimum_after_cents}/>}</strong></div></div>
+  return <div className="space-y-3">{preview.scope === 'self' && <p className="m-0 border-l-2 border-warning bg-canvas px-3 py-2 text-sm">当前展示你可见的家庭共担账单。</p>}<div className="grid gap-3 sm:grid-cols-2"><div className="family-preview-number"><span>{balance ? '原计划最低余额' : '原计划累计变化低点'}</span><strong>{preview.minimum_before_cents == null ? '暂无可计算数据' : <Money cents={preview.minimum_before_cents}/>}</strong></div><div className="family-preview-number"><span>{balance ? '加入提案后最低余额' : '加入提案后累计变化低点'}</span><strong>{preview.minimum_after_cents == null ? '暂无可计算数据' : <Money cents={preview.minimum_after_cents}/>}</strong></div></div>
     {preview.timeline.length ? <Chart option={option} height={300}/> : <State kind="empty" message="没有可对比的未来现金流"/>}
     {preview.goal_impact && <div className="rounded-control border border-line p-4 text-sm"><strong className="block text-base">储蓄目标日期影响</strong><div className="mt-2 flex flex-wrap gap-x-6 gap-y-1"><span>原预计达成：{preview.goal_impact.estimated_before_date ? fullDate(preview.goal_impact.estimated_before_date) : '暂无可估日期'}</span><span>加入提案后：{preview.goal_impact.estimated_after_date ? fullDate(preview.goal_impact.estimated_after_date) : '暂无可估日期'}</span></div>{preview.goal_impact.delay_months != null && <p className="mb-0 mt-2 text-muted">预计推迟 {preview.goal_impact.delay_months} 个月。估算基于目标已记录金额及每月投入。</p>}</div>}
-    <p className="m-0 text-sm leading-6 text-muted">{balance ? '曲线使用已授权账户起点计算余额。' : '缺少可信账户起点，曲线展示累计预计净现金流变化，不代表账户余额。'}未来收入未计入。</p>
+    <p className="m-0 text-sm leading-6 text-muted">{balance ? '曲线使用已授权账户起点计算余额。' : '曲线展示累计预计净现金流变化；可在钱庄补充账户起点。'}未来收入可在计划中补充。</p>
     {!!preview.forecast_assumptions?.length && <p className="m-0 text-sm leading-6 text-muted">计算假设：{preview.forecast_assumptions.join('；')}</p>}
   </div>
 }

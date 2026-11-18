@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { LedgerPortrait } from '../components/village/FinancialPortraits'
 import { AiClassificationPanel } from '../components/AiClassificationPanel'
@@ -15,6 +15,8 @@ import { useSession } from '../lib/session'
 import { useWorkspaceDraft } from '../lib/useWorkspaceDraft'
 import { lifeApi } from '../lib/lifeApi'
 import { TransactionBackground } from '../components/village/TransactionBackground'
+import { JourneyTipCard } from '../components/village/VillageJourney'
+import { journeyKey } from '../lib/journeyApi'
 import type { PageData, Transaction } from '../types'
 
 const categories = ['待确认', '餐饮', '交通', '购物', '居住', '医疗健康', '娱乐', '旅行', '通讯', '教育', '日用品', '人情往来', '收入', '退款', '转账', '其他']
@@ -25,6 +27,7 @@ export function Ledger() {
   const cache = useQueryClient()
   const [search, setSearch] = useSearchParams()
   const [adding, setAdding] = useState(false)
+  useEffect(() => { if (search.get('new') === '1') setAdding(true) }, [search])
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<number[]>([])
   const [detailSelection, setDetail] = useState<Transaction | null>(null)
@@ -81,6 +84,7 @@ export function Ledger() {
     cache.invalidateQueries({ queryKey: ['budget-preview'] })
     cache.invalidateQueries({ queryKey: ['family'] })
     for (const key of ['chronicle', 'village-state', 'market-review']) void cache.invalidateQueries({ queryKey: [key] })
+    void cache.invalidateQueries({ queryKey: journeyKey })
   }
 
   const add = useMutation({
@@ -130,11 +134,12 @@ export function Ledger() {
   return <div className="page ledger-page space-y-6">
     <header><p className="mb-1 text-sm text-muted">交易与分类</p><h1 className="m-0 text-3xl font-semibold">账本</h1></header>
     <div className="ledger-toolbar"><Button onClick={() => updateFilter('import', '1')}>导入账单</Button><Button variant="secondary" onClick={() => setAdding(true)}>记一笔</Button><Button variant={review ? 'primary' : 'secondary'} onClick={() => updateFilter('review', review ? '' : '1')}>待处理</Button></div>
+    <JourneyTipCard kind="ledger"/>
     {status.data && <div className="pending-strip"><button onClick={() => updateFilter('category', '待确认')}>未分类 <strong>{status.data.unclassified}</strong></button><button onClick={() => updateFilter('review', '1')}>待核对 <strong>{status.data.unreviewed}</strong></button><button onClick={() => updateFilter('import', '1')}>导入异常 <strong>{status.data.import_errors}</strong></button></div>}
     {query.data && <LedgerPortrait data={query.data} rangeLabel={rangeLabel} onCategory={category => updateFilter('category', category)}/>}
     <div className="ledger-cross-actions"><span>从记录进入计划</span><Link className="story-text-action" to={`/simulate?category=${encodeURIComponent(filterCategory || '当前消费')}&from=${encodeURIComponent('/ledger?' + search.toString())}`}>在集市比较一项消费 →</Link></div>
 
-    <DetailDialog open={adding} onOpenChange={setAdding} title="新增账单">
+    <DetailDialog open={adding} onOpenChange={open => { setAdding(open); if (!open && search.get('new')) updateFilter('new', '') }} title="新增账单">
       <div className="grid gap-3 md:grid-cols-6">
         <div className="field"><label>日期</label><input type="date" value={form.tx_date} onChange={event => setForm({ ...form, tx_date: event.target.value })}/></div>
         <div className="field"><label>类型</label><select value={form.tx_type} onChange={event => setForm({ ...form, tx_type: event.target.value })}><option value="expense">支出</option><option value="income">收入</option><option value="refund">退款</option><option value="transfer">转账</option></select></div>

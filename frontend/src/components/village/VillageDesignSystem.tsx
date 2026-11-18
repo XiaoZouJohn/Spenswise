@@ -9,7 +9,7 @@ export function VillageDesignSystem() {
   const [drawer, setDrawer] = useState(false)
   return <section className="village-design-system" aria-label="富贵村设计系统">
     <h1>富贵村 · 设计系统</h1>
-    <p>Design specification v1.0 / P0 · 仅供开发审阅</p>
+    <p>界面与组件</p>
     <div className="design-swatches">{swatches.map(name => <figure key={name}>
       <i style={{ background: `var(--${name})` }}/><figcaption>{name}</figcaption>
     </figure>)}</div>

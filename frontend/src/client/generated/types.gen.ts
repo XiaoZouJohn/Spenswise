@@ -494,6 +494,34 @@ export type InvitationPreviewOut = {
     expires_at: string;
 };
 
+export type JourneyAchievement = {
+    code: 'login_3' | 'login_7' | 'logs_1' | 'logs_5' | 'plan_2' | 'plan_3';
+    unlocked_at: (string | null);
+};
+
+export type code = 'login_3' | 'login_7' | 'logs_1' | 'logs_5' | 'plan_2' | 'plan_3';
+
+export type JourneyOut = {
+    revision: number;
+    welcome_dismissed: boolean;
+    show_welcome: boolean;
+    tour_step: number;
+    seen_tips: Array<('ledger' | 'story' | 'assistant')>;
+    has_transactions: boolean;
+    login_streak: number;
+    log_count: number;
+    plan_streak: number;
+    achievements: Array<JourneyAchievement>;
+};
+
+export type JourneyUpdateIn = {
+    revision: number;
+    dismiss_welcome?: boolean;
+    seen_tip?: ('ledger' | 'story' | 'assistant' | null);
+    replay?: boolean;
+    tour_step?: (number | null);
+};
+
 export type LegacyClaimIn = {
     code: string;
 };
@@ -1073,6 +1101,14 @@ export type ClearMonthlyReviewApiMonthlyReviewsMonthClearPostData = {
 };
 
 export type ClearMonthlyReviewApiMonthlyReviewsMonthClearPostResponse = (MonthlyReviewOut);
+
+export type JourneyApiVillageJourneyGetResponse = (JourneyOut);
+
+export type UpdateJourneyApiVillageJourneyPutData = {
+    requestBody: JourneyUpdateIn;
+};
+
+export type UpdateJourneyApiVillageJourneyPutResponse = (JourneyOut);
 
 export type LifeLogsApiVillageLogsGetData = {
     month?: (string | null);

@@ -26,5 +26,5 @@ export function AccountsPortrait({ assets, confirmed, onEdit }: { assets: Accoun
     series: [{ type: 'bar', barMaxWidth: 22, data: assets.map(a => ({ value: a.kind === 'liability' ? -a.balance_cents : a.balance_cents, itemStyle: { color: a.kind === 'liability' ? chartColors[1] : chartColors[0] } })) }],
   }), [assets])
   if (!assets.length) return null
-  return <section className="asset-portrait"><div className="asset-portrait-head"><div><h2>已记录的资产与负债</h2><p>逐项展示各账户的最新快照。负债向左，资产向右；不代表已完整覆盖的净资产。</p></div><span className="story-source-tag">{confirmed ? '已确认纳入范围 · 仍需核对快照有效期' : '覆盖范围尚未确认'}</span></div><Chart option={option} height={Math.max(180, Math.min(600, assets.length * 40 + 60))} label="已记录账户的资产负债对照，点击账户编辑快照" onClick={params => { const item = assets[params.dataIndex]; if (item) onEdit(item) }}/></section>
+  return <section className="asset-portrait"><div className="asset-portrait-head"><div><h2>已记录的资产与负债</h2><p>逐项展示各账户的最新快照。负债向左，资产向右；完整净资产请核对覆盖范围。</p></div><span className="story-source-tag">{confirmed ? '已确认纳入范围 · 仍需核对快照有效期' : '覆盖范围尚未确认'}</span></div><Chart option={option} height={Math.max(180, Math.min(600, assets.length * 40 + 60))} label="已记录账户的资产负债对照，点击账户编辑快照" onClick={params => { const item = assets[params.dataIndex]; if (item) onEdit(item) }}/></section>
 }

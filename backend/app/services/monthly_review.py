@@ -55,12 +55,14 @@ def save(db: Session, owner_id: int, month: str, value: dict, *, clear: bool = F
     if not clear and current["ledger_version"] != value["ledger_version"]:
         raise ValueError("账本已更新，请刷新事实后重新确认保存")
     key = f"monthly_review:{month}"
+    budget_configured = db.get(Setting, (owner_id, "monthly_budget_cents")) is not None
     stored = {
         "revision": current["revision"] + 1,
         "notes": "" if clear else value["notes"],
         "constraints": "" if clear else value["constraints"],
         "differences": "" if clear else value["differences"],
         "saved_at": None if clear else datetime.now(timezone.utc).isoformat(),
+        "budget_configured": not clear and budget_configured,
         "ledger_version": None if clear else current["ledger_version"],
         "facts": None if clear else current["facts"],
         "life_log_ids": [] if clear else value.get("life_log_ids", []),

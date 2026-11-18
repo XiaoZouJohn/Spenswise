@@ -7,6 +7,7 @@ import { CharacterHint } from '../components/village/LifeWidgets'
 import { lifeApi } from '../lib/lifeApi'
 import { today } from '../lib/format'
 import { useVillage } from '../components/village/VillageContext'
+import { journeyKey } from '../lib/journeyApi'
 
 export function LifeLogs() {
   const [params, setParams] = useSearchParams()
@@ -24,7 +25,7 @@ export function LifeLogs() {
   async function remove(id: string, revision: number) {
     if (!window.confirm('删除这篇生活记录？历史引用将显示来源已删除。')) return
     setDeleting(id)
-    try { await lifeApi.deleteLog(id, revision); await Promise.all(['life-logs', 'chronicle', 'market-review'].map(key => client.invalidateQueries({ queryKey: [key] }))) }
+    try { await lifeApi.deleteLog(id, revision); await Promise.all(['life-logs', 'chronicle', 'market-review'].map(key => client.invalidateQueries({ queryKey: [key] }))); await client.invalidateQueries({ queryKey: journeyKey }) }
     catch { setError('删除失败或记录已更新，请重新读取') }
     finally { setDeleting(null) }
   }
@@ -34,7 +35,7 @@ export function LifeLogs() {
     {error && <p role="alert" className="text-danger">{error}</p>}
     {records.isPending ? <State kind="loading"/> : records.isError ? <State kind="error" retry={() => records.refetch()}/> : !records.data.length ? <State kind="empty" message="这个月还没有生活记录。也可以先去账房核对流水。"/> : <div className="life-log-timeline">{records.data.map(record => <article key={record.id}><time>{record.event_date}</time><div><h2>{record.title || record.content.slice(0, 30)}</h2><p className="life-log-content">{record.content}</p><div className="source-links">{record.transaction_ids?.map(id => <Link key={id} className="source-tag" to={`/ledger?ids=${id}&detail=${id}`}>关联账单 #{id} ↗</Link>)}</div><footer><Badge>{record.ai_allowed ? '允许AI使用' : '个人记录'}</Badge><Button variant="ghost" onClick={() => setParams({ month, log: record.id })}>编辑</Button><Button variant="ghost" disabled={!!deleting} onClick={() => remove(record.id, record.revision ?? 0)}>删除</Button><Button variant="ghost" onClick={() => village?.ask({ label: '生活记录', month: record.event_date.slice(0, 7) }, `请分析我明确允许AI使用的生活记录，月份为${record.event_date.slice(0, 7)}。当前记录ID为${record.id}，先调用生活记录工具核对许可及内容，不要猜测背景。`)}>询问助手</Button></footer></div></article>)}</div>}
     <DetailDialog open={creating || !!logId} onOpenChange={open => { if (!open) close() }} title={creating ? '留下一句话' : '编辑生活记录'}>
-      {creating ? <LifeLogEditor key="new" transactionId={transactionId} onSaved={() => { close(); void records.refetch() }} onCancel={close}/> : selected.isPending ? <State kind="loading"/> : selected.isError ? <State kind="error" retry={() => selected.refetch()}/> : selected.data && <LifeLogEditor key={`${selected.data.id}-${selected.data.revision}`} record={selected.data} onSaved={record => { client.setQueryData(['life-log', record.id], record); close() }} onCancel={close}/>}
+      {creating ? <LifeLogEditor key="new" transactionId={transactionId} onSaved={() => { close(); void records.refetch(); void client.invalidateQueries({ queryKey: journeyKey }) }} onCancel={close}/> : selected.isPending ? <State kind="loading"/> : selected.isError ? <State kind="error" retry={() => selected.refetch()}/> : selected.data && <LifeLogEditor key={`${selected.data.id}-${selected.data.revision}`} record={selected.data} onSaved={record => { client.setQueryData(['life-log', record.id], record); close(); void client.invalidateQueries({ queryKey: journeyKey }) }} onCancel={close}/>}
     </DetailDialog>
   </div>
 }

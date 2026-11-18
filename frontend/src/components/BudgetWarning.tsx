@@ -25,7 +25,7 @@ export function BudgetAlertSummary({ data }: { data: BudgetStatusData }) {
         <div className="mt-2 flex justify-between gap-3 text-xs text-muted"><span>已消费 <Money cents={alert.spent_cents}/> / 限额 <Money cents={alert.limit_cents}/></span><span>{ratio === null ? '无额度' : `${ratio}%`}</span></div>
       </div>
     })}
-    <p className="m-0 text-xs text-muted">按本月已记录账单计算；退款冲减消费，收入和转账不计入消费预算。</p>
+    <p className="m-0 text-xs text-muted">按本月消费扣除退款后计算预算使用额。</p>
   </div>
 }
 

@@ -8,12 +8,33 @@ from sqlalchemy.orm import Session
 from .auth import current_user
 from .db import get_db
 from .models import ConsumptionEvent, StoryEdition, StoryPart, User
-from .schemas import BatchReviewIn, DraftIn, EventIn, LifeLogIn, LifeLogOut, StoryGenerateIn
+from .schemas import (
+    BatchReviewIn,
+    DraftIn,
+    EventIn,
+    JourneyOut,
+    JourneyUpdateIn,
+    LifeLogIn,
+    LifeLogOut,
+    StoryGenerateIn,
+)
+from .services import village_journey, village_story
 from .services import village_life as life
-from .services import village_story
 
 router = APIRouter(prefix="/api/village", tags=["village life"])
 MONTH = r"^\d{4}-(0[1-9]|1[0-2])$"
+
+
+@router.get("/journey", response_model=JourneyOut)
+def journey(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    return village_journey.read(db, user.id)
+
+
+@router.put("/journey", response_model=JourneyOut)
+def update_journey(
+    value: JourneyUpdateIn, user: User = Depends(current_user), db: Session = Depends(get_db)
+):
+    return execute(db, lambda: village_journey.update_progress(db, user.id, value.model_dump()))
 
 
 def execute(db: Session, operation):

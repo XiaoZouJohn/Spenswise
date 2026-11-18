@@ -1,4 +1,7 @@
-/* Local builds must not wait for external font downloads; the existing font stack falls back locally. */
+/* Locally hosted, subset OFL fonts. No runtime font-service requests. */
+@font-face { font-family:'SpendWise Noto Sans SC'; src:url('/fonts/noto-sans-sc.woff2') format('woff2'); font-style:normal; font-weight:100 900; font-display:swap; }
+@font-face { font-family:'SpendWise Noto Serif SC'; src:url('/fonts/noto-serif-sc.woff2') format('woff2'); font-style:normal; font-weight:200 900; font-display:swap; }
+@font-face { font-family:'SpendWise Lora'; src:url('/fonts/lora-500.woff2') format('woff2'); font-style:normal; font-weight:500; font-display:swap; }
 @tailwind base; @tailwind components; @tailwind utilities;
 
 :root {
@@ -31,7 +34,9 @@
   --chart-3: var(--gold);
   --chart-4: var(--water);
   --chart-5: var(--forest-light);
-  --font-body: 'Microsoft YaHei','PingFang SC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-body: 'SpendWise Noto Sans SC','Noto Sans SC','Microsoft YaHei','PingFang SC',sans-serif;
+  --font-display: 'SpendWise Noto Serif SC','Noto Serif SC','STSong',serif;
+  --font-numeral: 'SpendWise Lora','Lora',Georgia,serif;
   --font-size-body: 15px;
   --font-size-control: 14px;
   --font-size-meta: 12px;
@@ -52,7 +57,7 @@
 
 
 
-*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--canvas);font-family:Inter,'Noto Sans SC',Arial,sans-serif}button,input,select{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted);font-weight:600}input,select{outline:none}input:focus,select:focus{border-color:var(--accent)}.field{display:flex;flex-direction:column;gap:7px}.field label{font-size:12px;font-weight:600;color:var(--muted)}.field input,.field select{height:40px;border:1px solid var(--line);border-radius:var(--radius-control);padding:0 12px;background:#fff}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel);box-shadow:var(--shadow-panel)}.page{max-width:1500px;margin:auto;padding:var(--space-page)}.grid-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.two-col{display:grid;grid-template-columns:1.35fr 1fr;gap:var(--space-section)}@media(max-width:1000px){.grid-metrics{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}@media(max-width:650px){.page{padding:16px}.grid-metrics{grid-template-columns:1fr}}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--canvas);font-family:var(--font-body);font-weight:400}button,input,select{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted);font-weight:600}input,select{outline:none}input:focus,select:focus{border-color:var(--accent)}.field{display:flex;flex-direction:column;gap:7px}.field label{font-size:12px;font-weight:600;color:var(--muted)}.field input,.field select{height:40px;border:1px solid var(--line);border-radius:var(--radius-control);padding:0 12px;background:#fff}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel);box-shadow:var(--shadow-panel)}.page{max-width:1500px;margin:auto;padding:var(--space-page)}.grid-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.two-col{display:grid;grid-template-columns:1.35fr 1fr;gap:var(--space-section)}@media(max-width:1000px){.grid-metrics{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}@media(max-width:650px){.page{padding:16px}.grid-metrics{grid-template-columns:1fr}}
 
 .field input.amount-input{padding-left:36px}
 

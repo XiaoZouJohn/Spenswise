@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useSession } from '../lib/session'
 import { lifeApi } from '../lib/lifeApi'
 import { today } from '../lib/format'
+import { journeyKey } from '../lib/journeyApi'
 
 type Mapping = { date: string; amount: string; merchant: string | null; description: string | null; type: string | null; category: string | null }
 type Preview = { token: string; columns: string[]; sample: Record<string, unknown>[]; mapping: Mapping; total: number }
@@ -56,6 +57,7 @@ export function ImportPanel() {
     for (const queryKey of ['budget-status', 'budget-preview', 'overview', 'cashflow-outlook', 'transactions', 'chronicle', 'village-state', 'market-review']) {
       void cache.invalidateQueries({ queryKey: [queryKey] })
     }
+    if (job.data.inserted > 0) void cache.invalidateQueries({ queryKey: journeyKey })
   }, [job.data?.status, cache])
 
   return <div className="space-y-5">

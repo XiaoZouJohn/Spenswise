@@ -52,6 +52,9 @@ def token_hash(token: str) -> str:
 
 
 def create_session(db: Session, user_id: int) -> str:
+    from .services.village_journey import record_login
+
+    record_login(db, user_id)
     token = secrets.token_urlsafe(32)
     db.add(
         UserSession(

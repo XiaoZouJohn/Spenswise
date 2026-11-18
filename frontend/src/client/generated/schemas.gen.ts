@@ -2037,6 +2037,134 @@ export const InvitationPreviewOutSchema = {
     title: 'InvitationPreviewOut'
 } as const;
 
+export const JourneyAchievementSchema = {
+    properties: {
+        code: {
+            type: 'string',
+            enum: ['login_3', 'login_7', 'logs_1', 'logs_5', 'plan_2', 'plan_3'],
+            title: 'Code'
+        },
+        unlocked_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Unlocked At'
+        }
+    },
+    type: 'object',
+    required: ['code', 'unlocked_at'],
+    title: 'JourneyAchievement'
+} as const;
+
+export const JourneyOutSchema = {
+    properties: {
+        revision: {
+            type: 'integer',
+            title: 'Revision'
+        },
+        welcome_dismissed: {
+            type: 'boolean',
+            title: 'Welcome Dismissed'
+        },
+        show_welcome: {
+            type: 'boolean',
+            title: 'Show Welcome'
+        },
+        tour_step: {
+            type: 'integer',
+            title: 'Tour Step'
+        },
+        seen_tips: {
+            items: {
+                type: 'string',
+                enum: ['ledger', 'story', 'assistant']
+            },
+            type: 'array',
+            title: 'Seen Tips'
+        },
+        has_transactions: {
+            type: 'boolean',
+            title: 'Has Transactions'
+        },
+        login_streak: {
+            type: 'integer',
+            title: 'Login Streak'
+        },
+        log_count: {
+            type: 'integer',
+            title: 'Log Count'
+        },
+        plan_streak: {
+            type: 'integer',
+            title: 'Plan Streak'
+        },
+        achievements: {
+            items: {
+                '$ref': '#/components/schemas/JourneyAchievement'
+            },
+            type: 'array',
+            title: 'Achievements'
+        }
+    },
+    type: 'object',
+    required: ['revision', 'welcome_dismissed', 'show_welcome', 'tour_step', 'seen_tips', 'has_transactions', 'login_streak', 'log_count', 'plan_streak', 'achievements'],
+    title: 'JourneyOut'
+} as const;
+
+export const JourneyUpdateInSchema = {
+    properties: {
+        revision: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Revision'
+        },
+        dismiss_welcome: {
+            type: 'boolean',
+            title: 'Dismiss Welcome',
+            default: false
+        },
+        seen_tip: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['ledger', 'story', 'assistant']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Seen Tip'
+        },
+        replay: {
+            type: 'boolean',
+            title: 'Replay',
+            default: false
+        },
+        tour_step: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 11,
+                    minimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tour Step'
+        }
+    },
+    type: 'object',
+    required: ['revision'],
+    title: 'JourneyUpdateIn'
+} as const;
+
 export const LegacyClaimInSchema = {
     properties: {
         code: {

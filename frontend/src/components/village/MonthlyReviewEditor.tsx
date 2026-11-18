@@ -11,6 +11,7 @@ import { lifeApi, type Source } from '../../lib/lifeApi'
 import { usePersistentDraft } from '../../lib/usePersistentDraft'
 import { ledgerHref } from '../../lib/village'
 import type { MonthlyReviewIn, MonthlyReviewOut } from '../../client/generated/types.gen'
+import { journeyKey } from '../../lib/journeyApi'
 
 export function MonthlyReviewEditor({ month }: { month: string }) {
   const query = useQuery({ queryKey: ['monthly-review', month], queryFn: () => reviewApi.read(month) })
@@ -38,6 +39,7 @@ function ReviewDocument({ month, data }: { month: string; data: MonthlyReviewOut
       client.setQueryData(['monthly-review', month], stored)
       await form.clear(stored)
       for (const key of ['chronicle', 'village-state']) void client.invalidateQueries({ queryKey: [key] })
+      void client.invalidateQueries({ queryKey: journeyKey })
     } catch { setError('保存失败，可能已在其他窗口更新。草稿已保留，请重新读取后合并。') }
     finally { setBusy(false) }
   }
@@ -61,7 +63,7 @@ function ReviewDocument({ month, data }: { month: string; data: MonthlyReviewOut
         <label htmlFor="review-differences">还有什么需要记住？</label><Textarea id="review-differences" maxLength={2000} placeholder="一次性支出、待报销的账，或暂时不能减少的花费。" value={value.differences ?? ''} onChange={event => change('differences', event.target.value)}/>
         <details className="review-log-picker"><summary>关联生活记录 · 已选 {selected.length} 篇</summary>{logs.isPending ? <State kind="loading"/> : logs.isError ? <State kind="error" retry={() => logs.refetch()}/> : logs.data.map(log => <label key={log.id}><input type="checkbox" checked={selected.includes(log.id)} onChange={event => form.change({ ...value, life_log_ids: event.target.checked ? [...selected, log.id] : selected.filter(id => id !== log.id) })}/><span>{log.event_date} · {log.title || log.content.slice(0, 50)}<small>关联 {log.transaction_ids?.length ?? 0} 笔账单</small></span></label>)}<Link className="story-action" to={`/logs?new=1&month=${month}`}>补充一篇生活记录 ↗</Link></details>
         <div className="source-links">{data.life_logs?.map((ref, index) => <SourceLink key={index} source={ref as Source}/>)}</div>
-        <p>只保存生活记录的引用，不复制正文。你的说明与账本事实分别保留。</p>
+        <p>关联的生活记录会在本月回顾中显示。</p>
       </section>
     </div>
     <DraftStatus status={form.status} retry={form.retry} reload={reload}/>{error && <p role="alert" className="text-danger">{error}</p>}
