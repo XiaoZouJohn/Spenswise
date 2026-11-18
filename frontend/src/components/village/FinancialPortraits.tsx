@@ -9,7 +9,7 @@ import type { EChartsOption } from 'echarts'
 export function LedgerPortrait({ data, rangeLabel, onCategory }: { data: PageData; rangeLabel?: string; onCategory?: (category: string) => void }) {
   const option = useMemo<EChartsOption>(() => ({
     grid: { left: 8, right: 60, top: 8, bottom: 20, containLabel: true },
-    xAxis: { type: 'value', axisLabel: { formatter: value => money(Math.round(value)) }, splitLine: { lineStyle: { color: chartSemanticColors.line } } },
+    xAxis: { type: 'value', splitNumber: 3, axisLabel: { hideOverlap: true, formatter: value => money(Math.round(value)).replace('.00', '') }, splitLine: { lineStyle: { color: chartSemanticColors.line } } },
     yAxis: { type: 'category', data: ['净支出', '收入'], axisLine: { show: false }, axisTick: { show: false } },
     tooltip: { trigger: 'axis', valueFormatter: value => money(Number(value)) },
     series: [{ type: 'bar', barWidth: 18, data: [{ value: data.expense_cents ?? 0, itemStyle: { color: chartColors[1] } }, { value: data.income_cents ?? 0, itemStyle: { color: chartColors[0] } }] }],
@@ -20,7 +20,7 @@ export function LedgerPortrait({ data, rangeLabel, onCategory }: { data: PageDat
 export function AccountsPortrait({ assets, confirmed, onEdit }: { assets: AccountSnapshot[]; confirmed: boolean; onEdit: (item: AccountSnapshot) => void }) {
   const option = useMemo<EChartsOption>(() => ({
     grid: { left: 5, right: 25, top: 12, bottom: 25, containLabel: true },
-    xAxis: { type: 'value', axisLabel: { formatter: value => money(Math.round(value)) }, splitLine: { lineStyle: { color: chartSemanticColors.line } } },
+    xAxis: { type: 'value', splitNumber: 3, axisLabel: { hideOverlap: true, formatter: value => money(Math.round(value)).replace('.00', '') }, splitLine: { lineStyle: { color: chartSemanticColors.line } } },
     yAxis: { type: 'category', inverse: true, data: assets.map(a => `${a.name} · ${a.kind === 'liability' ? '负债' : '资产'}`), axisTick: { show: false }, axisLine: { show: false } },
     tooltip: { trigger: 'axis', valueFormatter: value => money(Math.abs(Number(value))) },
     series: [{ type: 'bar', barMaxWidth: 22, data: assets.map(a => ({ value: a.kind === 'liability' ? -a.balance_cents : a.balance_cents, itemStyle: { color: a.kind === 'liability' ? chartColors[1] : chartColors[0] } })) }],

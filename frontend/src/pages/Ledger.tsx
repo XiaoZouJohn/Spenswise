@@ -13,6 +13,8 @@ import { familyApi } from '../lib/familyApi'
 import { today } from '../lib/format'
 import { useSession } from '../lib/session'
 import { useWorkspaceDraft } from '../lib/useWorkspaceDraft'
+import { lifeApi } from '../lib/lifeApi'
+import { TransactionBackground } from '../components/village/TransactionBackground'
 import type { PageData, Transaction } from '../types'
 
 const categories = ['待确认', '餐饮', '交通', '购物', '居住', '医疗健康', '娱乐', '旅行', '通讯', '教育', '日用品', '人情往来', '收入', '退款', '转账', '其他']
@@ -25,13 +27,15 @@ export function Ledger() {
   const [adding, setAdding] = useState(false)
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<number[]>([])
-  const [detail, setDetail] = useState<Transaction | null>(null)
+  const [detailSelection, setDetail] = useState<Transaction | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
-  const [category, setCategory] = useState('餐饮')
+  const [category, setCategory] = useState('保留原分类')
+  const [batchDate, setBatchDate] = useState('')
+  const [batchAccount, setBatchAccount] = useState('')
   const [undo, setUndo] = useState<{ id: number; category: string }[]>([])
   const [merchantDraft, setMerchantDraft] = useState(search.get('merchant') || '')
   const [form, setForm] = useWorkspaceDraft('ledger-entry', {
-    tx_date: today(), amount_cents: 0, merchant: '', description: '', category: '待确认', tx_type: 'expense',
+    tx_date: today(), amount_cents: 0, merchant: '', description: '', category: '待确认', tx_type: 'expense', account_key: null as string | null,
   })
 
   const review = search.get('review') === '1'
@@ -48,7 +52,14 @@ export function Ledger() {
   if (dateFrom) requestParams.set('date_from', dateFrom)
   if (dateTo) requestParams.set('date_to', dateTo)
   if (ids) requestParams.set('ids', ids)
+  if (search.get('account_key')) requestParams.set('account_key', search.get('account_key')!)
+  const assets = useQuery({ queryKey: ['assets'], queryFn: familyApi.assets })
+  const accounts = Array.from(new Map((assets.data ?? []).filter(row => !row.archived).map(row => [row.account_key, row])).values())
+  const status = useQuery({ queryKey: ['village-state', 'ledger', today().slice(0, 7)], queryFn: () => lifeApi.state(today().slice(0, 7)) })
+  const linkedDetail = useQuery({ queryKey: ['transactions', 'detail', search.get('detail')], enabled: !!search.get('detail'), queryFn: () => api<PageData>(`/transactions?ids=${encodeURIComponent(search.get('detail')!)}`) })
+  const shownDetail = detailSelection ?? linkedDetail.data?.items[0] ?? null
 
+  const detail = shownDetail
   const query = useQuery({
     queryKey: ['transactions', requestParams.toString()],
     queryFn: () => api<PageData>(`/transactions?${requestParams.toString()}`),
@@ -69,6 +80,7 @@ export function Ledger() {
     cache.invalidateQueries({ queryKey: ['budget-status'] })
     cache.invalidateQueries({ queryKey: ['budget-preview'] })
     cache.invalidateQueries({ queryKey: ['family'] })
+    for (const key of ['chronicle', 'village-state', 'market-review']) void cache.invalidateQueries({ queryKey: [key] })
   }
 
   const add = useMutation({
@@ -83,6 +95,7 @@ export function Ledger() {
     mutationFn: () => api('/transactions/undo-category', json('POST', undo)),
     onSuccess: () => { setUndo([]); refresh() },
   })
+  const confirmReview = useMutation({ mutationFn: () => lifeApi.batch({ ids: selected, category: category === '保留原分类' ? null : category, tx_date: batchDate || null, account_key: batchAccount && batchAccount !== 'clear' ? batchAccount : null, clear_account: batchAccount === 'clear', confirmed: true }), onSuccess: () => { setSelected([]); refresh() } })
   const remove = useMutation({
     mutationFn: (target: Exclude<DeleteTarget, null>) => target === 'all'
       ? api<{ deleted: number }>('/transactions', { method: 'DELETE' })
@@ -116,7 +129,8 @@ export function Ledger() {
 
   return <div className="page ledger-page space-y-6">
     <header><p className="mb-1 text-sm text-muted">交易与分类</p><h1 className="m-0 text-3xl font-semibold">账本</h1></header>
-    <div className="ledger-toolbar"><Button onClick={() => setAdding(true)}>记一笔</Button><Button variant="secondary" onClick={() => updateFilter("import", "1")}>导入账单</Button></div>
+    <div className="ledger-toolbar"><Button onClick={() => updateFilter('import', '1')}>导入账单</Button><Button variant="secondary" onClick={() => setAdding(true)}>记一笔</Button><Button variant={review ? 'primary' : 'secondary'} onClick={() => updateFilter('review', review ? '' : '1')}>待处理</Button></div>
+    {status.data && <div className="pending-strip"><button onClick={() => updateFilter('category', '待确认')}>未分类 <strong>{status.data.unclassified}</strong></button><button onClick={() => updateFilter('review', '1')}>待核对 <strong>{status.data.unreviewed}</strong></button><button onClick={() => updateFilter('import', '1')}>导入异常 <strong>{status.data.import_errors}</strong></button></div>}
     {query.data && <LedgerPortrait data={query.data} rangeLabel={rangeLabel} onCategory={category => updateFilter('category', category)}/>}
     <div className="ledger-cross-actions"><span>从记录进入计划</span><Link className="story-text-action" to={`/simulate?category=${encodeURIComponent(filterCategory || '当前消费')}&from=${encodeURIComponent('/ledger?' + search.toString())}`}>在集市比较一项消费 →</Link></div>
 
@@ -127,6 +141,7 @@ export function Ledger() {
         <div className="field"><label>商户</label><input value={form.merchant} onChange={event => setForm({ ...form, merchant: event.target.value })}/></div>
         <AmountInput label="金额" value={form.amount_cents} onChange={value => setForm({ ...form, amount_cents: value })}/>
         <div className="field"><label>分类</label><CategoryPicker value={form.category} onChange={value => setForm({ ...form, category: value })} categories={categories}/></div>
+        <div className="field"><label>所属账户</label><select value={form.account_key || ''} onChange={event => setForm({ ...form, account_key: event.target.value || null })}><option value="">未关联</option>{accounts.map(row => <option key={row.account_key} value={row.account_key}>{row.name}</option>)}</select></div>
         <div className="flex items-end"><Button onClick={() => add.mutate()} disabled={add.isPending || !form.amount_cents}>添加</Button></div>
       </div>
       {add.isError && <p className="text-sm text-danger">{add.error.message}</p>}
@@ -163,7 +178,8 @@ export function Ledger() {
       </div>
 
       <AiClassificationPanel items={query.data?.items || []} selectedIds={selected} onSaved={before => { setUndo(before); setSelected([]); refresh() }}/>
-      {selected.length > 0 && <div className="mb-4 flex flex-wrap items-center gap-3 rounded-control bg-canvas p-3 text-sm">已选 {selected.length} 笔 <CategoryPicker value={category} onChange={setCategory} categories={categories}/><Button onClick={() => batch.mutate()} disabled={batch.isPending}>批量修改分类</Button></div>}
+      {selected.length > 0 && <div className="mb-4 flex flex-wrap items-center gap-3 rounded-control bg-canvas p-3 text-sm">已选 {selected.length} 笔 <CategoryPicker value={category} onChange={setCategory} categories={['保留原分类', ...categories]}/><Button onClick={() => batch.mutate()} disabled={batch.isPending || category === '保留原分类'}>批量修改分类</Button></div>}
+      {selected.length > 0 && <div className="batch-review-controls"><label>修正日期<input aria-label="批量修正日期" type="date" value={batchDate} onChange={event => setBatchDate(event.target.value)}/></label><label>关联账户<select value={batchAccount} onChange={event => setBatchAccount(event.target.value)}><option value="">保留原账户</option><option value="clear">解除账户关联</option>{accounts.map(row => <option key={row.account_key} value={row.account_key}>{row.name}</option>)}</select></label><Button disabled={confirmReview.isPending} onClick={() => confirmReview.mutate()}>修正并确认所选记录</Button>{confirmReview.isSuccess && <span role="status">已确认</span>}{confirmReview.isError && <p role="alert">操作失败，记录可能冲突或已变更，请刷新后重试。</p>}</div>}
       {undo.length > 0 && <div className="mb-4 flex items-center gap-3 text-sm text-success">分类已更新 <Button variant="secondary" onClick={() => restore.mutate()}>撤销</Button></div>}
       {query.isLoading ? <State kind="loading"/> : query.isError ? <State kind="error" message={query.error.message} retry={() => query.refetch()}/> : <>
         <TransactionTable items={query.data?.items || []} selected={selected} onSelect={setSelected} onDetail={setDetail} onDelete={item => setDeleteTarget(item)}/>
@@ -171,7 +187,8 @@ export function Ledger() {
       </>}
     </Card>
 
-    <DetailDialog open={!!detail} onOpenChange={open => { if (!open) setDetail(null) }} title="账单详情">
+    <DetailDialog open={!!shownDetail} onOpenChange={open => { if (!open) { setDetail(null); updateFilter('detail', '') } }} title="账单详情">
+      {shownDetail && <TransactionBackground key={shownDetail.id} transactionId={shownDetail.id} month={shownDetail.tx_date.slice(0, 7)}/>}
       {detail && <>
         <TransactionDetail item={detail}/>
         <div className="mt-5"><Button variant="danger" onClick={() => setDeleteTarget(detail)}><Trash2 size={16}/>删除这条账单</Button></div>

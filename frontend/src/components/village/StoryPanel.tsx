@@ -1,137 +1,110 @@
-import { useEffect, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import { getVillageOverview, ledgerHref, safeEvidenceHref } from '../../lib/village'
-import { money } from '../../lib/format'
+import { useEffect, useRef, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, useSearchParams } from 'react-router-dom'
+import { motion, useReducedMotion } from 'motion/react'
+import { lifeApi } from '../../lib/lifeApi'
+import { money, today } from '../../lib/format'
 import { useSession } from '../../lib/session'
-import type { AgentBrief } from '../../lib/agent'
-import { State } from '../ui'
+import { State, Button } from '../ui'
+import { AiMarkdown } from '../AiMarkdown'
 import { Illustration } from './Illustration'
-import { StoryAction, StoryChapter, StoryMetrics } from './StoryParts'
-import { chapterLabels, useVillage, type StoryChapter as Chapter } from './VillageContext'
+import { CharacterHint, SourceLink } from './LifeWidgets'
+import { chapterLabels, useVillage, type StoryChapter } from './VillageContext'
+import { ledgerHref } from '../../lib/village'
 
-const chapters = Object.keys(chapterLabels) as Chapter[]
+const chapters = Object.keys(chapterLabels) as StoryChapter[]
+const chapterActions: Record<StoryChapter, string> = {
+  summary: '/ledger', spending: '/simulate?view=spending', memories: '/logs', surplus: '/accounts', next: '/review',
+}
 
 export function Story() {
   const village = useVillage()
-  const session = useSession()
-  const overview = useQuery({ queryKey: ['overview'], queryFn: getVillageOverview })
-  const brief = useQuery<AgentBrief | null>({
-    queryKey: ['agent-report', session.data?.user.id], queryFn: () => null, enabled: false,
-  })
+  const owner = useSession().data?.user.id
+  const client = useQueryClient()
+  const [params, setParams] = useSearchParams()
+  const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(params.get('month') || '') ? params.get('month')! : village?.month ?? today().slice(0, 7)
+  const edition = params.get('edition') || undefined
+  const [useLogs, setUseLogs] = useState(false)
   const scroll = useRef<HTMLDivElement>(null)
+  const restored = useRef('')
+  const reduced = useReducedMotion()
+  const query = useQuery({ queryKey: ['chronicle', owner, month, edition], queryFn: () => lifeApi.story(month, edition),
+    refetchInterval: current => current.state.data?.editions.some(item => ['pending', 'running'].includes(item.status)) ? 2500 : false })
+  const generate = useMutation({ mutationFn: () => lifeApi.generate(month, useLogs, true), onSuccess: () => client.invalidateQueries({ queryKey: ['chronicle'] }) })
+  const progressKey = `spendwise-story-progress:${owner}:${month}`
+  const currentChapter = village?.chapter ?? 'summary'
 
+  function jump(chapter: StoryChapter) {
+    village?.setChapter(chapter)
+    localStorage.setItem(progressKey, chapter)
+    const target = document.getElementById(`story-${chapter}`)
+    const root = scroll.current
+    if (target && root) root.scrollTo({ top: target.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop - 18, behavior: reduced ? 'instant' : 'smooth' })
+  }
   useEffect(() => {
     const root = scroll.current
     if (!root) return
+    const token = `${month}:${params.get('chapter') || ''}`
+    if (restored.current !== token) {
+      const saved = params.get('chapter') || localStorage.getItem(progressKey)
+      restored.current = token
+      requestAnimationFrame(() => jump(chapters.includes(saved as StoryChapter) ? saved as StoryChapter : 'summary'))
+    }
     const update = () => {
-      if (!root.clientHeight) return
-      const box = root.getBoundingClientRect()
-      const target = Math.max(0, box.top) + Math.min(root.clientHeight, window.innerHeight) * .22
-      const sections = Array.from(root.querySelectorAll<HTMLElement>('[data-story-chapter]'))
-      const current = sections.find(element => {
-        const bounds = element.getBoundingClientRect()
-        return bounds.top <= target && bounds.bottom > target
-      })
-      if (current) village?.setChapter(current.dataset.storyChapter as Chapter)
+      const bounds = root.getBoundingClientRect()
+      const position = bounds.top + root.clientHeight * .18
+      for (const section of root.querySelectorAll<HTMLElement>('[data-story-chapter]')) {
+        const rect = section.getBoundingClientRect()
+        if (rect.top <= position && rect.bottom > position) {
+          const chapter = section.dataset.storyChapter as StoryChapter
+          village?.setChapter(chapter)
+          localStorage.setItem(progressKey, chapter)
+          break
+        }
+      }
     }
     root.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('scroll', update, { passive: true })
-    const observer = new ResizeObserver(update)
-    observer.observe(root)
-    return () => {
-      observer.disconnect()
-      root.removeEventListener('scroll', update)
-      window.removeEventListener('scroll', update)
-    }
-  }, [overview.isSuccess, village?.setChapter])
+    return () => root.removeEventListener('scroll', update)
+    // Reading restoration intentionally follows month and explicit deep links, not every scroll update.
+  }, [query.isSuccess, month, params.get('chapter')])
 
-  function jump(chapter: Chapter) {
-    village?.setChapter(chapter)
-    const target = document.getElementById(`story-${chapter}`)
-    const root = scroll.current
-    if (!target || !root) return
-    const behavior = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'
-    root.scrollTo({ top: target.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop - 18, behavior })
-  }
+  if (query.isPending) return <div className="story-paper"><State kind="loading" message="正在整理本月生活与账簿…"/></div>
+  if (query.isError || !query.data) return <div className="story-paper"><State kind="error" retry={() => query.refetch()}/></div>
+  const data = query.data
+  const task = data.editions.find(item => ['pending', 'running'].includes(item.status))
+  const latest = data.editions[0]
+  const busy = generate.isPending || !!task
+  const ask = () => village?.ask({ label: chapterLabels[currentChapter], month }, `请结合我当前阅读的${month}纪事“${chapterLabels[currentChapter]}”，先核对本人账本和明确允许AI使用的生活记录，再区分事实与判断。`)
 
-  if (overview.isPending) return <div className="story-paper"><State kind="loading" message="正在整理本月账本…"/></div>
-  const data = overview.data
-  if (overview.isError || !data) return <div className="story-paper"><State kind="error" message="暂时无法读取本月账本" retry={() => overview.refetch()}/></div>
-
-  const report = brief.data
-  const matchingReport = report && report.month === data.month
-    && report.facts.transaction_count === data.transaction_count
-    && report.facts.income_cents === data.income_cents
-    && report.facts.spent_cents === Math.max(0, data.expense_cents)
-    && brief.dataUpdatedAt >= overview.dataUpdatedAt
-  const surplus = data.net_flow_cents ?? 0
-  const headline = !data.transaction_count ? '从第一笔记录，开始本月故事。'
-    : surplus > 0 ? '本月收入，留有结余。'
-    : surplus < 0 ? '本月净支出超过收入。' : '本月记录的收支持平。'
-  const updated = new Date(overview.dataUpdatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-  const monthLabel = `${data.month.slice(0, 4)} 年 ${Number(data.month.slice(5))} 月`
-  const categories = [...data.category_spend].sort((a, b) => b.amount_cents - a.amount_cents)
-  const ask = (chapter: Chapter, category?: string) => village?.ask({
-    label: chapterLabels[chapter], month: data.month, category,
-  }, `请结合我的账本解释${category ? `“${category}”的支出情况` : chapterLabels[chapter]}，指出依据和数据覆盖范围。`)
-
-  return <article className="story-paper" aria-label="本月财务 Story" data-testid="village-story">
-    <header className="story-masthead">
-      <Illustration name="ledger"/>
-      <div><h1>本月财务故事</h1><p>{monthLabel}</p></div>
-    </header>
-    <nav className="story-index" aria-label="Story 章节">{chapters.map((id, index) => <button key={id} onClick={() => jump(id)} className={village?.chapter === id ? 'is-active' : ''} aria-current={village?.chapter === id ? 'step' : undefined}>
-      <span>{index + 1}</span>{chapterLabels[id]}
-    </button>)}</nav>
-    <div className="story-reading-stage" aria-live="polite"><span>正在阅读</span><strong>{chapterLabels[village?.chapter ?? 'summary']}</strong><span>{chapters.indexOf(village?.chapter ?? 'summary') + 1} / {chapters.length}</span></div>
-    <div ref={scroll} className="story-scroll" tabIndex={0} aria-label="财务故事正文">
-      <section id="story-summary" data-story-chapter="summary" className="story-opening">
-        <Illustration name="merchant" className="story-merchant"/>
-        <p className="story-eyebrow">本月概览</p><h2 className="story-lead-title">{headline}</h2>
-        <p>{data.transaction_count ? `已记录 ${data.transaction_count} 笔流水，回看收入与消费的去向。` : '添加或导入账单，让收入、消费与结余连成一条故事。'}</p>
-        <StoryMetrics income={data.income_cents} expense={data.expense_cents} surplus={surplus}/>
-        {!data.transaction_count && <StoryAction to="/ledger?import=1">添加或导入账单</StoryAction>}
-        <p className="story-coverage">个人账本 · 更新于 {updated}</p>
-      </section>
-      <StoryChapter id="income" number="01 / 来源" title="记录下来的收入">
-        <div className="story-amount income-amount">{money(data.income_cents)}</div>
-        <Link className="story-source-row" to={ledgerHref(data.month, undefined, 'income')} onMouseEnter={() => village?.setChapter('income')}>
-          <Illustration name="income"/><div><span>本月收入记录</span><strong>{money(data.income_cents)}</strong><span className="story-data-bar"><i style={{ width: data.income_cents > 0 ? '100%' : '0%' }}/></span></div><span aria-hidden="true">↗</span>
-        </Link>
-        <p>收入明细可在账房核对。来源细分及历史对比待服务端提供聚合。</p>
-        <StoryAction to={ledgerHref(data.month, undefined, 'income')}>核对收入记录</StoryAction>
-      </StoryChapter>
-      <StoryChapter id="spending" number="02 / 去向" title="资金流向日常生活">
-        <div className="story-amount expense-amount">{money(data.expense_cents)}</div>
-        <p>净支出已扣退款，转账不计收支。</p>
-        {categories.length ? <div className="story-categories">{categories.map(item => {
-          const ratio = data.expense_cents > 0 && item.amount_cents >= 0 ? item.amount_cents / data.expense_cents * 100 : null
-          return <Link key={item.category} to={ledgerHref(data.month, item.category)} className={village?.selectedCategory === item.category ? 'is-selected' : ''}
-            onFocus={() => { village?.selectCategory(item.category); village?.setChapter('spending') }}
-            onMouseEnter={() => { village?.selectCategory(item.category); village?.setChapter('spending') }}>
-            <span className="story-category-name">{item.category}</span><strong>{money(item.amount_cents)}</strong>
-            <span className="story-data-bar"><i style={{ width: `${Math.min(100, ratio ?? 0)}%` }}/></span>
-            <small>{ratio === null ? '净退款' : `${ratio.toFixed(0)}%`}</small>
-          </Link>
-        })}</div> : <p className="story-note">本月尚无消费分类。</p>}
-        <button className="story-text-action" onClick={() => ask('spending', village?.selectedCategory)}>请助手解释这项支出 ↗</button>
-      </StoryChapter>
-      <StoryChapter id="surplus" number="03 / 留下" title="本月的收支结余">
-        <div className="story-surplus"><Illustration name="surplus"/><strong>{money(surplus)}</strong></div>
-        <p>本月收入减净支出。账户期初资金、借贷与估值变化需在钱庄核对。</p>
-        <p className="story-note">当前汇总未提供上月同期数据。</p>
-        <StoryAction to="/accounts">前往钱庄核对账户</StoryAction>
-      </StoryChapter>
-      <StoryChapter id="next" number="04 / 展望" title="接下来值得关注的事情">
-        <div className="story-insight"><Illustration name="insight"/><div><h3>预算执行</h3><p>{data.budget_remaining_cents < 0 ? `本月已超预算 ${money(-data.budget_remaining_cents)}。` : `本月预算尚余 ${money(data.budget_remaining_cents)}。`}</p><StoryAction to="/simulate">先比较下一项消费计划</StoryAction></div></div>
-        {matchingReport && report.cards.map(card => <div className="story-insight" key={card.id}>
-          <Illustration name="insight"/><div><h3>{card.title}</h3><p>{card.message}</p><p className="story-evidence">依据 · {card.evidence}</p><StoryAction to={safeEvidenceHref(card.href)}>核对相关记录</StoryAction></div>
-        </div>)}
-        <StoryAction to="/review">整理本月背景与安排</StoryAction>
-      </StoryChapter>
-      <p className="story-footnote">人民币 · 本月已记录账本<br/>收支结余与账户余额、净资产使用独立口径。</p>
+  return <article className="story-paper" aria-label="本月生活纪事" data-testid="village-story">
+    <header className="story-masthead"><Illustration name="ledger"/><div><h1>本月生活纪事</h1><p>{data.selected_edition ? new Date(data.selected_edition.created_at).toLocaleDateString('zh-CN') + ' 整理' : '已记录的生活与账本'}</p></div><input aria-label="纪事月份" type="month" value={month} max={today().slice(0, 7)} onChange={event => { if (event.target.value) setParams({ month: event.target.value }) }}/></header>
+    <div className="story-generation"><Button variant="ghost" disabled={busy} onClick={() => generate.mutate()}>{busy ? '正在整理纪事…' : '整理本月纪事'}</Button>
+      <details><summary>使用范围与历史版本</summary><label><input type="checkbox" checked={useLogs} onChange={event => setUseLogs(event.target.checked)}/>本次使用允许AI读取的生活记录及本月回顾</label><p>账本沿用已有 AI 授权；日志需逐篇允许。整理后保存版本，页面滚动不会调用模型。</p>
+        <select aria-label="纪事版本" value={edition || ''} onChange={event => { const next = new URLSearchParams(params); if (event.target.value) next.set('edition', event.target.value); else next.delete('edition'); setParams(next) }}><option value="">最新纪事</option><option value="facts">当前账本事实</option>{data.editions.filter(item => item.status === 'completed').map((item, index) => <option key={item.id} value={item.id}>历史版 {data.editions.length - index} · {new Date(item.created_at).toLocaleString('zh-CN')}</option>)}</select>
+      </details>
+      {(generate.isError || latest?.status === 'failed') && <p role="alert">{latest?.error_message || '无法整理，请检查 AI 连接与授权后重试。'}</p>}
+      {data.stale && <p role="status">账本或生活记录已更新，可重新整理本月纪事。</p>}
+      {task && <p role="status">{task.status === 'pending' ? '任务排队中' : '正在组织纪事'} · 离开后可回来查看</p>}
     </div>
-    <footer className="story-footer"><button className="story-primary" onClick={() => ask(village?.chapter ?? 'summary')}>继续与 AI 助手对话 <span aria-hidden="true">↗</span></button><Illustration name="sprig"/></footer>
+    <nav className="story-index" aria-label="Story 章节">{chapters.map((chapter, index) => <button key={chapter} onClick={() => jump(chapter)} className={currentChapter === chapter ? 'is-active' : ''} aria-current={currentChapter === chapter ? 'step' : undefined}><span>{index + 1}</span>{chapterLabels[chapter]}</button>)}</nav>
+    <div className="story-reading-stage"><span>正在阅读</span><strong>{chapterLabels[currentChapter]}</strong><span>{chapters.indexOf(currentChapter) + 1} / 5</span></div>
+    <div ref={scroll} className="story-scroll" tabIndex={0} aria-label="生活纪事正文">
+      {data.chapters.map((part, index) => {
+        const chapter = part.chapter as StoryChapter
+        return <motion.section key={`${edition || 'latest'}-${chapter}`} id={`story-${chapter}`} data-story-chapter={chapter} className={currentChapter === chapter ? 'is-current' : ''} initial={{ opacity: reduced ? 1 : 0 }} whileInView={{ opacity: 1 }} viewport={{ root: scroll, once: true, amount: .1 }} transition={{ duration: .18 }}>
+          <div className="story-chapter-heading"><span className="story-chapter-number">{String(index + 1).padStart(2, '0')}</span><div><p className="story-chapter-label">{chapterLabels[chapter]}</p><h2>{part.title}</h2></div></div>
+          {index === 0 && <Illustration name="merchant" className="story-merchant"/>}
+          <AiMarkdown content={part.body} className="story-narrative"/>
+          <div className="story-fact-lines">{part.facts.slice(0, 3).map(fact => <Link key={fact.label} to={fact.source?.href || ledgerHref(month)}><span>{fact.label}</span><strong>{money(fact.amount_cents)}</strong></Link>)}</div>
+          {chapter === 'spending' && <div className="story-categories">{data.categories.map(item => <Link key={item.category} to={`${ledgerHref(month, item.category)}`} onMouseEnter={() => village?.selectCategory(item.category)}><span>{item.category}</span><strong>{money(item.amount_cents)}</strong><small>同口径上月 {money(item.previous_cents)}</small><small>{item.change_cents > 0 ? '+' : ''}{money(item.change_cents)}</small></Link>)}</div>}
+          {chapter === 'memories' && <div className="story-memory-list">{data.logs.slice(0, 5).map(log => <Link key={log.id} to={`/logs?log=${log.id}`}><time>{log.event_date}</time><strong>{log.title || log.content.slice(0, 30)}</strong><span>{log.content.slice(0, 100)}</span></Link>)}<Link className="story-action" to={`/logs?new=1&month=${month}`}>值得留下的一件事 ↗</Link></div>}
+          {chapter === 'next' && data.review_completed && <p className="review-completed">本月回顾已完成</p>}
+          <details className="story-sources"><summary>查看依据 · {part.sources.length} 项来源</summary><div className="source-links">{part.sources.map(source => <SourceLink key={`${source.type}-${source.id}`} source={source}/>)}</div></details>
+          <div className="story-chapter-actions"><Link to={chapterActions[chapter]} className="story-action">直接处理 ↗</Link>{index < 4 && <button className="story-text-action" onClick={() => jump(chapters[index + 1])}>跳过本章 →</button>}</div>
+        </motion.section>
+      })}
+      <CharacterHint text={village?.business?.character_hint || '只记下对你有意义的事。其余的可以稍后再看。'}/>
+    </div>
+    <footer className="story-footer"><button className="story-primary" onClick={ask}>就当前纪事问问助手 ↗</button><Illustration name="sprig"/></footer>
   </article>
 }

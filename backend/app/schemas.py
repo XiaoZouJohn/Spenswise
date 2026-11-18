@@ -15,6 +15,7 @@ class MonthlyReviewIn(BaseModel):
     notes: str = Field(default="", max_length=3000)
     constraints: str = Field(default="", max_length=2000)
     differences: str = Field(default="", max_length=2000)
+    life_log_ids: list[str] = Field(default_factory=list, max_length=30)
 
 
 class MonthlyReviewOut(MonthlyReviewIn):
@@ -24,6 +25,7 @@ class MonthlyReviewOut(MonthlyReviewIn):
     ledger_changed: bool
     saved_facts: dict | None
     facts: dict
+    life_logs: list[dict] = Field(default_factory=list)
 
 
 class AgentPreferencesIn(BaseModel):
@@ -78,6 +80,7 @@ class TransactionIn(BaseModel):
     description: str = ""
     category: str = "待确认"
     is_fixed: bool = False
+    account_key: str | None = Field(default=None, max_length=36)
 
 
 class TransactionOut(BaseModel):
@@ -95,6 +98,8 @@ class TransactionOut(BaseModel):
     classification_reason: str
     family_shared: bool = False
     family_internal: bool = False
+    account_key: str | None = None
+    reviewed: bool = False
 
 
 class Page(BaseModel):
@@ -106,6 +111,51 @@ class Page(BaseModel):
     page_size: int
     expense_cents: int = 0
     income_cents: int = 0
+
+
+class LifeLogIn(BaseModel):
+    event_date: date
+    title: str = Field(default="", max_length=100)
+    content: str = Field(min_length=1, max_length=5000)
+    visibility: Literal["private"] = "private"
+    ai_allowed: bool = False
+    transaction_ids: list[int] = Field(default_factory=list, max_length=50)
+    revision: int = Field(default=0, ge=0)
+
+
+class LifeLogOut(LifeLogIn):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    deleted: bool = False
+
+
+class EventIn(BaseModel):
+    purpose: str = Field(default="", max_length=200)
+    feeling: str = Field(default="", max_length=80)
+    note: str = Field(default="", max_length=2000)
+    deferred: bool = False
+    revision: int = Field(default=0, ge=0)
+
+
+class DraftIn(BaseModel):
+    content: dict
+    revision: int = Field(default=0, ge=0)
+    expected_owner_id: int | None = None
+
+
+class BatchReviewIn(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=100)
+    category: str | None = Field(default=None, min_length=1, max_length=80)
+    tx_date: date | None = None
+    account_key: str | None = Field(default=None, max_length=36)
+    clear_account: bool = False
+    confirmed: bool = True
+
+
+class StoryGenerateIn(BaseModel):
+    use_logs: bool = False
+    force: bool = False
 
 
 class CategoryBudgetIn(BaseModel):

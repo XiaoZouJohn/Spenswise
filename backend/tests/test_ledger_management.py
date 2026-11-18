@@ -56,7 +56,12 @@ def test_ledger_filters_and_deletion(tmp_path):
         )
         assert total == 1
         assert filtered[0].merchant == "校园食堂"
-        assert totals == {"expense_cents": 1800, "income_cents": 0}
+        assert totals == {
+            "expense_cents": 1800,
+            "income_cents": 0,
+            "net_flow_cents": -1800,
+            "category_spend": [{"category": "餐饮", "amount_cents": 1800}],
+        }
 
         try:
             ledger.list_transactions(

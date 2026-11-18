@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { villageMedia } from '../../lib/villageMedia'
 import { Link, useLocation } from 'react-router-dom'
 import { buildings, chapterBuildings, type Building, type StoryChapter } from './VillageContext'
 import { BuildingLabel } from './BuildingLabel'
@@ -9,6 +10,7 @@ export function VillageScene({ chapter, selectedCategory, categoryAmount, worksp
   categoryAmount?: number
   flow?: { income: number; expense: number }; hasData: boolean
 }) {
+  const media = villageMedia()
   const video = useRef<HTMLVideoElement>(null)
   const host = useRef<HTMLDivElement>(null)
   const location = useLocation()
@@ -47,13 +49,13 @@ export function VillageScene({ chapter, selectedCategory, categoryAmount, worksp
 
   const selected = workspace ? buildings.find(building => building.href === location.pathname)?.id : undefined
   const active = hovered ?? selected ?? (hasData ? chapterBuildings[chapter] : undefined)
-  const showIncome = hasData && chapter === 'income' && !!flow && flow.income > 0
+  const showIncome = hasData && chapter === 'summary' && !!flow && flow.income > 0
   const showExpense = hasData && chapter === 'spending' && !!flow && flow.expense > 0
 
   return <div ref={host} className={`village-scene ${workspace ? 'is-working' : ''} ${playing ? 'is-playing' : ''}`} data-testid="village-scene">
-      <img className="village-poster" src="/media/village/village-v1.webp" alt="富贵村：商会大厅、账房、钱庄与集市"/>
-      <video ref={video} className="village-video" autoPlay={playing} muted playsInline loop preload="metadata" poster="/media/village/village-v1.webp" onError={() => setFailed(true)} aria-hidden="true">
-        <source src="/media/village/village-v1.mp4" type="video/mp4"/>
+      <img className="village-poster" src={media.poster} alt="富贵村：议事厅、账房、钱庄与集市"/>
+      <video ref={video} className="village-video" autoPlay={playing} muted playsInline loop preload="metadata" poster={media.poster} onError={() => setFailed(true)} aria-hidden="true">
+        <source src={media.video} type="video/mp4"/>
       </video>
       <div className="village-light"/>
       <div className="village-spatial-layer" hidden={workspace}>
@@ -66,7 +68,7 @@ export function VillageScene({ chapter, selectedCategory, categoryAmount, worksp
             return <Link key={building.id} to={building.href} className={`building-hotspot ${active === building.id ? 'is-active' : ''}`}
               style={{ clipPath: `polygon(${polygon})` }} tabIndex={-1} aria-label={`进入${building.name}`}
               onMouseEnter={() => setHovered(building.id)} onMouseLeave={() => setHovered(null)}>
-              <img className="building-highlight-image" src="/media/village/village-v1.webp" alt="" aria-hidden="true"/>
+              <img className="building-highlight-image" src={media.poster} alt="" aria-hidden="true"/>
             </Link>
           })}
         </div>

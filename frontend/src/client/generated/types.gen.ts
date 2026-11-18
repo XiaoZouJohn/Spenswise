@@ -147,6 +147,15 @@ export type BatchCategory = {
     create_rule?: boolean;
 };
 
+export type BatchReviewIn = {
+    ids: Array<(number)>;
+    category?: (string | null);
+    tx_date?: (string | null);
+    account_key?: (string | null);
+    clear_account?: boolean;
+    confirmed?: boolean;
+};
+
 export type Body_preview_import_api_import_preview_post = {
     file: (Blob | File);
 };
@@ -243,6 +252,22 @@ export type DeviceSessionOut = {
     current: boolean;
     created_at: string;
     expires_at: string;
+};
+
+export type DraftIn = {
+    content: {
+        [key: string]: unknown;
+    };
+    revision?: number;
+    expected_owner_id?: (number | null);
+};
+
+export type EventIn = {
+    purpose?: string;
+    feeling?: string;
+    note?: string;
+    deferred?: boolean;
+    revision?: number;
 };
 
 export type FamilyBudgetIn = {
@@ -473,6 +498,32 @@ export type LegacyClaimIn = {
     code: string;
 };
 
+export type LifeLogIn = {
+    event_date: string;
+    title?: string;
+    content: string;
+    visibility?: 'private';
+    ai_allowed?: boolean;
+    transaction_ids?: Array<(number)>;
+    revision?: number;
+};
+
+export type visibility = 'private';
+
+export type LifeLogOut = {
+    event_date: string;
+    title?: string;
+    content: string;
+    visibility?: 'private';
+    ai_allowed?: boolean;
+    transaction_ids?: Array<(number)>;
+    revision?: number;
+    id: string;
+    created_at: string;
+    updated_at: string;
+    deleted?: boolean;
+};
+
 export type MemberOut = {
     share_from: string;
     share_transactions: boolean;
@@ -493,6 +544,7 @@ export type MonthlyReviewIn = {
     notes?: string;
     constraints?: string;
     differences?: string;
+    life_log_ids?: Array<(string)>;
 };
 
 export type MonthlyReviewOut = {
@@ -501,6 +553,7 @@ export type MonthlyReviewOut = {
     notes?: string;
     constraints?: string;
     differences?: string;
+    life_log_ids?: Array<(string)>;
     month: string;
     saved_at: (string | null);
     saved_ledger_version: (string | null);
@@ -511,6 +564,9 @@ export type MonthlyReviewOut = {
     facts: {
         [key: string]: unknown;
     };
+    life_logs?: Array<{
+        [key: string]: unknown;
+    }>;
 };
 
 export type OptimizationResult = {
@@ -685,6 +741,11 @@ export type SharingIn = {
     share_transactions: boolean;
 };
 
+export type StoryGenerateIn = {
+    use_logs?: boolean;
+    force?: boolean;
+};
+
 export type TransactionIn = {
     tx_date: string;
     amount_cents: number;
@@ -693,6 +754,7 @@ export type TransactionIn = {
     description?: string;
     category?: string;
     is_fixed?: boolean;
+    account_key?: (string | null);
 };
 
 export type tx_type = 'expense' | 'income' | 'transfer' | 'refund';
@@ -711,6 +773,8 @@ export type TransactionOut = {
     classification_reason: string;
     family_shared?: boolean;
     family_internal?: boolean;
+    account_key?: (string | null);
+    reviewed?: boolean;
 };
 
 export type TransferIn = {
@@ -1010,6 +1074,126 @@ export type ClearMonthlyReviewApiMonthlyReviewsMonthClearPostData = {
 
 export type ClearMonthlyReviewApiMonthlyReviewsMonthClearPostResponse = (MonthlyReviewOut);
 
+export type LifeLogsApiVillageLogsGetData = {
+    month?: (string | null);
+    transactionId?: (number | null);
+};
+
+export type LifeLogsApiVillageLogsGetResponse = (Array<LifeLogOut>);
+
+export type CreateLifeLogApiVillageLogsPostData = {
+    requestBody: LifeLogIn;
+};
+
+export type CreateLifeLogApiVillageLogsPostResponse = (LifeLogOut);
+
+export type LifeLogApiVillageLogsLogIdGetData = {
+    logId: string;
+};
+
+export type LifeLogApiVillageLogsLogIdGetResponse = (LifeLogOut);
+
+export type UpdateLifeLogApiVillageLogsLogIdPutData = {
+    logId: string;
+    requestBody: LifeLogIn;
+};
+
+export type UpdateLifeLogApiVillageLogsLogIdPutResponse = (LifeLogOut);
+
+export type DeleteLifeLogApiVillageLogsLogIdDeleteData = {
+    logId: string;
+    revision: number;
+};
+
+export type DeleteLifeLogApiVillageLogsLogIdDeleteResponse = (unknown);
+
+export type ConsumptionEventsApiVillageEventsGetData = {
+    month: string;
+};
+
+export type ConsumptionEventsApiVillageEventsGetResponse = (unknown);
+
+export type ConsumptionEventApiVillageEventsTransactionIdGetData = {
+    transactionId: number;
+};
+
+export type ConsumptionEventApiVillageEventsTransactionIdGetResponse = (unknown);
+
+export type UpdateConsumptionEventApiVillageEventsTransactionIdPutData = {
+    requestBody: EventIn;
+    transactionId: number;
+};
+
+export type UpdateConsumptionEventApiVillageEventsTransactionIdPutResponse = (unknown);
+
+export type ReviewTransactionsApiVillageBatchReviewPostData = {
+    requestBody: BatchReviewIn;
+};
+
+export type ReviewTransactionsApiVillageBatchReviewPostResponse = (unknown);
+
+export type VillageStateApiVillageStateGetData = {
+    month: string;
+};
+
+export type VillageStateApiVillageStateGetResponse = (unknown);
+
+export type VillageMarketApiVillageMarketGetData = {
+    month: string;
+};
+
+export type VillageMarketApiVillageMarketGetResponse = (unknown);
+
+export type WorkspaceDraftApiVillageDraftsResourceTypeResourceIdGetData = {
+    resourceId: string;
+    resourceType: string;
+};
+
+export type WorkspaceDraftApiVillageDraftsResourceTypeResourceIdGetResponse = (unknown);
+
+export type SaveWorkspaceDraftApiVillageDraftsResourceTypeResourceIdPutData = {
+    requestBody: DraftIn;
+    resourceId: string;
+    resourceType: string;
+};
+
+export type SaveWorkspaceDraftApiVillageDraftsResourceTypeResourceIdPutResponse = (unknown);
+
+export type ClearWorkspaceDraftApiVillageDraftsResourceTypeResourceIdDeleteData = {
+    expectedOwnerId?: (number | null);
+    resourceId: string;
+    resourceType: string;
+    revision: number;
+};
+
+export type ClearWorkspaceDraftApiVillageDraftsResourceTypeResourceIdDeleteResponse = (unknown);
+
+export type MonthlyStoryApiVillageStoryMonthGetData = {
+    editionId?: (string | null);
+    month: string;
+};
+
+export type MonthlyStoryApiVillageStoryMonthGetResponse = (unknown);
+
+export type GenerateMonthlyStoryApiVillageStoryMonthPostData = {
+    month: string;
+    requestBody: StoryGenerateIn;
+};
+
+export type GenerateMonthlyStoryApiVillageStoryMonthPostResponse = (unknown);
+
+export type StoryTaskStatusApiVillageStoryTasksTaskIdGetData = {
+    taskId: string;
+};
+
+export type StoryTaskStatusApiVillageStoryTasksTaskIdGetResponse = (unknown);
+
+export type TransactionStoryApiVillageTransactionStoryTransactionIdGetData = {
+    transactionId: number;
+};
+
+export type TransactionStoryApiVillageTransactionStoryTransactionIdGetResponse = (unknown);
+
 export type HealthApiHealthGetResponse = ({
     [key: string]: unknown;
 });
@@ -1041,6 +1225,7 @@ export type PreviewBudgetApiBudgetPreviewPostData = {
 export type PreviewBudgetApiBudgetPreviewPostResponse = (BudgetStatus);
 
 export type TransactionsApiTransactionsGetData = {
+    accountKey?: (string | null);
     category?: (string | null);
     dateFrom?: (string | null);
     dateTo?: (string | null);

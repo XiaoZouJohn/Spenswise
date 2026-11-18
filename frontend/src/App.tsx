@@ -20,6 +20,7 @@ const FamilyGoalsPage = lazy(() => import('./pages/FamilyGoals').then(m => ({ de
 const FamilyMembersPage = lazy(() => import('./pages/FamilyMembers').then(m => ({ default: m.FamilyMembersPage })))
 const AccountsPage = lazy(() => import('./pages/Accounts').then(m => ({ default: m.AccountsPage })))
 const Review = lazy(() => import('./pages/Review').then(m => ({ default: m.Review })))
+const LifeLogs = lazy(() => import('./pages/LifeLogs').then(m => ({ default: m.LifeLogs })))
 
 export default function App() {
   const session = useSession()
@@ -33,6 +34,7 @@ export default function App() {
       <Route path="/" element={<Navigate to="/overview" replace/>}/>
       <Route path="/overview" element={null}/>
       <Route path="/review" element={<Review/>}/>
+      <Route path="/logs" element={<LifeLogs/>}/>
       <Route path="/simulate" element={<Simulate/>}/>
       <Route path="/plan" element={<Navigate to="/overview" replace/>}/>
       <Route path="/ledger" element={<Ledger/>}/>

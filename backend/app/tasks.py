@@ -14,11 +14,21 @@ celery_app = Celery(
     backend=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
 )
 celery_app.conf.update(
+    broker_connection_timeout=3,
+    broker_transport_options={"socket_connect_timeout": 3, "socket_timeout": 3},
     task_track_started=True,
     task_serializer="json",
     result_serializer="json",
     accept_content=["json"],
 )
+
+
+@celery_app.task(name="spendwise.story", soft_time_limit=90, time_limit=120)
+def story_task(task_id: str) -> None:
+    from .services.village_story import generate
+
+    with SessionLocal() as db:
+        generate(db, task_id)
 
 
 @celery_app.task(name="spendwise.import", bind=True)

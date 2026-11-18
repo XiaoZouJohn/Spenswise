@@ -20,5 +20,5 @@ export function ledgerHref(month: string, category?: string, txType?: string) {
 export function safeEvidenceHref(href: string) {
   // Agent evidence is a navigation suggestion, never an executable external link.
   const route = href.split(/[?#]/)[0]
-  return ['/ledger', '/settings', '/simulate', '/accounts', '/overview', '/review', '/import'].includes(route) ? href : '/ledger'
+  return ['/ledger', '/settings', '/simulate', '/accounts', '/overview', '/review', '/import', '/logs'].includes(route) ? href : '/ledger'
 }

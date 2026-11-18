@@ -561,6 +561,70 @@ export const BatchCategorySchema = {
     title: 'BatchCategory'
 } as const;
 
+export const BatchReviewInSchema = {
+    properties: {
+        ids: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            maxItems: 100,
+            minItems: 1,
+            title: 'Ids'
+        },
+        category: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 80,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Category'
+        },
+        tx_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tx Date'
+        },
+        account_key: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 36
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Account Key'
+        },
+        clear_account: {
+            type: 'boolean',
+            title: 'Clear Account',
+            default: false
+        },
+        confirmed: {
+            type: 'boolean',
+            title: 'Confirmed',
+            default: true
+        }
+    },
+    type: 'object',
+    required: ['ids'],
+    title: 'BatchReviewIn'
+} as const;
+
 export const Body_preview_import_api_import_preview_postSchema = {
     properties: {
         file: {
@@ -914,6 +978,71 @@ export const DeviceSessionOutSchema = {
     type: 'object',
     required: ['id', 'current', 'created_at', 'expires_at'],
     title: 'DeviceSessionOut'
+} as const;
+
+export const DraftInSchema = {
+    properties: {
+        content: {
+            type: 'object',
+            title: 'Content'
+        },
+        revision: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Revision',
+            default: 0
+        },
+        expected_owner_id: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expected Owner Id'
+        }
+    },
+    type: 'object',
+    required: ['content'],
+    title: 'DraftIn'
+} as const;
+
+export const EventInSchema = {
+    properties: {
+        purpose: {
+            type: 'string',
+            maxLength: 200,
+            title: 'Purpose',
+            default: ''
+        },
+        feeling: {
+            type: 'string',
+            maxLength: 80,
+            title: 'Feeling',
+            default: ''
+        },
+        note: {
+            type: 'string',
+            maxLength: 2000,
+            title: 'Note',
+            default: ''
+        },
+        deferred: {
+            type: 'boolean',
+            title: 'Deferred',
+            default: false
+        },
+        revision: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Revision',
+            default: 0
+        }
+    },
+    type: 'object',
+    title: 'EventIn'
 } as const;
 
 export const FamilyBudgetInSchema = {
@@ -1922,6 +2051,127 @@ export const LegacyClaimInSchema = {
     title: 'LegacyClaimIn'
 } as const;
 
+export const LifeLogInSchema = {
+    properties: {
+        event_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Event Date'
+        },
+        title: {
+            type: 'string',
+            maxLength: 100,
+            title: 'Title',
+            default: ''
+        },
+        content: {
+            type: 'string',
+            maxLength: 5000,
+            minLength: 1,
+            title: 'Content'
+        },
+        visibility: {
+            type: 'string',
+            enum: ['private'],
+            const: 'private',
+            title: 'Visibility',
+            default: 'private'
+        },
+        ai_allowed: {
+            type: 'boolean',
+            title: 'Ai Allowed',
+            default: false
+        },
+        transaction_ids: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            maxItems: 50,
+            title: 'Transaction Ids'
+        },
+        revision: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Revision',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['event_date', 'content'],
+    title: 'LifeLogIn'
+} as const;
+
+export const LifeLogOutSchema = {
+    properties: {
+        event_date: {
+            type: 'string',
+            format: 'date',
+            title: 'Event Date'
+        },
+        title: {
+            type: 'string',
+            maxLength: 100,
+            title: 'Title',
+            default: ''
+        },
+        content: {
+            type: 'string',
+            maxLength: 5000,
+            minLength: 1,
+            title: 'Content'
+        },
+        visibility: {
+            type: 'string',
+            enum: ['private'],
+            const: 'private',
+            title: 'Visibility',
+            default: 'private'
+        },
+        ai_allowed: {
+            type: 'boolean',
+            title: 'Ai Allowed',
+            default: false
+        },
+        transaction_ids: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            maxItems: 50,
+            title: 'Transaction Ids'
+        },
+        revision: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Revision',
+            default: 0
+        },
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        },
+        deleted: {
+            type: 'boolean',
+            title: 'Deleted',
+            default: false
+        }
+    },
+    type: 'object',
+    required: ['event_date', 'content', 'id', 'created_at', 'updated_at'],
+    title: 'LifeLogOut'
+} as const;
+
 export const MemberOutSchema = {
     properties: {
         share_from: {
@@ -2005,6 +2255,14 @@ export const MonthlyReviewInSchema = {
             maxLength: 2000,
             title: 'Differences',
             default: ''
+        },
+        life_log_ids: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            maxItems: 30,
+            title: 'Life Log Ids'
         }
     },
     type: 'object',
@@ -2041,6 +2299,14 @@ export const MonthlyReviewOutSchema = {
             maxLength: 2000,
             title: 'Differences',
             default: ''
+        },
+        life_log_ids: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            maxItems: 30,
+            title: 'Life Log Ids'
         },
         month: {
             type: 'string',
@@ -2086,6 +2352,13 @@ export const MonthlyReviewOutSchema = {
         facts: {
             type: 'object',
             title: 'Facts'
+        },
+        life_logs: {
+            items: {
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Life Logs'
         }
     },
     type: 'object',
@@ -2842,6 +3115,23 @@ export const SharingInSchema = {
     title: 'SharingIn'
 } as const;
 
+export const StoryGenerateInSchema = {
+    properties: {
+        use_logs: {
+            type: 'boolean',
+            title: 'Use Logs',
+            default: false
+        },
+        force: {
+            type: 'boolean',
+            title: 'Force',
+            default: false
+        }
+    },
+    type: 'object',
+    title: 'StoryGenerateIn'
+} as const;
+
 export const TransactionInSchema = {
     properties: {
         tx_date: {
@@ -2879,6 +3169,18 @@ export const TransactionInSchema = {
             type: 'boolean',
             title: 'Is Fixed',
             default: false
+        },
+        account_key: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 36
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Account Key'
         }
     },
     type: 'object',
@@ -2942,6 +3244,22 @@ export const TransactionOutSchema = {
         family_internal: {
             type: 'boolean',
             title: 'Family Internal',
+            default: false
+        },
+        account_key: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Account Key'
+        },
+        reviewed: {
+            type: 'boolean',
+            title: 'Reviewed',
             default: false
         }
     },

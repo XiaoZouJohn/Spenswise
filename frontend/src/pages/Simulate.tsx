@@ -10,10 +10,17 @@ import { chartColors } from '../lib/tokens'
 import type { ScenarioInput, ScenarioResult } from '../types'
 import { getVillageOverview, safeEvidenceHref } from '../lib/village'
 import { useWorkspaceDraft } from '../lib/useWorkspaceDraft'
+import { ConsumptionReview } from '../components/village/ConsumptionReview'
 
 const categories = ['餐饮', '交通', '购物', '居住', '医疗健康', '娱乐', '旅行', '通讯', '教育', '日用品', '人情往来']
 
 export function Simulate() {
+  const [params, setParams] = useSearchParams()
+  const view = params.get('view') === 'simulation' ? 'simulation' : 'spending'
+  return <div className="page market-page"><header className="workspace-title"><div><p>集市 / 消费与选择</p><h1>集市</h1></div></header><nav className="building-tabs" aria-label="集市功能">{(['spending', 'simulation'] as const).map((item, index) => <button key={item} aria-pressed={view === item} onClick={() => { const next = new URLSearchParams(params); next.set('view', item); next.delete('category'); setParams(next) }}>{['消费回看', '消费模拟'][index]}</button>)}</nav>{view === 'spending' ? <ConsumptionReview/> : <SimulationWorkspace key={params.get('category') || ''}/>}</div>
+}
+
+function SimulationWorkspace() {
   const [params] = useSearchParams()
   const sourceCategory = params.get('category') || ''
   const sourceHref = params.get('from')

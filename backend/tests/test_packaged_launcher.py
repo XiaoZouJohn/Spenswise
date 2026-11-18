@@ -39,7 +39,7 @@ def test_unversioned_initial_database_continues_to_head(tmp_path, monkeypatch):
     launcher.migrate_database()
 
     with sqlite3.connect(database) as connection:
-        assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == ("0007",)
+        assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == ("0008",)
         asset_columns = {
             row[1] for row in connection.execute('PRAGMA table_info("asset_snapshots")')
         }
@@ -96,4 +96,4 @@ def test_isolated_source_runtime_does_not_migrate_legacy_data(tmp_path, monkeypa
     assert os.environ["AI_KEY_FILE"] == str(target / "ai-key" / "fernet.key")
     launcher.migrate_database(PROJECT_ROOT / "backend" / "migrations")
     with sqlite3.connect(database) as connection:
-        assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == ("0007",)
+        assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == ("0008",)

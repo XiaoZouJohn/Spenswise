@@ -30,17 +30,23 @@ from .models import (
     CategoryBudget,
     ChatConversation,
     ChatMessage,
+    ConsumptionEvent,
     HouseholdMember,
     HouseholdProposal,
     ImportJob,
     LegacyClaim,
+    LifeLog,
+    LifeLogTransaction,
     MerchantRule,
     ProposalComment,
     Scenario,
     Setting,
+    StoryEdition,
+    StoryPart,
     Transaction,
     User,
     UserSession,
+    WorkspaceDraft,
 )
 from .schemas import (
     AccountDeleteIn,
@@ -237,6 +243,12 @@ def export_my_data(
     user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> JSONResponse:
     tables: dict[str, Any] = {
+        "life_logs": LifeLog,
+        "life_log_transactions": LifeLogTransaction,
+        "consumption_events": ConsumptionEvent,
+        "story_editions": StoryEdition,
+        "story_parts": StoryPart,
+        "workspace_drafts": WorkspaceDraft,
         "transactions": Transaction,
         "settings": Setting,
         "category_budgets": CategoryBudget,

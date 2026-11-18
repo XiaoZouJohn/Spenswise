@@ -1,4 +1,5 @@
-﻿import { useState, type FormEvent } from 'react'
+import { clearLocalDrafts } from '../lib/usePersistentDraft'
+import { useState, type FormEvent } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Badge, Button, Card, CenterDialog, Disclosure, FormField, Input, SectionTitle, State } from '../components/ui'
@@ -53,7 +54,7 @@ export function UserCenter() {
     setBusy(true); setError(''); setStatus('')
     try {
       await familyApi.revokeSession(id)
-      if (current) { client.clear(); navigate('/overview', { replace: true }); return }
+      if (current) { clearLocalDrafts(); client.clear(); navigate('/overview', { replace: true }); return }
       await client.invalidateQueries({ queryKey: ['security', 'sessions'] })
       setStatus('已退出所选设备')
     } catch (issue) { setError(familyErrorMessage(issue, '退出设备失败')) }
@@ -87,7 +88,7 @@ export function UserCenter() {
 
   async function logout() {
     setBusy(true); setError('')
-    try { await familyApi.logout(); client.clear(); navigate('/overview', { replace: true }) }
+    try { await familyApi.logout(); clearLocalDrafts(); client.clear(); navigate('/overview', { replace: true }) }
     catch (issue) { setError(familyErrorMessage(issue, '退出失败')) }
     finally { setBusy(false) }
   }
@@ -98,7 +99,7 @@ export function UserCenter() {
     setBusy(true)
     try {
       await familyApi.deleteAccount(deletePassword)
-      client.clear()
+      clearLocalDrafts(); client.clear()
       navigate('/overview', { replace: true })
     } catch (issue) { setDeleteError(familyErrorMessage(issue, '注销失败，请确认密码及家庭关系')) }
     finally { setBusy(false) }
