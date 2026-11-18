@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { LedgerPortrait } from '../components/village/FinancialPortraits'
+import { ForecastPortrait } from '../components/village/FinancialPortraits'
 import { AiClassificationPanel } from '../components/AiClassificationPanel'
 import { AmountInput, CategoryPicker, TransactionDetail } from '../components/business'
 import { TransactionTable } from '../components/TransactionTable'
@@ -129,14 +129,12 @@ export function Ledger() {
   })
   const session = useSession()
   const activeFilterCount = [review, filterCategory, txType, merchant, dateFrom, dateTo, ids].filter(Boolean).length
-  const rangeLabel = dateFrom && dateTo ? `${dateFrom} 至 ${dateTo}` : dateFrom ? `${dateFrom} 起` : dateTo ? `截至 ${dateTo}` : '全部时间'
-
   return <div className="page ledger-page space-y-6">
     <header><p className="mb-1 text-sm text-muted">交易与分类</p><h1 className="m-0 text-3xl font-semibold">账本</h1></header>
     <div className="ledger-toolbar"><Button onClick={() => updateFilter('import', '1')}>导入账单</Button><Button variant="secondary" onClick={() => setAdding(true)}>记一笔</Button><Button variant={review ? 'primary' : 'secondary'} onClick={() => updateFilter('review', review ? '' : '1')}>待处理</Button></div>
     <JourneyTipCard kind="ledger"/>
     {status.data && <div className="pending-strip"><button onClick={() => updateFilter('category', '待确认')}>未分类 <strong>{status.data.unclassified}</strong></button><button onClick={() => updateFilter('review', '1')}>待核对 <strong>{status.data.unreviewed}</strong></button><button onClick={() => updateFilter('import', '1')}>导入异常 <strong>{status.data.import_errors}</strong></button></div>}
-    {query.data && <LedgerPortrait data={query.data} rangeLabel={rangeLabel} onCategory={category => updateFilter('category', category)}/>}
+    <ForecastPortrait/>
     <div className="ledger-cross-actions"><span>从记录进入计划</span><Link className="story-text-action" to={`/simulate?category=${encodeURIComponent(filterCategory || '当前消费')}&from=${encodeURIComponent('/ledger?' + search.toString())}`}>在集市比较一项消费 →</Link></div>
 
     <DetailDialog open={adding} onOpenChange={open => { setAdding(open); if (!open && search.get('new')) updateFilter('new', '') }} title="新增账单">

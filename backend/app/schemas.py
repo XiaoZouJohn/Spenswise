@@ -434,6 +434,7 @@ class ScenarioResult(BaseModel):
     optimization: OptimizationResult
     timeline: list[CashflowDay]
     recurring_bills: list[RecurringBill]
+    category_forecast: list[CategorySpend] = Field(default_factory=list)
     source_transaction_ids: list[int]
     expected_expense_cents: int | None = None
     expected_expense_after_purchase_cents: int | None = None

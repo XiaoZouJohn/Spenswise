@@ -70,6 +70,7 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
   const validMonth = monthParameter && /^\d{4}-(0[1-9]|1[0-2])$/.test(monthParameter) ? monthParameter : null
   const [month, setMonth] = useState(validMonth ?? today().slice(0, 7))
   useEffect(() => { if (validMonth) setMonth(validMonth) }, [validMonth])
+  const [homeMode, setHomeMode] = useState<'story' | 'places'>('story')
   const [compactMode, setCompactMode] = useState<'story' | 'places' | 'workspace'>('story')
   const restoreFocus = useRef<HTMLElement | null>(null)
   const overview = useQuery({ queryKey: ['market-review', month], queryFn: () => lifeApi.market(month) })
@@ -82,7 +83,7 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
     setAiMounted(true); setAiOpen(true)
   }, [])
   const closeAssistant = useCallback(() => { setAiOpen(false); restoreFocus.current?.focus() }, [])
-  useEffect(() => { setCompactMode(workspace ? 'workspace' : 'story') }, [location.pathname, workspace])
+  useEffect(() => { setCompactMode(workspace ? 'workspace' : homeMode) }, [workspace, homeMode])
   useEffect(() => {
     setMenu(false)
     if (!workspace) requestAnimationFrame(() => returnFocus.current?.focus({ preventScroll: true }))
@@ -112,7 +113,7 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
         <button onClick={() => setMenu(v => !v)} aria-expanded={menu}><Compass size={15}/>全部地点</button>
       </nav>
       {menu && <nav className="village-location-menu" aria-label="全部地点">{buildings.map(b => <Link to={b.href} key={b.id} onClick={() => setMenu(false)}>{b.name}<span>{b.task}</span><ArrowUpRight size={15}/></Link>)}<Link to="/logs" onClick={() => setMenu(false)}>生活记录<Illustration name="ledger"/></Link><Link to="/family" onClick={() => setMenu(false)}>家庭事务<UsersRound size={15}/></Link><Link to="/user" onClick={() => setMenu(false)}>个人资料<UserRound size={15}/></Link><Link to="/settings" onClick={() => setMenu(false)}>预算与设置<Settings size={15}/></Link></nav>}
-      <nav className="compact-navigation" aria-label="紧凑视图">{(['story', 'places', 'workspace'] as const).map((value, index) => <button key={value} aria-pressed={compactMode === value} onClick={() => setCompactMode(value)}>{['Story', '地点', '工作区'][index]}</button>)}</nav>
+      <nav className="compact-navigation" aria-label="移动端视图"><button aria-pressed={compactMode === 'places' && home} onClick={() => { setHomeMode('places'); if (workspace) navigate('/overview'); else setCompactMode('places') }}><Compass size={16}/>村庄地图</button><button aria-pressed={compactMode === 'story' && home} onClick={() => { setHomeMode('story'); if (workspace) navigate('/overview'); else setCompactMode('story') }}><BookOpen size={16}/>本月 Story</button>{workspace && <button aria-pressed={compactMode === 'workspace'} onClick={() => setCompactMode('workspace')}><Building2 size={16}/>管理页面</button>}</nav>
       <main id="village-content" className="village-main" tabIndex={-1} onClickCapture={event => {
         const target = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href="/overview"]')
         if (target) returnFocus.current = document.querySelector<HTMLAnchorElement>(`.building-sign[href="${current.href}"]`)

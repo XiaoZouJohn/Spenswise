@@ -761,6 +761,7 @@ export type ScenarioResult = {
     optimization: OptimizationResult;
     timeline: Array<CashflowDay>;
     recurring_bills: Array<RecurringBill>;
+    category_forecast?: Array<CategorySpend>;
     source_transaction_ids: Array<(number)>;
     expected_expense_cents?: (number | null);
     expected_expense_after_purchase_cents?: (number | null);

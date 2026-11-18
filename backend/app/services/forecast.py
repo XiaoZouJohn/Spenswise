@@ -371,6 +371,12 @@ def simulate(db: Session, request: ScenarioIn, as_of: date | None = None, *, own
     expected = fixed + variable + planned_expense
     lower_expense = fixed + variable_lower + planned_expense
     upper_expense = fixed + variable_upper + planned_expense
+    category_forecast = forecast_math.allocate(variable, projection["category_variable_cents"])
+    for bill in bills:
+        category = bill["category"] or "其他"
+        category_forecast[category] = category_forecast.get(category, 0) + bill["amount_cents"]
+    if planned_expense:
+        category_forecast["计划支出"] = category_forecast.get("计划支出", 0) + planned_expense
     timeline = []
     before = after = low = high = opening
     for offset in range(horizon):
@@ -455,6 +461,13 @@ def simulate(db: Session, request: ScenarioIn, as_of: date | None = None, *, own
         "optimization": optimization,
         "timeline": timeline,
         "recurring_bills": bills,
+        "category_forecast": [
+            {"category": category, "amount_cents": amount}
+            for category, amount in sorted(
+                category_forecast.items(), key=lambda item: (-item[1], item[0])
+            )
+            if amount > 0
+        ],
         "source_transaction_ids": sorted(r.id for r in rows),
         "expected_expense_cents": expected,
         "expected_expense_after_purchase_cents": expected + request.amount_cents,
