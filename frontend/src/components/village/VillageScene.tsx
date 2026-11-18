@@ -56,6 +56,7 @@ export function VillageScene({ chapter, selectedCategory, categoryAmount, worksp
 
   const highlighted = hovered ?? focused
   const active = highlighted
+  const compactScene = window.matchMedia('(max-width: 1100px), (max-width: 1400px) and (max-height: 700px)').matches
   const showIncome = hasData && chapter === 'summary' && !!flow && flow.income > 0
   const showExpense = hasData && chapter === 'spending' && !!flow && flow.expense > 0
 
@@ -78,8 +79,8 @@ export function VillageScene({ chapter, selectedCategory, categoryAmount, worksp
           })}
         </div>
         {buildings.map(building => <BuildingLabel key={building.id} building={building} active={active === building.id}
-          x={`clamp(170px, ${building.x * 1920 * fit.scale + fit.x}px, calc(100% - 170px))`}
-          y={`clamp(160px, ${building.y * 1080 * fit.scale + fit.y}px, calc(100% - 85px))`}
+          x={`clamp(${compactScene ? 85 : 170}px, ${building.x * 1920 * fit.scale + fit.x}px, calc(100% - ${compactScene ? 85 : 170}px))`}
+          y={`clamp(${compactScene ? 55 : 160}px, ${building.y * 1080 * fit.scale + fit.y}px, calc(100% - ${compactScene ? 55 : 85}px))`}
           onHover={() => setHovered(building.id)} onLeave={() => setHovered(null)}
           onFocus={() => setFocused(building.id)} onBlur={() => setFocused(null)}/>)}
         {(showIncome || showExpense) && <div className={`scene-financial-focus ${showIncome ? 'is-income' : 'is-expense'}`} role="status">
