@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, ty
 import { ChevronDown, Grip } from 'lucide-react'
 import type { AiBubblePosition } from './AiLauncher'
 import { AiChat } from '../pages/AiChat'
+import type { AssistantContext, AssistantDraft } from './village/VillageContext'
 
 const bubbleSize = 60
 const margin = 16
@@ -60,11 +61,14 @@ function anchorFor(position: Position, size: Size, viewport: Size): Anchor {
   }
 }
 
-export function AiChatWindow({ open, onCollapse, bubblePosition, initialConversationId }: {
+export function AiChatWindow({ open, onCollapse, bubblePosition, initialConversationId, villageContext, onClearContext, suggestedDraft }: {
   open: boolean
   onCollapse: () => void
   bubblePosition: AiBubblePosition
   initialConversationId?: string | null
+  villageContext?: AssistantContext | null
+  onClearContext?: () => void
+  suggestedDraft?: AssistantDraft
 }) {
   const [size, setSize] = useState(() => clampSize(initialSize(), { width: window.innerWidth, height: window.innerHeight }))
   const sizeRef = useRef(size)
@@ -209,12 +213,12 @@ export function AiChatWindow({ open, onCollapse, bubblePosition, initialConversa
     }
   }
 
-  return <section className={`ai-window ${open ? 'is-open' : 'is-collapsed'}`} style={style} role="dialog" aria-label="AI 助手" aria-hidden={!open} data-testid="ai-chat-window">
+  return <section className={`ai-window village-floating-assistant ${open ? 'is-open' : 'is-collapsed'}`} style={style} role="dialog" aria-label="富贵村财务管理助手" aria-hidden={!open} hidden={!open} data-testid="ai-chat-window">
     <div className="ai-window-head">
-      <div className="ai-window-drag-handle" role="button" tabIndex={open ? 0 : -1} aria-label="拖动 AI 助手窗口" data-testid="ai-panel-drag-handle" onPointerDown={dragStart} onPointerMove={dragMove} onPointerUp={dragEnd} onPointerCancel={() => { dragRef.current = null }} onKeyDown={dragKey}><Grip size={15} aria-hidden="true"/><span>AI 助手</span></div>
+      <div className="ai-window-drag-handle" role="button" tabIndex={open ? 0 : -1} aria-label="拖动 AI 助手窗口" data-testid="ai-panel-drag-handle" onPointerDown={dragStart} onPointerMove={dragMove} onPointerUp={dragEnd} onPointerCancel={() => { dragRef.current = null }} onKeyDown={dragKey}><Grip size={15} aria-hidden="true"/><span>富贵村财务助手</span></div>
       <button type="button" className="ai-collapse-button" onClick={onCollapse} aria-label="收起 AI 助手" data-testid="ai-panel-collapse"><ChevronDown size={18}/>收起</button>
     </div>
-    <AiChat mode="panel" initialConversationId={initialConversationId}/>
+    <AiChat mode="panel" initialConversationId={initialConversationId} villageContext={villageContext} onClearContext={onClearContext} suggestedDraft={suggestedDraft}/>
     <div className={`ai-resize-edge ai-resize-horizontal ${horizontal === 'left' ? 'at-right' : 'at-left'}`} role="separator" aria-label="调整对话框宽度" aria-orientation="vertical" tabIndex={open ? 0 : -1} data-testid="ai-panel-resize-horizontal" onPointerDown={event => resizeStart(event, 'horizontal')} onPointerMove={resizeMove} onPointerUp={resizeEnd} onPointerCancel={() => { resizeRef.current = null }} onKeyDown={event => resizeKey(event, 'horizontal')}/>
     <div className={`ai-resize-edge ai-resize-vertical ${vertical === 'top' ? 'at-bottom' : 'at-top'}`} role="separator" aria-label="调整对话框高度" aria-orientation="horizontal" tabIndex={open ? 0 : -1} data-testid="ai-panel-resize-vertical" onPointerDown={event => resizeStart(event, 'vertical')} onPointerMove={resizeMove} onPointerUp={resizeEnd} onPointerCancel={() => { resizeRef.current = null }} onKeyDown={event => resizeKey(event, 'vertical')}/>
     <div className={`ai-resize-corner ${horizontal === 'left' ? 'at-right' : 'at-left'} ${vertical === 'top' ? 'at-bottom' : 'at-top'}`} role="separator" aria-label="调整对话框宽度和高度" tabIndex={open ? 0 : -1} data-testid="ai-panel-resize-handle" onPointerDown={event => resizeStart(event, 'corner')} onPointerMove={resizeMove} onPointerUp={resizeEnd} onPointerCancel={() => { resizeRef.current = null }} onKeyDown={event => resizeKey(event, 'corner')}/>

@@ -1976,6 +1976,123 @@ export const MembersOutSchema = {
     title: 'MembersOut'
 } as const;
 
+export const MonthlyReviewInSchema = {
+    properties: {
+        revision: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Revision'
+        },
+        ledger_version: {
+            type: 'string',
+            maxLength: 80,
+            title: 'Ledger Version'
+        },
+        notes: {
+            type: 'string',
+            maxLength: 3000,
+            title: 'Notes',
+            default: ''
+        },
+        constraints: {
+            type: 'string',
+            maxLength: 2000,
+            title: 'Constraints',
+            default: ''
+        },
+        differences: {
+            type: 'string',
+            maxLength: 2000,
+            title: 'Differences',
+            default: ''
+        }
+    },
+    type: 'object',
+    required: ['revision', 'ledger_version'],
+    title: 'MonthlyReviewIn'
+} as const;
+
+export const MonthlyReviewOutSchema = {
+    properties: {
+        revision: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Revision'
+        },
+        ledger_version: {
+            type: 'string',
+            maxLength: 80,
+            title: 'Ledger Version'
+        },
+        notes: {
+            type: 'string',
+            maxLength: 3000,
+            title: 'Notes',
+            default: ''
+        },
+        constraints: {
+            type: 'string',
+            maxLength: 2000,
+            title: 'Constraints',
+            default: ''
+        },
+        differences: {
+            type: 'string',
+            maxLength: 2000,
+            title: 'Differences',
+            default: ''
+        },
+        month: {
+            type: 'string',
+            title: 'Month'
+        },
+        saved_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Saved At'
+        },
+        saved_ledger_version: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Saved Ledger Version'
+        },
+        ledger_changed: {
+            type: 'boolean',
+            title: 'Ledger Changed'
+        },
+        saved_facts: {
+            anyOf: [
+                {
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Saved Facts'
+        },
+        facts: {
+            type: 'object',
+            title: 'Facts'
+        }
+    },
+    type: 'object',
+    required: ['revision', 'ledger_version', 'month', 'saved_at', 'saved_ledger_version', 'ledger_changed', 'saved_facts', 'facts'],
+    title: 'MonthlyReviewOut'
+} as const;
+
 export const OptimizationResultSchema = {
     properties: {
         feasible: {
@@ -2013,6 +2130,11 @@ export const OverviewOutSchema = {
             type: 'integer',
             title: 'Expense Cents'
         },
+        net_flow_cents: {
+            type: 'integer',
+            title: 'Net Flow Cents',
+            default: 0
+        },
         budget_remaining_cents: {
             type: 'integer',
             title: 'Budget Remaining Cents'
@@ -2044,6 +2166,18 @@ export const OverviewOutSchema = {
 
 export const PageSchema = {
     properties: {
+        category_spend: {
+            items: {
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Category Spend'
+        },
+        net_flow_cents: {
+            type: 'integer',
+            title: 'Net Flow Cents',
+            default: 0
+        },
         items: {
             items: {
                 '$ref': '#/components/schemas/TransactionOut'

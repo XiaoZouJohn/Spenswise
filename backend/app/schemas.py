@@ -9,6 +9,23 @@ class ErrorBody(BaseModel):
     message: str
 
 
+class MonthlyReviewIn(BaseModel):
+    revision: int = Field(ge=0)
+    ledger_version: str = Field(max_length=80)
+    notes: str = Field(default="", max_length=3000)
+    constraints: str = Field(default="", max_length=2000)
+    differences: str = Field(default="", max_length=2000)
+
+
+class MonthlyReviewOut(MonthlyReviewIn):
+    month: str
+    saved_at: str | None
+    saved_ledger_version: str | None
+    ledger_changed: bool
+    saved_facts: dict | None
+    facts: dict
+
+
 class AgentPreferencesIn(BaseModel):
     automatic_enabled: bool | None = None
     ai_enabled: bool | None = None
@@ -81,6 +98,8 @@ class TransactionOut(BaseModel):
 
 
 class Page(BaseModel):
+    category_spend: list[dict] = Field(default_factory=list)
+    net_flow_cents: int = 0
     items: list[TransactionOut]
     total: int
     page: int
@@ -212,6 +231,7 @@ class OverviewOut(BaseModel):
     month: str
     income_cents: int
     expense_cents: int
+    net_flow_cents: int = 0
     budget_remaining_cents: int
     account_balance_cents: int
     category_spend: list[CategorySpend]

@@ -109,6 +109,8 @@ def test_balance_refund_transfer_and_duplicate(tmp_path):
         result = summary(db, today)
         assert result["account_balance_cents"] == 58000
         assert result["budget_remaining_cents"] == 8000
+        assert result["net_flow_cents"] == 8000
+        assert result["net_flow_cents"] != result["account_balance_cents"]
         before = version(db)
         row = db.query(Transaction).filter_by(merchant="A", tx_type="expense").one()
         row.category = "餐饮"

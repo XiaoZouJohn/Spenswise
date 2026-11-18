@@ -21,6 +21,7 @@ from .models import (
     User,
 )
 from .routes_agent import router as agent_router
+from .routes_review import router as review_router
 from .routes_auth import router as auth_router
 from .routes_family import router as family_router
 from .schemas import (
@@ -74,6 +75,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(family_router)
 app.include_router(agent_router)
+app.include_router(review_router)
 
 
 @app.middleware("http")
@@ -187,6 +189,8 @@ def transactions(
         page_size=page_size,
         expense_cents=totals["expense_cents"],
         income_cents=totals["income_cents"],
+        category_spend=totals["category_spend"],
+        net_flow_cents=totals["net_flow_cents"],
     )
 
 

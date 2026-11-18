@@ -487,6 +487,32 @@ export type MembersOut = {
     members: Array<MemberOut>;
 };
 
+export type MonthlyReviewIn = {
+    revision: number;
+    ledger_version: string;
+    notes?: string;
+    constraints?: string;
+    differences?: string;
+};
+
+export type MonthlyReviewOut = {
+    revision: number;
+    ledger_version: string;
+    notes?: string;
+    constraints?: string;
+    differences?: string;
+    month: string;
+    saved_at: (string | null);
+    saved_ledger_version: (string | null);
+    ledger_changed: boolean;
+    saved_facts: ({
+    [key: string]: unknown;
+} | null);
+    facts: {
+        [key: string]: unknown;
+    };
+};
+
 export type OptimizationResult = {
     feasible: boolean;
     cuts: Array<BudgetCut>;
@@ -497,6 +523,7 @@ export type OverviewOut = {
     month: string;
     income_cents: number;
     expense_cents: number;
+    net_flow_cents?: number;
     budget_remaining_cents: number;
     account_balance_cents: number;
     category_spend: Array<CategorySpend>;
@@ -505,6 +532,10 @@ export type OverviewOut = {
 };
 
 export type Page = {
+    category_spend?: Array<{
+        [key: string]: unknown;
+    }>;
+    net_flow_cents?: number;
     items: Array<TransactionOut>;
     total: number;
     page: number;
@@ -958,6 +989,26 @@ export type UpdateAgentPreferencesApiAgentPreferencesPutResponse = (AgentPrefere
 export type AgentStatusApiAgentStatusGetResponse = (AgentBrief);
 
 export type AgentBriefApiAgentBriefPostResponse = (AgentBrief);
+
+export type GetMonthlyReviewApiMonthlyReviewsMonthGetData = {
+    month: string;
+};
+
+export type GetMonthlyReviewApiMonthlyReviewsMonthGetResponse = (MonthlyReviewOut);
+
+export type PutMonthlyReviewApiMonthlyReviewsMonthPutData = {
+    month: string;
+    requestBody: MonthlyReviewIn;
+};
+
+export type PutMonthlyReviewApiMonthlyReviewsMonthPutResponse = (MonthlyReviewOut);
+
+export type ClearMonthlyReviewApiMonthlyReviewsMonthClearPostData = {
+    month: string;
+    requestBody: MonthlyReviewIn;
+};
+
+export type ClearMonthlyReviewApiMonthlyReviewsMonthClearPostResponse = (MonthlyReviewOut);
 
 export type HealthApiHealthGetResponse = ({
     [key: string]: unknown;

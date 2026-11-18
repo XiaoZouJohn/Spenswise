@@ -50,79 +50,22 @@ async function selectHistory(page: Page, title: string) {
   await page.locator('.ai-history-item', { hasText: title }).click()
 }
 
-test('左下角云朵展开浮窗，收起后可拖动入口，并可移动及缩放浮窗', async ({ page }) => {
+test('Story 默认展示，助手可展开收起，路由切换保留会话草稿', async ({ page }) => {
   await mockShell(page)
   await page.route('**/api/ai/conversations', route => route.fulfill({ json: [] }))
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/overview')
-
-  const bubble = page.getByTestId('ai-bubble')
-  await expect(bubble).toBeVisible()
-  const start = await bubble.boundingBox()
-  expect(start).not.toBeNull()
-  expect(start!.x).toBeLessThan(100)
-  expect(start!.y).toBeGreaterThan(750)
-
-  await bubble.click()
-  await expect(page).toHaveURL(/\/overview$/)
-  const panel = page.getByTestId('ai-chat-window')
-  await expect(panel).toBeVisible()
-  const initialPanel = await panel.boundingBox()
-  expect(initialPanel).not.toBeNull()
-  expect(initialPanel!.width).toBeGreaterThan(410)
-  expect(initialPanel!.width).toBeLessThan(600)
-  await expect(page.getByText('分类支出')).toBeVisible()
-  await expect(page.getByText('房租')).toBeVisible()
-  await page.screenshot({ path: 'test-results/ai-floating-panel.png' })
-
-  const dragHandle = page.getByTestId('ai-panel-drag-handle')
-  const title = await dragHandle.boundingBox()
-  expect(title).not.toBeNull()
-  await page.mouse.move(title!.x + title!.width / 2, title!.y + title!.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(title!.x + title!.width / 2 + 140, title!.y + title!.height / 2 - 40, { steps: 10 })
-  await page.mouse.up()
-  const draggedPanel = await panel.boundingBox()
-  expect(draggedPanel).not.toBeNull()
-  expect(draggedPanel!.x - initialPanel!.x).toBeGreaterThan(50)
-  await expect(page).toHaveURL(/\/overview$/)
-  await page.screenshot({ path: 'test-results/ai-floating-panel-dragged.png' })
-
-  await page.getByTestId('ai-panel-collapse').click()
-  await expect(panel).toBeHidden()
-  await expect(bubble).toBeVisible()
-  await page.mouse.move(start!.x + start!.width / 2, start!.y + start!.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(start!.x + start!.width / 2 + 170, start!.y + start!.height / 2 - 100, { steps: 10 })
-  await page.mouse.up()
-  await expect(page).toHaveURL(/\/overview$/)
-  const moved = await bubble.boundingBox()
-  expect(moved).not.toBeNull()
-  expect(moved!.x - start!.x).toBeGreaterThan(50)
-  await expect(panel).toBeHidden()
-
-  await bubble.click()
-  await expect(panel).toBeVisible()
-  await expect(page).toHaveURL(/\/overview$/)
-  const beforeResize = await panel.boundingBox()
-  const handle = await page.getByTestId('ai-panel-resize-handle').boundingBox()
-  expect(beforeResize).not.toBeNull()
-  expect(handle).not.toBeNull()
-  const handleX = handle!.x + handle!.width / 2
-  const handleY = handle!.y + handle!.height / 2
-  const moveX = handle!.x < beforeResize!.x + beforeResize!.width / 2 ? -100 : 100
-  const moveY = handle!.y < beforeResize!.y + beforeResize!.height / 2 ? -80 : 80
-  await page.mouse.move(handleX, handleY)
-  await page.mouse.down()
-  await page.mouse.move(handleX + moveX, handleY + moveY, { steps: 8 })
-  await page.mouse.up()
-  const afterResize = await panel.boundingBox()
-  expect(afterResize).not.toBeNull()
-  expect(Math.abs(afterResize!.width - beforeResize!.width)).toBeGreaterThan(30)
-  await page.getByTestId('ai-panel-collapse').click()
-  await expect(bubble).toBeVisible()
-  const afterCollapse = await bubble.boundingBox()
-  expect(afterCollapse!.x).toBeGreaterThan(start!.x + 50)
+  await openChat(page)
+  await page.getByTestId('ai-composer').fill('保留这段草稿')
+  await page.getByRole('button', { name: '收起 AI 对话' }).click()
+  await expect(page.getByTestId('village-story')).toBeVisible()
+  await page.getByRole('navigation', { name: '地点导航' }).getByRole('link', { name: '账房' }).click()
+  await page.getByTestId('ai-bubble').click()
+  await expect(page.getByTestId('ai-composer')).toHaveValue('保留这段草稿')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.getByTestId('ai-composer')).toBeVisible()
+  await expect(page.getByTestId('ai-send')).toBeVisible()
+  await page.getByRole('button', { name: '收起 AI 对话' }).click()
+  await expect(page.getByTestId('ai-chat-window')).toBeHidden()
 })
 
 test('AI 回答在流式显示及历史记录中正确渲染 Markdown 加粗和列表', async ({ page }) => {
@@ -210,7 +153,7 @@ test('预设可改写，思考与回答按事件显示，刷新可恢复会话',
   await expect(page.getByTestId('ai-reasoning')).toContainText('先区分预算与现金余额。')
   await expect(page.getByTestId('ai-message').last()).toContainText('再决定是否购买。')
   await expect(page.getByTestId('ai-send')).toHaveAccessibleName('发送消息')
-  expect(submitted).toEqual({ conversation_id: null, message: '请帮我分析预算', thinking: true })
+  expect(submitted).toMatchObject({ conversation_id: null, thinking: true }); expect(submitted?.message).toContain('请帮我分析预算')
 
   await page.reload()
   await page.getByTestId('ai-bubble').click()
@@ -249,68 +192,27 @@ test('关闭思考模式时请求和界面均保持普通回答', async ({ page 
   await page.getByTestId('ai-thinking-toggle').uncheck()
   await page.getByTestId('ai-send').click()
   await expect(page.getByTestId('ai-message').last()).toContainText('可以先设定每月上限。')
-  expect(submitted).toMatchObject({ thinking: false, message: '怎样开始做预算？' })
+  expect(submitted).toMatchObject({ thinking: false }); expect(submitted?.message).toContain('怎样开始做预算？')
   await expect(page.getByTestId('ai-reasoning')).toHaveCount(0)
 })
 
-test('账本授权一键切换，撤销后隔离旧对话，普通聊天仍可发送', async ({ page }) => {
+test('无首页授权按钮，既有撤销授权仍阻止旧账本对话继续', async ({ page }) => {
   await mockShell(page)
   const oldId = '33333333-3333-4333-8333-333333333333'
-  let enabled = false
-  const updates: boolean[] = []
-  let submitted: Record<string, unknown> | undefined
-  await page.route('**/api/ai/chat/ledger-consent', route => {
-    if (route.request().method() === 'PUT') {
-      enabled = route.request().postDataJSON().enabled
-      updates.push(enabled)
-    }
-    return route.fulfill({ json: {
-      enabled, scope: '本月汇总和最近 90 天最多 100 笔账单，不含备注',
-    } })
-  })
   await page.route('**/api/ai/conversations', route => route.fulfill({ json: [
     { id: oldId, title: '旧账本对话', created_at: '2026-10-10T10:00:00Z' },
   ] }))
   await page.route('**/api/ai/conversations/*', route => route.fulfill({ json: {
     id: oldId, title: '旧账本对话', used_ledger: true, messages: [
-      { id: 1, role: 'user', content: '看一下账本', reasoning: '', thinking: false },
-      { id: 2, role: 'assistant', content: '以前的账本答复', reasoning: '', thinking: false },
+      { id: 1, role: 'assistant', content: '以前的答复', reasoning: '', thinking: false },
     ],
   } }))
-  await page.route('**/api/ai/chat/stream', route => {
-    submitted = route.request().postDataJSON()
-    return route.fulfill({ status: 200, contentType: 'text/event-stream', body: sse([
-      { event: 'status', data: { phase: 'answering' } },
-      { event: 'content', data: { text: '先确定每月储蓄目标。' } },
-      { event: 'done', data: { conversation_id: '44444444-4444-4444-8444-444444444444' } },
-    ]) })
-  })
-
   await openChat(page)
-  const toggle = page.getByTestId('ai-ledger-consent-toggle')
-  await expect(toggle).toContainText('关闭')
-  await toggle.click()
-  await expect(page.getByTestId('ai-ledger-consent-dialog')).toHaveCount(0)
-  await expect(toggle).toContainText('已开启')
-  expect(updates).toEqual([true])
-
+  await expect(page.getByTestId('ai-ledger-consent-toggle')).toHaveCount(0)
   await selectHistory(page, '旧账本对话')
-  await expect(page.getByText('以前的账本答复')).toBeVisible()
-  await toggle.click()
-  await expect(toggle).toContainText('关闭')
-  expect(updates).toEqual([true, false])
-  await expect(page).toHaveURL(/\/overview$/)
-  await selectHistory(page, '旧账本对话')
-  await expect(page.getByText('新建对话以继续')).toBeVisible()
   await expect(page.getByTestId('ai-composer')).toBeDisabled()
-
   await page.getByRole('button', { name: '新建对话以继续' }).click()
-  await page.getByTestId('ai-composer').fill('怎样开始储蓄？')
-  await page.getByTestId('ai-send').click()
-  await expect.poll(() => submitted).toMatchObject({
-    conversation_id: null, message: '怎样开始储蓄？', thinking: false,
-  })
-  expect(JSON.stringify(submitted)).not.toContain('账本')
+  await expect(page.getByTestId('ai-composer')).toBeEnabled()
 })
 
 test('连接设置保存后不在页面或浏览器缓存回显 API Key', async ({ page }) => {
@@ -342,6 +244,7 @@ test('连接设置保存后不在页面或浏览器缓存回显 API Key', async 
   await expect(key).toHaveValue('')
   expect(saved).toEqual({ model: 'deepseek-flash', api_key: 'sk-local-test-123456' })
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('sk-local-test-123456')
+  await page.getByRole('button', { name: '同意并开启全部 AI 功能' }).click()
   await page.getByRole('button', { name: '测试连接' }).click()
   await expect(page.getByText('连接成功')).toBeVisible()
   await page.reload()

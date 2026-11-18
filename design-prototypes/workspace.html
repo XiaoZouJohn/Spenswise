@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SpendWise · 开放工作台</title>
+  <link rel="stylesheet" href="workspace.css">
+</head>
+<body>
+  <div class="glow glow-a" aria-hidden="true"></div><div class="glow glow-b" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-icon">✳</span>SpendWise</a>
+    <span class="status"><span class="status-dot"></span>个人空间 · 账本已就绪 <small>演示状态</small></span>
+    <button class="avatar" data-open="account" aria-label="打开账户设置">L</button>
+  </header>
+  <main class="shell">
+    <div class="intro"><p class="eyebrow">YOUR SPACE · YOUR PACE</p><h1>从现在关心的事开始。</h1><p>账本一直在这里。提问、查看、整理，随时任选一件。</p></div>
+    <div class="question"><label for="prompt">问问你的财务助手</label><div class="question-row"><textarea id="prompt" rows="2" placeholder="例如：最近的开支有什么值得留意？"></textarea><button id="send" aria-label="发送问题">↑</button></div><div class="question-foot"><span>基于已保存的账本 · 无需再次导入</span><button data-open="history">历史对话 ↗</button></div></div>
+    <div class="section-label"><span>或者，直接去做</span><span>没有固定顺序</span></div>
+    <div class="actions">
+      <button class="action" data-open="ledger"><span class="symbol">↗</span><strong>看账本</strong><small>查找、编辑、核对记录</small></button>
+      <button class="action" data-open="review"><span class="symbol">◎</span><strong>待处理</strong><small>只看需要你确认的事</small></button>
+      <button class="action" data-open="plan"><span class="symbol">◌</span><strong>做计划</strong><small>预算、目标与情景推演</small></button>
+      <button class="action" data-open="family"><span class="symbol">◇</span><strong>家庭空间</strong><small>共同账本与议事</small></button>
+    </div>
+    <div class="lower"><button class="quiet-link" data-open="import">＋ 补充账单</button><span>需要时再导入；已保存的数据会继续使用。</span></div>
+  </main>
+  <nav class="dock" aria-label="常用入口"><button data-open="home" class="selected" aria-label="首页">⌂<span>首页</span></button><button data-open="ledger" aria-label="账本">▤<span>账本</span></button><button data-open="review" aria-label="待处理">◉<span>待处理</span></button><button data-open="plan" aria-label="计划">◌<span>计划</span></button><button data-open="more" aria-label="更多功能">☷<span>更多</span></button></nav>
+  <div class="overlay" id="overlay" hidden><div class="scrim" data-close></div><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-head"><span class="eyebrow">SPENDWISE / SPACE</span><button data-close aria-label="关闭">×</button></div><h2 id="sheet-title"></h2><p id="sheet-copy"></p><div id="sheet-body"></div><p class="prototype-note">交互样板 · 此处不连接真实接口或数据</p></section></div>
+  <script src="workspace.js"></script>
+</body>
+</html>

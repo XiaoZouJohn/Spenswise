@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { LedgerPortrait } from '../components/village/FinancialPortraits'
 import { AiClassificationPanel } from '../components/AiClassificationPanel'
-import { AmountInput, CategoryPicker, Money, TransactionDetail } from '../components/business'
+import { AmountInput, CategoryPicker, TransactionDetail } from '../components/business'
 import { TransactionTable } from '../components/TransactionTable'
 import { Badge, Button, Card, CenterDialog, DetailDialog, Disclosure, SectionTitle, State } from '../components/ui'
 import { ImportPanel } from './Import'
@@ -11,6 +12,7 @@ import { api, json } from '../lib/api'
 import { familyApi } from '../lib/familyApi'
 import { today } from '../lib/format'
 import { useSession } from '../lib/session'
+import { useWorkspaceDraft } from '../lib/useWorkspaceDraft'
 import type { PageData, Transaction } from '../types'
 
 const categories = ['待确认', '餐饮', '交通', '购物', '居住', '医疗健康', '娱乐', '旅行', '通讯', '教育', '日用品', '人情往来', '收入', '退款', '转账', '其他']
@@ -20,6 +22,7 @@ type DeleteTarget = Transaction | 'all' | null
 export function Ledger() {
   const cache = useQueryClient()
   const [search, setSearch] = useSearchParams()
+  const [adding, setAdding] = useState(false)
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<number[]>([])
   const [detail, setDetail] = useState<Transaction | null>(null)
@@ -27,7 +30,7 @@ export function Ledger() {
   const [category, setCategory] = useState('餐饮')
   const [undo, setUndo] = useState<{ id: number; category: string }[]>([])
   const [merchantDraft, setMerchantDraft] = useState(search.get('merchant') || '')
-  const [form, setForm] = useState({
+  const [form, setForm] = useWorkspaceDraft('ledger-entry', {
     tx_date: today(), amount_cents: 0, merchant: '', description: '', category: '待确认', tx_type: 'expense',
   })
 
@@ -70,7 +73,7 @@ export function Ledger() {
 
   const add = useMutation({
     mutationFn: () => api('/transactions', json('POST', form)),
-    onSuccess: () => { refresh(); setForm({ ...form, merchant: '', amount_cents: 0 }) },
+    onSuccess: () => { refresh(); setForm({ ...form, merchant: '', amount_cents: 0 }); setAdding(false) },
   })
   const batch = useMutation({
     mutationFn: () => api<{ before: { id: number; category: string }[] }>('/transactions/batch-category', json('POST', { ids: selected, category, create_rule: false })),
@@ -111,11 +114,13 @@ export function Ledger() {
   const activeFilterCount = [review, filterCategory, txType, merchant, dateFrom, dateTo, ids].filter(Boolean).length
   const rangeLabel = dateFrom && dateTo ? `${dateFrom} 至 ${dateTo}` : dateFrom ? `${dateFrom} 起` : dateTo ? `截至 ${dateTo}` : '全部时间'
 
-  return <div className="page space-y-6">
+  return <div className="page ledger-page space-y-6">
     <header><p className="mb-1 text-sm text-muted">交易与分类</p><h1 className="m-0 text-3xl font-semibold">账本</h1></header>
+    <div className="ledger-toolbar"><Button onClick={() => setAdding(true)}>记一笔</Button><Button variant="secondary" onClick={() => updateFilter("import", "1")}>导入账单</Button></div>
+    {query.data && <LedgerPortrait data={query.data} rangeLabel={rangeLabel} onCategory={category => updateFilter('category', category)}/>}
+    <div className="ledger-cross-actions"><span>从记录进入计划</span><Link className="story-text-action" to={`/simulate?category=${encodeURIComponent(filterCategory || '当前消费')}&from=${encodeURIComponent('/ledger?' + search.toString())}`}>在集市比较一项消费 →</Link></div>
 
-    <Card>
-      <SectionTitle title="新增账单"/>
+    <DetailDialog open={adding} onOpenChange={setAdding} title="新增账单">
       <div className="grid gap-3 md:grid-cols-6">
         <div className="field"><label>日期</label><input type="date" value={form.tx_date} onChange={event => setForm({ ...form, tx_date: event.target.value })}/></div>
         <div className="field"><label>类型</label><select value={form.tx_type} onChange={event => setForm({ ...form, tx_type: event.target.value })}><option value="expense">支出</option><option value="income">收入</option><option value="refund">退款</option><option value="transfer">转账</option></select></div>
@@ -125,13 +130,9 @@ export function Ledger() {
         <div className="flex items-end"><Button onClick={() => add.mutate()} disabled={add.isPending || !form.amount_cents}>添加</Button></div>
       </div>
       {add.isError && <p className="text-sm text-danger">{add.error.message}</p>}
-    </Card>
+    </DetailDialog>
 
-    <Card>
-      <Disclosure title="导入账单" description="导入微信、支付宝或其他 CSV、TXT、XLSX 账单" defaultOpen={search.get('import') === '1'}>
-        <ImportPanel/>
-      </Disclosure>
-    </Card>
+    <DetailDialog open={search.get('import') === '1'} onOpenChange={open => { if (!open) updateFilter('import', '') }} title="导入账单"><ImportPanel/></DetailDialog>
 
     <Card>
       <SectionTitle title="交易记录" action={<div className="flex flex-wrap gap-2">
@@ -160,12 +161,6 @@ export function Ledger() {
           </div>
         </Disclosure>
       </div>
-
-      {query.data && <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-panel border border-line bg-white p-4"><div className="text-sm text-muted">{rangeLabel} · 净支出</div><div className="mt-2 text-2xl font-semibold"><Money cents={query.data.expense_cents ?? 0} tone="negative"/></div><p className="mb-0 mt-2 text-xs text-muted">支出减退款，转账不计入</p></div>
-        <div className="rounded-panel border border-line bg-white p-4"><div className="text-sm text-muted">{rangeLabel} · 收入</div><div className="mt-2 text-2xl font-semibold"><Money cents={query.data.income_cents ?? 0} tone="positive"/></div><p className="mb-0 mt-2 text-xs text-muted">仅统计收入类型账单</p></div>
-        <div className="rounded-panel border border-line bg-white p-4"><div className="text-sm text-muted">匹配账单</div><div className="mt-2 text-2xl font-semibold">{query.data.total} 笔</div><p className="mb-0 mt-2 text-xs text-muted">统计全部筛选结果，不限当前页</p></div>
-      </div>}
 
       <AiClassificationPanel items={query.data?.items || []} selectedIds={selected} onSaved={before => { setUndo(before); setSelected([]); refresh() }}/>
       {selected.length > 0 && <div className="mb-4 flex flex-wrap items-center gap-3 rounded-control bg-canvas p-3 text-sm">已选 {selected.length} 笔 <CategoryPicker value={category} onChange={setCategory} categories={categories}/><Button onClick={() => batch.mutate()} disabled={batch.isPending}>批量修改分类</Button></div>}

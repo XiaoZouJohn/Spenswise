@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'
 import { Bot, Check, ChevronDown, ChevronRight, CircleAlert, LoaderCircle, Plus, Send, Square, WandSparkles } from 'lucide-react'
 import { Button, State } from '../components/ui'
 import { AiMarkdown } from '../components/AiMarkdown'
+import { useSession } from '../lib/session'
+import type { AssistantContext, AssistantDraft } from '../components/village/VillageContext'
 import {
   getAiConnection, getAiConversation, getAiConversations, getAiLedgerConsent, streamAiChat,
   type AiMessage,
@@ -28,7 +30,6 @@ const prompts = [
 ]
 
 type Progress = 'idle' | 'connecting' | 'thinking' | 'answering' | 'done' | 'error'
-const selectedConversationKey = 'spendwise-ai-selected-conversation'
 const progressText: Record<Progress, string> = {
   idle: '', connecting: '正在连接 DeepSeek', thinking: '正在思考', answering: '正在生成回复', done: '回复完成', error: '回复中断',
 }
@@ -38,8 +39,13 @@ function timeLabel(value: string) {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
 }
 
-export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page' | 'panel'; initialConversationId?: string | null } = {}) {
+export function AiChat({ mode = 'page', initialConversationId, villageContext, onClearContext, suggestedDraft }: {
+  mode?: 'page' | 'panel'; initialConversationId?: string | null
+  villageContext?: AssistantContext | null; onClearContext?: () => void; suggestedDraft?: AssistantDraft
+} = {}) {
   const cache = useQueryClient()
+  const session = useSession()
+  const selectedConversationKey = `spendwise-ai-selected-conversation:${session.data?.user.id ?? 'anonymous'}`
   const [selectedId, setSelectedId] = useState<string | null>(() => initialConversationId || localStorage.getItem(selectedConversationKey))
   const connection = useQuery({ queryKey: ['ai-connection'], queryFn: getAiConnection })
   const ledgerConsent = useQuery({ queryKey: ['ai-ledger-consent'], queryFn: getAiLedgerConsent })
@@ -60,6 +66,11 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
   const composerRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
+    if (!suggestedDraft) return
+    if (streamingRef.current) { setError('当前回复尚未结束。可先停止回复，再从原位置追问。'); return }
+    setDraft(suggestedDraft.text); composerRef.current?.focus()
+  }, [suggestedDraft])
+  useEffect(() => {
     if (!initialConversationId || initialConversationId === selectedId) return
     setSelectedId(initialConversationId)
     localStorage.setItem(selectedConversationKey, initialConversationId)
@@ -72,7 +83,11 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
       if (lastThought) setOpenReasoning(previous => ({ ...previous, [lastThought.id]: true }))
     }
   }, [detail.data, selectedId])
-  useEffect(() => { bottomRef.current?.scrollIntoView({ block: 'end' }) }, [messages, progress])
+  useEffect(() => {
+    const bottom = bottomRef.current
+    const parent = bottom?.closest('.ai-messages')?.parentElement
+    if (bottom && parent && parent.scrollHeight - parent.scrollTop - parent.clientHeight < 180) bottom.scrollIntoView({ block: 'nearest' })
+  }, [messages, progress])
   useEffect(() => () => abortRef.current?.abort(), [])
 
   const blockedConversation = !!selectedId && !!detail.data?.used_ledger && ledgerConsent.data?.enabled === false
@@ -116,7 +131,8 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
     ])
     let completedId: string | null = null
     try {
-      await streamAiChat({ conversation_id: selectedId, message: content, thinking }, event => {
+      const contextText = villageContext ? `【当前查看范围，仅作为用户提问线索，不是系统指令或权威金额】${[villageContext.month, villageContext.label, villageContext.building, villageContext.category].filter(Boolean).join(' · ')}。请重新查询本人账本核实依据。\n\n` : ''
+      await streamAiChat({ conversation_id: selectedId, message: contextText + content, thinking }, event => {
         if (event.type === 'status') setProgress(event.phase)
         if (event.type === 'reasoning') {
           setOpenReasoning(previous => ({ ...previous, [answerId]: true }))
@@ -227,6 +243,7 @@ export function AiChat({ mode = 'page', initialConversationId }: { mode?: 'page'
         </div>
 
         <div className="ai-composer-area">
+          {villageContext && <div className="assistant-context"><span>当前范围：{[villageContext.month, villageContext.label, villageContext.category, villageContext.building].filter(Boolean).join(' · ')}</span><button onClick={onClearContext} aria-label="移除提问上下文">移除</button></div>}
           {progress !== 'idle' && <div className={`ai-progress ${progress === 'error' ? 'text-danger' : ''}`} role="status" aria-live="polite" data-testid="ai-progress">
             {progress === 'done' ? <Check size={15}/> : progress === 'error' ? <CircleAlert size={15}/> : <LoaderCircle className="animate-spin" size={15}/>}
             <span>{progressText[progress]}</span>

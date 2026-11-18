@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import { Illustration } from './village/Illustration'
 
 export type AiBubblePosition = { x: number; y: number }
 const storageKey = 'spendwise-ai-launcher-position-v2'
@@ -79,11 +80,6 @@ export function AiLauncher({ onOpen }: { onOpen: (position: AiBubblePosition) =>
     title="打开 AI 助手，可拖动位置"
     data-testid="ai-bubble"
   >
-    <svg aria-hidden="true" width="34" height="34" viewBox="0 0 40 40" fill="none">
-      <path d="M11.3 27.8C7.2 27.8 4.2 25.1 4.2 21.6c0-3.1 2.3-5.6 5.5-6.1 1.4-4.6 5.4-7.4 10.3-7.4 4.6 0 8.5 2.7 10.1 6.8 3.5.2 5.7 2.7 5.7 6.1 0 3.6-2.9 6.4-6.7 6.4H18.5l-6.5 4.3.9-4.3h-1.6Z" fill="currentColor"/>
-      <circle cx="14.5" cy="20.5" r="1.6" fill="var(--accent)"/>
-      <circle cx="20" cy="20.5" r="1.6" fill="var(--accent)"/>
-      <circle cx="25.5" cy="20.5" r="1.6" fill="var(--accent)"/>
-    </svg>
+    <Illustration name="merchant"/>
   </button>
 }

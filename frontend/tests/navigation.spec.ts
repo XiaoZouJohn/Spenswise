@@ -1,26 +1,16 @@
 import { expect, test } from './fixtures'
 
-test('首页承接未来收支，开发页与独立导入入口不出现在用户导航', async ({ page }) => {
-  await page.route('**/api/budget/status', route => route.fulfill({ json: {
-    month: '2026-10', as_of: '2026-10-08', income_cents: 0, spent_cents: 0,
-    total_limit_cents: 0, alerts: [], data_version: 'v1',
-  } }))
-  await page.route('**/api/overview', route => route.fulfill({ json: {
-    month: '2026-10', income_cents: 0, expense_cents: 0,
-    budget_remaining_cents: 0, account_balance_cents: 300000,
-    category_spend: [], transaction_count: 0, data_version: 'v1',
-  } }))
-  await page.route('**/api/simulate', route => route.fulfill({ json: {
-    minimum_after_cents: 210000,
-    recurring_bills: [{ date: '2026-10-15', merchant: '房租', amount_cents: 80000, source_ids: [12] }],
-  } }))
-
+test('Story 为默认入口，浏览不触发模拟，原功能与旧路由可达', async ({ page }) => {
+  let simulations = 0
+  await page.route('**/api/simulate', route => { simulations++; return route.abort() })
   await page.goto('/plan')
   await expect(page).toHaveURL(/\/overview$/)
-  await expect(page.getByText('预计账户最低余额')).toBeVisible()
-  await expect(page.getByText('房租')).toBeVisible()
-  await expect(page.getByRole('link', { name: '月度规划' })).toHaveCount(0)
+  await expect(page.getByTestId('village-story')).toBeVisible()
+  await expect(page.getByTestId('ai-chat-window')).toHaveCount(0)
+  await page.getByRole('button', { name: '本月结余', exact: true }).click()
+  expect(simulations).toBe(0)
   await expect(page.getByRole('link', { name: '组件展示' })).toHaveCount(0)
-  await expect(page.getByRole('link', { name: '导入' })).toHaveCount(0)
-  await expect(page.getByText('数据版本')).toHaveCount(0)
+  await page.goto('/import')
+  await expect(page).toHaveURL(/\/ledger\?import=1$/)
+  await expect(page.getByRole('button', { name: '读取并预览' })).toBeVisible()
 })
