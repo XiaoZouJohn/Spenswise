@@ -1,12 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+import sys
 from pathlib import Path
+
+
+sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
 
 package_root = Path(SPECPATH)
 project_root = package_root.parent
-os.environ["PYTHONNOUSERSITE"] = "1"
-os.environ["PYTHONUSERBASE"] = str(package_root / ".userbase")
 
 from PyInstaller.utils.hooks import collect_submodules
 
@@ -43,7 +45,25 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["pytest", "matplotlib", "IPython", "jupyter"],
+    excludes=[
+        "pytest",
+        "matplotlib",
+        "IPython",
+        "jupyter",
+        "torch",
+        "torchvision",
+        "torchaudio",
+        "onnxruntime",
+        "tensorflow",
+        "keras",
+        "numba",
+        "llvmlite",
+        "av",
+        "pygame",
+        "cv2",
+        "sklearn",
+        "xgboost",
+    ],
     noarchive=False,
     optimize=0,
 )
