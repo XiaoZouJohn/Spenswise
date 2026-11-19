@@ -9,9 +9,12 @@
       "args": ["app.main:app", "--host", "127.0.0.1", "--port", "8000"],
       "cwd": "${workspaceFolder}/backend",
       "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "envFile": "${workspaceFolder}/.env",
       "preLaunchTask": "SpendWise SQLite 数据库升级",
       "env": {
         "DATABASE_URL": "sqlite:///./spendwise-dev.db",
+        "REDIS_URL": "redis://127.0.0.1:6379/0",
+        "CORS_ORIGINS": "http://localhost:5173,http://127.0.0.1:5173",
         "CELERY_ALWAYS_EAGER": "1"
       },
       "justMyCode": true
@@ -37,9 +40,11 @@
       "args": ["app.main:app", "--host", "127.0.0.1", "--port", "8000"],
       "cwd": "${workspaceFolder}/backend",
       "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "envFile": "${workspaceFolder}/.env",
       "env": {
         "DATABASE_URL": "postgresql+psycopg://spendwise:spendwise@127.0.0.1:5432/spendwise",
-        "REDIS_URL": "redis://127.0.0.1:6379/0"
+        "REDIS_URL": "redis://127.0.0.1:6379/0",
+        "CORS_ORIGINS": "http://localhost:5173,http://127.0.0.1:5173"
       },
       "justMyCode": true
     },
@@ -51,6 +56,7 @@
       "args": ["-A", "app.tasks.celery_app", "worker", "--pool=solo", "--loglevel=INFO"],
       "cwd": "${workspaceFolder}/backend",
       "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "envFile": "${workspaceFolder}/.env",
       "env": {
         "DATABASE_URL": "postgresql+psycopg://spendwise:spendwise@127.0.0.1:5432/spendwise",
         "REDIS_URL": "redis://127.0.0.1:6379/0"

@@ -8,7 +8,9 @@ import { money, today } from '../../lib/format'
 import { useSession } from '../../lib/session'
 import { State, Button } from '../ui'
 import { AiMarkdown } from '../AiMarkdown'
+import { AiUsageHint } from '../AiUsageHint'
 import { Illustration } from './Illustration'
+import { CategoryIcon } from './CategoryIcon'
 import { CharacterHint } from './LifeWidgets'
 import { chapterLabels, useVillage, type StoryChapter } from './VillageContext'
 import { ledgerHref } from '../../lib/village'
@@ -41,7 +43,7 @@ export function Story() {
     refetchInterval: current => current.state.data?.editions.some(item => ['pending', 'running'].includes(item.status)) ? 2500 : false })
   const completedEdition = query.data?.editions.find(item => item.status === 'completed')?.id ?? null
   useEffect(() => { if (completedEdition) void client.invalidateQueries({ queryKey: journeyKey }) }, [completedEdition, client])
-  const generate = useMutation({ mutationFn: () => lifeApi.generate(month, true, true), onSuccess: () => client.invalidateQueries({ queryKey: ['chronicle'] }) })
+  const generate = useMutation({ mutationFn: () => lifeApi.generate(month, true, true), onSuccess: () => { void client.invalidateQueries({ queryKey: ['chronicle'] }); void client.invalidateQueries({ queryKey: ['ai-usage'] }) } })
   const progressKey = `spendwise-story-progress:${owner}:${month}`
   const currentChapter = village?.chapter ?? 'summary'
 
@@ -50,7 +52,10 @@ export function Story() {
     localStorage.setItem(progressKey, chapter)
     const target = document.getElementById(`story-${chapter}`)
     const root = scroll.current
-    if (target && root) root.scrollTo({ top: target.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop - 18, behavior: reduced ? 'instant' : 'smooth' })
+    if (target && root) {
+      if (window.matchMedia('(max-width: 1100px)').matches) target.scrollIntoView({ block: 'start', behavior: reduced ? 'instant' : 'smooth' })
+      else root.scrollTo({ top: target.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop - 18, behavior: reduced ? 'instant' : 'smooth' })
+    }
   }
   useEffect(() => {
     const root = scroll.current
@@ -59,11 +64,16 @@ export function Story() {
     if (restored.current !== token) {
       const saved = params.get('chapter') || localStorage.getItem(progressKey)
       restored.current = token
-      requestAnimationFrame(() => jump(chapters.includes(saved as StoryChapter) ? saved as StoryChapter : 'summary'))
+      const chapter = chapters.includes(saved as StoryChapter) ? saved as StoryChapter : 'summary'
+      requestAnimationFrame(() => {
+        if (chapter === 'summary' && window.matchMedia('(max-width: 1100px)').matches) village?.setChapter('summary')
+        else jump(chapter)
+      })
     }
     const update = () => {
+      const mobile = window.matchMedia('(max-width: 1100px)').matches
       const bounds = root.getBoundingClientRect()
-      const position = bounds.top + root.clientHeight * .18
+      const position = mobile ? Math.min(window.innerHeight * .35, 190) : bounds.top + root.clientHeight * .18
       for (const section of root.querySelectorAll<HTMLElement>('[data-story-chapter]')) {
         const rect = section.getBoundingClientRect()
         if (rect.top <= position && rect.bottom > position) {
@@ -75,7 +85,8 @@ export function Story() {
       }
     }
     root.addEventListener('scroll', update, { passive: true })
-    return () => root.removeEventListener('scroll', update)
+    window.addEventListener('scroll', update, { passive: true })
+    return () => { root.removeEventListener('scroll', update); window.removeEventListener('scroll', update) }
     // Reading restoration intentionally follows month and explicit deep links, not every scroll update.
   }, [query.isSuccess, month, params.get('chapter')])
 
@@ -97,7 +108,7 @@ export function Story() {
     <JourneyTipCard kind="story"/>
     <div className="story-generation"><Button disabled={busy} onClick={() => generate.mutate()}><BookOpenCheck size={16} strokeWidth={1.8}/>{busy ? '正在生成回顾…' : completed.length ? '重新生成回顾' : '生成本月回顾'}</Button>
       <label className="story-version-picker"><span>历史版本</span><select aria-label="历史版本" value={edition || ''} onChange={event => { const next = new URLSearchParams(params); if (event.target.value) next.set('edition', event.target.value); else next.delete('edition'); setParams(next) }}><option value="">最新版本</option><option value="facts">当前账本事实</option>{completed.map((item, index) => <option key={item.id} value={item.id}>{month.replace('-', '年')}月 · 第{completed.length - index}版</option>)}</select></label>
-      <p>将依据本月账目生成，并参考你允许使用的生活记录。</p>
+      <p>将依据本月账目生成，并参考你允许使用的生活记录。 <AiUsageHint feature="story"/></p>
       {(generate.isError || latest?.status === 'failed') && <p role="alert">{latest?.error_message || '无法整理，请检查 AI 连接与授权后重试。'}</p>}
       {data.stale && <p role="status">账本或生活记录有更新，可以重新生成回顾。</p>}
       {task && <p role="status">{task.status === 'pending' ? '任务排队中' : '正在组织纪事'} · 离开后可回来查看</p>}
@@ -112,7 +123,7 @@ export function Story() {
           {index === 0 && <Illustration name="merchant" className="story-merchant"/>}
           <AiMarkdown content={part.body} className="story-narrative"/>
           <div className="story-fact-lines">{part.facts.slice(0, 3).map(fact => <Link key={fact.label} to={fact.source?.href || ledgerHref(month)}><span>{fact.label}</span><strong>{money(fact.amount_cents)}</strong></Link>)}</div>
-          {chapter === 'spending' && <div className="story-categories">{data.categories.map(item => <Link key={item.category} to={`${ledgerHref(month, item.category)}`} onMouseEnter={() => village?.selectCategory(item.category)}><span>{item.category}</span><strong>{money(item.amount_cents)}</strong><small>上月同期 {money(item.previous_cents)}</small><small>{item.change_cents > 0 ? '+' : ''}{money(item.change_cents)}</small></Link>)}</div>}
+          {chapter === 'spending' && <div className="story-categories">{data.categories.map(item => <Link key={item.category} to={`${ledgerHref(month, item.category)}`} onMouseEnter={() => village?.selectCategory(item.category)}><span className="story-category-name"><CategoryIcon category={item.category}/>{item.category}</span><strong>{money(item.amount_cents)}</strong><small>上月同期 {money(item.previous_cents)}</small><small>{item.change_cents > 0 ? '+' : ''}{money(item.change_cents)}</small></Link>)}</div>}
           {chapter === 'memories' && <div className="story-memory-list">{data.logs.slice(0, 5).map(log => <Link key={log.id} to={`/logs?log=${log.id}`}><time>{log.event_date}</time><strong>{log.title || log.content.slice(0, 30)}</strong><span>{log.content.slice(0, 100)}</span></Link>)}<Link className="story-action" to={`/logs?new=1&month=${month}`}>值得留下的一件事 ↗</Link></div>}
           {chapter === 'next' && data.review_completed && <p className="review-completed">本月回顾已完成</p>}
           <div className="story-chapter-actions"><Link to={chapterActions[chapter].href} className="story-action">{chapterActions[chapter].label} <span aria-hidden="true">↗</span></Link></div>

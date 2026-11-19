@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.db import Base, get_db
 from app.main import app
 from app.models import Setting, StoryEdition, StoryPart, Transaction, WorkspaceDraft
-from app.services import ai, ai_ledger_consent, life_log_skill, village_journey, village_story
+from app.services import ai, ai_agreement, life_log_skill, village_journey, village_story
 
 
 @pytest.fixture
@@ -41,6 +41,7 @@ def village(tmp_path):
             },
         )
         assert response.status_code == 200
+        assert client.post("/api/ai/agreement").status_code == 200
     yield engine, *clients
     app.dependency_overrides.clear()
     engine.dispose()
@@ -248,7 +249,7 @@ def test_story_facts_comparison_and_source_privacy(village, monkeypatch):
     private = record(first, content="不允许模型读取的私密内容")
     captured = []
 
-    def generate(messages, *_):
+    def generate(messages, *_, **_kwargs):
         captured.append(messages)
         return json.dumps({"paragraphs": ["这是根据账本与已授权记录组织的纪事。"] * 5})
 
@@ -296,7 +297,8 @@ def test_log_tool_and_conversation_revocation(village):
     with Session(engine) as db:
         with pytest.raises(PermissionError):
             life_log_skill.ensure_history_allowed(db, 1, "conversation")
-        ai_ledger_consent.set_enabled(db, 1, False)
+        db.delete(db.get(Setting, (1, ai_agreement.KEY)))
+        db.commit()
         with pytest.raises(PermissionError):
             life_log_skill.view(db, 1, {"month": "2026-10"}, "new")
 

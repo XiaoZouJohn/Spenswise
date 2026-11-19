@@ -12,17 +12,6 @@ export type AiConnection = {
   endpoint: string
 }
 
-export type AiConnectionUpdate = {
-  model: DeepSeekModel
-  api_key?: string
-  clear_key?: boolean
-}
-
-export type AiConnectionTest = {
-  ok: boolean
-  message: string
-}
-
 function connection(value: AiConnectionOut): AiConnection {
   if (value.model !== 'deepseek-flash' && value.model !== 'deepseek-v4-pro') {
     throw new Error('DeepSeek 模型配置无法识别')
@@ -32,16 +21,4 @@ function connection(value: AiConnectionOut): AiConnection {
 
 export async function getAiConnection(): Promise<AiConnection> {
   return connection(await sdk.getAiConnectionApiAiConnectionGet())
-}
-
-export async function putAiConnection(value: AiConnectionUpdate): Promise<AiConnection> {
-  return connection(await sdk.putAiConnectionApiAiConnectionPut({ requestBody: value }))
-}
-
-export async function testAiConnection(): Promise<AiConnectionTest> {
-  const result = await sdk.testAiApiAiTestPost()
-  if (typeof result.ok !== 'boolean' || typeof result.message !== 'string') {
-    throw new Error('连接测试返回了无法识别的结果')
-  }
-  return { ok: result.ok, message: result.message }
 }

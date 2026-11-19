@@ -220,6 +220,7 @@ def _ai_review(
             ],
             db,
             owner_id,
+            feature="forecast",
         )
         cleaned = (
             answer.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()

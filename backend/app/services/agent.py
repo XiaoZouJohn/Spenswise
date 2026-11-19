@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import logging
 import re
 import uuid
 from datetime import date, datetime, timedelta, timezone
@@ -12,14 +13,16 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import AiConnection, ImportJob, Setting, Transaction, User
+from app.models import ImportJob, Setting, Transaction, User
 
 from . import ai, ai_connection, ai_ledger_consent, budget
+
+logger = logging.getLogger(__name__)
 
 SCOPE = (
     "开启后，在打开软件、重要消费变化或手动查看时，向 DeepSeek 发送本人的本月收支、预算、"
     "分类汇总、上月同期及近两周支出汇总和程序生成的提醒依据。"
-    "不发送商户、备注、原始账单、家庭数据或聊天记录。与 AI 对话共用账本授权，可随时关闭。"
+    "不发送商户、备注、原始账单、家庭数据或聊天记录。"
 )
 SYSTEM_PROMPT = """# 富贵村 · 个人财务分析助手 System Prompt
 
@@ -152,9 +155,8 @@ def _write(db: Session, owner_id: int, key: str, value: dict) -> None:
 
 
 def preferences(db: Session, owner_id: int) -> dict:
-    saved = _read(db, owner_id, "agent_preferences")
     return {
-        "automatic_enabled": saved.get("automatic_enabled", True) is True,
+        "automatic_enabled": True,
         "ai_enabled": ai_ledger_consent.enabled(db, owner_id),
         "scope": SCOPE,
     }
@@ -167,12 +169,6 @@ def save_preferences(db: Session, owner_id: int, values: dict) -> dict:
         db.rollback()
         saved = _read(db, owner_id, "agent_preferences")
         changes = {k: v for k, v in values.items() if k == "automatic_enabled"}
-        if "ai_enabled" in values:
-            row = db.get(Setting, (owner_id, "ai_chat_ledger_consent"))
-            if row is None:
-                row = Setting(owner_id=owner_id, key="ai_chat_ledger_consent", value="false")
-                db.add(row)
-            row.value = "true" if values["ai_enabled"] else "false"
         _write(
             db, owner_id, "agent_preferences", {**saved, **changes, "revision": uuid.uuid4().hex}
         )
@@ -333,7 +329,7 @@ def status(db: Session, owner_id: int, today: date | None = None) -> dict:
         )
         is not None
     )
-    connection = db.scalar(select(AiConnection).where(AiConnection.owner_id == owner_id))
+    connection = ai_connection.status(db, owner_id)
     signature = json.dumps(
         {
             "day": today.isoformat(),
@@ -343,9 +339,8 @@ def status(db: Session, owner_id: int, today: date | None = None) -> dict:
             "risks": risks,
             "cards": cards[:3],
             "pending_import": pending,
-            "prefs": _read(db, owner_id, "agent_preferences"),
             "ai_ledger_consent": prefs["ai_enabled"],
-            "connection": str(connection.updated_at) if connection else None,
+            "connection": {"configured": connection["configured"], "model": connection["model"]},
             "prompt_version": hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest(),
         },
         sort_keys=True,
@@ -408,6 +403,8 @@ def briefing(db: Session, owner_id: int) -> dict:
                 ],
                 db,
                 owner_id,
+                feature="agent",
+                json_output=True,
             )
             parsed = json.loads(answer)
             valid = {card["id"]: card for card in report["cards"]}
@@ -442,10 +439,12 @@ def briefing(db: Session, owner_id: int) -> dict:
             ]
             report["source"] = "ai"
             report["reason"] = "generated"
-        except (ValueError, KeyError, TypeError, AttributeError):
+        except (ValueError, KeyError, TypeError, AttributeError) as error:
+            logger.warning("Agent briefing rejected: %s", type(error).__name__)
             report["reason"] = "model_unavailable"
-        except Exception:
+        except Exception as error:
             # Provider/network errors must not interrupt accounting; don't expose secrets.
+            logger.warning("Agent briefing unavailable: %s", type(error).__name__)
             report["reason"] = "model_unavailable"
         db.rollback()
         if db.get(User, owner_id) is None:

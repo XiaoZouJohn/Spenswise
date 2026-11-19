@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthPage } from './pages/Auth'
 import { VillageShell } from './components/village/VillageShell'
+import { AiAgreementGate } from './components/AiAgreementGate'
 import { State } from './components/ui'
 import { useSession } from './lib/session'
 import type { BudgetStatusData } from './types'
@@ -29,7 +30,7 @@ export default function App() {
   if (session.isError) return <div className="session-state"><State kind="error" message="无法连接服务" retry={() => session.refetch()}/></div>
   if (!session.data) return <div className="village-auth"><AuthPage/></div>
   const hasFamily = session.data.family !== null
-  return <VillageShell key={session.data.user.id} session={session.data} budgetPreview={budgetPreview}>
+  return <AiAgreementGate userId={session.data.user.id}><VillageShell key={session.data.user.id} session={session.data} budgetPreview={budgetPreview}>
     <Suspense fallback={<State kind="loading" message="正在打开工作区…"/>}><Routes>
       <Route path="/" element={<Navigate to="/overview" replace/>}/>
       <Route path="/overview" element={null}/>
@@ -52,5 +53,5 @@ export default function App() {
       <Route path="/components" element={<ComponentsPage/>}/>
       <Route path="*" element={<Navigate to="/overview" replace/>}/>
     </Routes></Suspense>
-  </VillageShell>
+  </VillageShell></AiAgreementGate>
 }

@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { Bell, Sparkles, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { agentApi, readOpening, writeOpening, type AgentBrief } from '../lib/agent'
-import { useSession } from '../lib/session'
-import { Badge, Button, Card, SectionTitle, State } from './ui'
+import { AiUsageHint } from './AiUsageHint'
+import { Badge, Button } from './ui'
 
 const reasons: Record<string, string> = {
-  consent_required: 'AI 提醒已关闭，仍可查看账本提醒。',
-  not_configured: '连接 DeepSeek 后，可以查看 AI 建议。',
+  consent_required: '同意 AI 使用协议后，小猫就能继续帮你看账本。',
+  not_configured: 'AI 服务暂时不可用，请稍后再试。',
   model_unavailable: '暂时无法获取 AI 建议，稍后再试。',
   ready: '当前为本地分析，可点“更新分析”获取 AI 建议。',
 }
@@ -139,8 +139,8 @@ export function AgentReminder({ ownerId, quiet = false }: { ownerId: number; qui
       </>}
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
       <footer className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
-        <Link to="/settings#agent-reminders" onClick={() => setOpen(false)} className="text-xs text-accent underline">提醒与 AI 授权设置</Link>
         <Button variant="ghost" disabled={busy} onClick={() => request.current(true)}>更新分析</Button>
+        <AiUsageHint feature="agent"/>
       </footer>
     </section>}
   </div>
@@ -153,39 +153,4 @@ export function AgentCards({ cards, onNavigate }: { cards: AgentBrief['cards']; 
     <p className="my-2 text-xs leading-5 text-muted">账本里：{card.evidence}</p>
     <Link to={card.href} onClick={onNavigate} className="text-xs font-semibold text-accent underline">查看相关记录</Link>
   </article>)}</div>
-}
-
-export function AgentReminderSettings() {
-  const session = useSession()
-  const client = useQueryClient()
-  const queryKey = ['agent-preferences', session.data?.user.id]
-  const query = useQuery({ queryKey, queryFn: agentApi.preferences, enabled: !!session.data })
-  const save = useMutation({
-    mutationFn: agentApi.savePreferences,
-    onMutate: value => {
-      client.setQueryData<Awaited<ReturnType<typeof agentApi.preferences>>>(queryKey, current =>
-        current ? {
-          ...current,
-          automatic_enabled: value.automatic_enabled ?? current.automatic_enabled,
-          ai_enabled: value.ai_enabled ?? current.ai_enabled,
-        } : current)
-      void client.invalidateQueries({ queryKey, refetchType: 'none' })
-    },
-    onSuccess: async stored => {
-      client.setQueryData(queryKey, stored)
-      await client.invalidateQueries({ queryKey })
-    },
-    onError: () => { void client.invalidateQueries({ queryKey }) },
-  })
-  return <Card id="agent-reminders">
-    <SectionTitle title="Agent 自动提醒"/>
-    {query.isPending ? <State kind="loading"/> : query.isError ? <State kind="error" retry={() => query.refetch()}/> : <div className="space-y-4 text-sm">
-      <label className="flex items-start gap-3"><input type="checkbox" className="mt-1" checked={save.isPending ? save.variables.automatic_enabled ?? query.data.automatic_enabled : query.data.automatic_enabled} disabled={save.isPending} onChange={event => save.mutate({ automatic_enabled: event.target.checked })}/>打开软件和重要变化时自动提醒</label>
-      <p className="m-0 leading-6 text-muted">打开富贵村时，提醒你留意值得关注的收支变化。你也可以随时从顶栏查看简报。</p>
-      <p className="m-0 leading-6 text-muted">AI 简报会使用你的账本汇总和提醒依据；聊天时可按需查询账单。没有连接时，仍可查看账本提醒。</p>
-    </div>}
-    {save.isPending && <p role="status" className="mb-0 text-sm text-muted">正在保存；若有进行中的 AI 请求，需等待它结束。</p>}
-    {save.isSuccess && <p role="status" className="mb-0 text-sm text-success">提醒设置已保存</p>}
-    {save.isError && <p role="alert" className="mb-0 text-sm text-danger">保存失败，请重试。</p>}
-  </Card>
 }

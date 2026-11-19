@@ -6,7 +6,7 @@ import { api } from '../../lib/api'
 import { money, today } from '../../lib/format'
 import type { PageData } from '../../types'
 import { Button, DetailDialog, State } from '../ui'
-import { Illustration } from './Illustration'
+import { CategoryIcon } from './CategoryIcon'
 import { Paper, CharacterHint } from './LifeWidgets'
 import { TransactionBackground } from './TransactionBackground'
 import { useVillage } from './VillageContext'
@@ -30,7 +30,7 @@ export function ConsumptionReview() {
   return <div className="consumption-review">
     <CharacterHint text={`这个月花了 ${money(value.facts.expense_cents)}。来看看主要花在了哪里。`}/>
     <p className="text-sm text-muted">比较日期：{value.comparison_from} — {value.comparison_to}，与本月相同已发生天数。退款冲减支出，转账不计入。</p>
-    <div className="market-stalls">{value.categories.map((row, index) => <button key={row.category} onClick={() => choose(row.category)} className="market-stall"><Illustration name={index % 2 ? 'expense' : 'market'}/><span><strong>{row.category}</strong><small>本月净支出</small></span><b>{money(row.amount_cents)}</b><small>{value.facts.expense_cents > 0 ? `${Math.round(row.amount_cents / value.facts.expense_cents * 100)}%` : '—'} · 上月同期 {money(row.previous_cents)} · 变化 {row.change_cents > 0 ? '+' : ''}{money(row.change_cents)}</small></button>)}</div>
+    <div className="market-stalls">{value.categories.map(row => <button key={row.category} onClick={() => choose(row.category)} className="market-stall"><CategoryIcon category={row.category}/><span><strong>{row.category}</strong><small>本月净支出</small></span><b>{money(row.amount_cents)}</b><small>{value.facts.expense_cents > 0 ? `${Math.round(row.amount_cents / value.facts.expense_cents * 100)}%` : '—'} · 上月同期 {money(row.previous_cents)} · 变化 {row.change_cents > 0 ? '+' : ''}{money(row.change_cents)}</small></button>)}</div>
     {!value.categories.length && <State kind="empty" message="本月还没有消费记录，导入后再来看看。"/>}
     <Paper title="值得回看的消费">{!value.events.length ? <p>暂时没有需要回看的事件，也可以在账单详情主动标记。</p> : value.events.map(item => <article key={item.id} className={`consumption-event ${item.deferred ? 'is-deferred' : ''}`}><div><small>{item.origin === 'rule' ? '规则提醒' : '你标记的事'} · {item.reason}</small><h3>{item.transaction?.merchant || '消费记录'} <span>{money(item.transaction?.amount_cents ?? 0)}</span></h3><p>{item.purpose || '想记住这笔消费？可以留下一句话。'}</p></div><footer><Button variant="secondary" onClick={() => setEvent(item)}>回看这件事</Button><Button variant="ghost" disabled={defer.isPending} onClick={() => defer.mutate(item)}>{item.deferred ? '放回待办' : '以后再看'}</Button></footer></article>)}{defer.isError && <p role="alert">未能更新，保留原状态，请重试。</p>}</Paper>
     <Paper title="你的生活记录">{value.logs.slice(0, 8).map(log => <Link className="life-reference" key={log.id} to={`/logs?log=${log.id}`}><time>{log.event_date}</time><span>{log.title || log.content.slice(0, 50)}</span></Link>)}<Link className="story-action" to={`/logs?new=1&month=${month}`}>值得留下的一件事 ↗</Link></Paper>

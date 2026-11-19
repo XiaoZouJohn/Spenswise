@@ -1,6 +1,6 @@
 import * as sdk from '../client/generated/sdk.gen'
 import { OpenAPI } from '../client/generated/core/OpenAPI'
-import type { AiConnectionOut, AiStatusOut, ChatConversationDetail, ChatConversationOut, ChatLedgerConsentOut, ChatMessageOut } from '../client/generated/types.gen'
+import type { AiConnectionOut, AiStatusOut, ChatConversationDetail, ChatConversationOut, ChatMessageOut } from '../client/generated/types.gen'
 
 OpenAPI.BASE = import.meta.env.VITE_API_URL || ''
 
@@ -9,7 +9,6 @@ export type AiStatus = AiStatusOut
 export type AiConversationSummary = ChatConversationOut
 export type AiMessage = Omit<ChatMessageOut, 'id' | 'reasoning'> & { id: string | number; reasoning: string | null }
 export type AiConversation = Omit<ChatConversationDetail, 'messages'> & { messages: AiMessage[] }
-export type AiLedgerConsent = ChatLedgerConsentOut
 
 export type AiStreamEvent =
   | { type: 'status'; phase: 'connecting' | 'thinking' | 'answering' }
@@ -36,9 +35,6 @@ export const getAiStatus = () => sdk.aiStatusApiAiStatusGet()
 export const getAiConversations = () => sdk.listAiConversationsApiAiConversationsGet()
 export const getAiConversation = (id: string) => sdk.getAiConversationApiAiConversationsConversationIdGet({ conversationId: id })
 export const deleteAiConversation = (id: string) => sdk.deleteAiConversationApiAiConversationsConversationIdDelete({ conversationId: id })
-
-export const getAiLedgerConsent = () => sdk.getChatLedgerConsentApiAiChatLedgerConsentGet()
-export const putAiLedgerConsent = (enabled: boolean) => sdk.putChatLedgerConsentApiAiChatLedgerConsentPut({ requestBody: { enabled } })
 
 export async function streamAiChat(
   input: { conversation_id: string | null; message: string; thinking: boolean },

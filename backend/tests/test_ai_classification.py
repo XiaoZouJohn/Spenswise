@@ -52,7 +52,7 @@ def test_ai_review_accepts_fenced_json_and_normalizes_fields(tmp_path, monkeypat
         monkeypatch.setattr(
             ai,
             "ask",
-            lambda *_args: """```json
+            lambda *_args, **_kwargs: """```json
             [
               {"id":"1","category":"餐饮","confidence":94,"reason":"校园食堂午餐"},
               {"id":2,"category":"转账","confidence":120,"reason":"交易类型为转账"}
@@ -160,7 +160,7 @@ def test_ai_review_all_groups_repeated_transactions(tmp_path, monkeypatch):
 
         payload_sizes = []
 
-        def fake_ask(messages, _db, _owner_id):
+        def fake_ask(messages, _db, _owner_id, **_kwargs):
             payload = __import__("json").loads(messages[1]["content"])
             payload_sizes.append(len(payload))
             return __import__("json").dumps(
@@ -253,7 +253,7 @@ def test_ai_review_pending_excludes_confirmed_transactions(tmp_path, monkeypatch
         monkeypatch.setattr(
             ai,
             "ask",
-            lambda messages, _db, _owner_id: __import__("json").dumps(
+            lambda messages, _db, _owner_id, **_kwargs: __import__("json").dumps(
                 [
                     {
                         "id": item["id"],

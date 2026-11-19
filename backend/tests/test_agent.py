@@ -9,13 +9,12 @@ from sqlalchemy.orm import Session
 from app.db import Base, get_db
 from app.main import app
 from app.models import ImportJob, Setting
-from app.services import ai
+from app.services import ai, ai_agreement
 
 
 @pytest.fixture
 def clients(tmp_path, monkeypatch):
-    monkeypatch.delenv("AI_API_KEY", raising=False)
-    monkeypatch.setenv("AI_KEY_FILE", str(tmp_path / "key"))
+    monkeypatch.setenv("AI_API_KEY", "fake-test-key-not-real")
     engine = create_engine(
         f"sqlite:///{tmp_path / 'agent.db'}", connect_args={"check_same_thread": False}
     )
@@ -39,6 +38,7 @@ def clients(tmp_path, monkeypatch):
                 ).status_code
                 == 200
             )
+            assert client.post("/api/ai/agreement").status_code == 200
         yield first, second, engine
     app.dependency_overrides.clear()
     engine.dispose()
@@ -60,16 +60,7 @@ def expense(client, cents, kind="expense", merchant="private merchant"):
 
 
 def configure(client):
-    assert (
-        client.put(
-            "/api/ai/connection",
-            json={
-                "api_key": "fake-test-key-not-real",
-                "model": "deepseek-flash",
-            },
-        ).status_code
-        == 200
-    )
+    assert client.get("/api/ai/connection").json()["configured"] is True
     assert (
         client.put(
             "/api/agent/preferences",
@@ -102,11 +93,11 @@ def test_auth_defaults_and_shared_consent(clients, monkeypatch):
         == 200
     )
     assert second.get("/api/agent/preferences").json()["ai_enabled"] is True
-    assert first.get("/api/ai/chat/ledger-consent").json()["enabled"] is True
-    first.put("/api/ai/chat/ledger-consent", json={"enabled": False})
-    assert first.get("/api/agent/preferences").json()["ai_enabled"] is False
-    first.put("/api/agent/preferences", json={"ai_enabled": True})
-    assert first.get("/api/ai/chat/ledger-consent").json()["enabled"] is True
+    assert first.get("/api/ai/agreement").json()["accepted"] is True
+    assert first.put("/api/ai/chat/ledger-consent", json={"enabled": False}).status_code == 404
+    assert first.get("/api/agent/preferences").json()["ai_enabled"] is True
+    first.put("/api/agent/preferences", json={"ai_enabled": False})
+    assert first.get("/api/agent/preferences").json()["ai_enabled"] is True
 
 
 def test_budget_facts_thresholds_and_owner_isolation(clients):
@@ -129,8 +120,10 @@ def test_budget_facts_thresholds_and_owner_isolation(clients):
 
 
 def test_local_fallback_never_sends_unconsented_data(clients, monkeypatch):
-    first, _, _ = clients
-    first.put("/api/ai/chat/ledger-consent", json={"enabled": False})
+    first, _, engine = clients
+    with Session(engine) as db:
+        db.delete(db.get(Setting, (1, ai_agreement.KEY)))
+        db.commit()
 
     def forbidden(*args, **kwargs):
         raise AssertionError("no consent: must not call model")
@@ -148,7 +141,7 @@ def test_model_receives_only_summaries_and_cache_invalidates(clients, monkeypatc
     configure(first)
     calls = []
 
-    def answer(messages, db, owner_id):
+    def answer(messages, db, owner_id, **_kwargs):
         payload = json.dumps(messages, ensure_ascii=False)
         assert "private merchant" not in payload
         assert "private account note" not in payload
@@ -177,7 +170,9 @@ def test_model_receives_only_summaries_and_cache_invalidates(clients, monkeypatc
     expense(first, 1000, merchant="new")
     assert first.post("/api/agent/brief").json()["fingerprint"] != first_report["fingerprint"]
     assert len(calls) == 2
-    first.put("/api/agent/preferences", json={"automatic_enabled": True, "ai_enabled": False})
+    with Session(clients[2]) as db:
+        db.delete(db.get(Setting, (1, ai_agreement.KEY)))
+        db.commit()
     assert first.post("/api/agent/brief").json()["source"] == "local"
     assert len(calls) == 2
 
@@ -205,7 +200,7 @@ def test_malformed_model_response_falls_back_without_invented_money(clients, mon
     first, _, _ = clients
     expense(first, 330000)
     configure(first)
-    monkeypatch.setattr(ai, "ask", lambda *args: output)
+    monkeypatch.setattr(ai, "ask", lambda *args, **kwargs: output)
     report = first.post("/api/agent/brief").json()
     assert report["source"] == "local"
     assert "999999" not in json.dumps(report)
@@ -216,10 +211,9 @@ def test_revocation_during_model_request_discards_result(clients, monkeypatch):
     expense(first, 330000)
     configure(first)
 
-    def answer(*args):
+    def answer(*args, **_kwargs):
         with Session(engine) as db:
-            row = db.get(Setting, (1, "agent_preferences"))
-            row.value = json.dumps({"automatic_enabled": True, "ai_enabled": False})
+            db.delete(db.get(Setting, (1, ai_agreement.KEY)))
             db.commit()
         return json.dumps(
             {
@@ -267,7 +261,7 @@ def test_provider_failure_is_cached_and_pending_import_does_not_call_model(clien
     configure(first)
     calls = []
 
-    def fail(*args):
+    def fail(*args, **_kwargs):
         calls.append(1)
         raise RuntimeError("provider error containing fake-secret")
 
@@ -352,51 +346,15 @@ def test_partial_preference_updates_do_not_restore_stale_consent(clients):
     assert result.json()["ai_enabled"] is True
     first.put("/api/agent/preferences", json={"ai_enabled": False})
     result = first.put("/api/agent/preferences", json={"automatic_enabled": True})
-    assert result.json()["ai_enabled"] is False
+    assert result.json()["ai_enabled"] is True
 
 
-def test_revocation_and_model_send_are_serialized(clients, monkeypatch):
-    from concurrent.futures import ThreadPoolExecutor, TimeoutError
-    from threading import Event
-
-    from app.services import agent, ai_connection
-
+def test_agent_preference_cannot_override_agreement(clients):
     first, _, engine = clients
-    configure(first)
-    entered = Event()
-    release = Event()
-    revoking = Event()
-    original = ai_connection.status
-
-    def paused_connection(db, owner_id):
-        entered.set()
-        assert release.wait(5)
-        return original(db, owner_id)
-
-    monkeypatch.setattr(ai_connection, "status", paused_connection)
-    monkeypatch.setattr(
-        ai, "ask", lambda *args: '{"items":[{"id":"start","message":"逐步记录，保持节奏。"}]}'
+    assert first.put("/api/agent/preferences", json={"ai_enabled": False}).json()["ai_enabled"]
+    with Session(engine) as db:
+        db.delete(db.get(Setting, (1, ai_agreement.KEY)))
+        db.commit()
+    assert (
+        first.put("/api/agent/preferences", json={"ai_enabled": True}).json()["ai_enabled"] is False
     )
-
-    def generate():
-        with Session(engine) as db:
-            return agent.briefing(db, 1)
-
-    def revoke():
-        revoking.set()
-        with Session(engine) as db:
-            return agent.save_preferences(db, 1, {"ai_enabled": False})
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        analysis = pool.submit(generate)
-        assert entered.wait(5)
-        revocation = pool.submit(revoke)
-        assert revoking.wait(5)
-        try:
-            with pytest.raises(TimeoutError):
-                revocation.result(timeout=0.2)
-        finally:
-            release.set()
-        analysis.result(timeout=5)
-        assert revocation.result(timeout=5)["ai_enabled"] is False
-    assert first.post("/api/agent/brief").json()["source"] == "local"

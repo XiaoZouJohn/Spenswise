@@ -50,7 +50,9 @@ export function Ledger() {
   const dateFrom = search.get('date_from') || ''
   const dateTo = search.get('date_to') || ''
   const ids = search.get('ids') || ''
+  const sort = search.get('sort') || 'date_desc'
   const requestParams = new URLSearchParams({ page_size: '40', review: String(review) })
+  requestParams.set('sort', sort)
   if (filterCategory) requestParams.set('category', filterCategory)
   if (txType) requestParams.set('tx_type', txType)
   if (merchant) requestParams.set('merchant', merchant)
@@ -181,6 +183,7 @@ export function Ledger() {
         <Disclosure title="筛选与搜索" description="按收支类型、分类、日期和商户缩小交易范围" badge={<Badge tone={activeFilterCount ? 'warning' : 'neutral'}>{activeFilterCount ? `${activeFilterCount} 个条件` : '全部账单'}</Badge>} defaultOpen={activeFilterCount > 0}>
           <div className="rounded-panel border border-line bg-canvas p-4">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+              <div className="field"><label>排序</label><select value={sort} onChange={event => updateFilter('sort', event.target.value)}><option value="date_desc">日期：从近到远</option><option value="amount_desc">金额：从大到小</option><option value="amount_asc">金额：从小到大</option></select></div>
               <div className="field"><label>收支类型</label><select value={txType} onChange={event => updateFilter('tx_type', event.target.value)}><option value="">全部类型</option><option value="expense">支出</option><option value="income">收入</option><option value="refund">退款</option><option value="transfer">转账</option></select></div>
               <div className="field"><label>消费分类</label><select value={filterCategory} onChange={event => updateFilter('category', event.target.value)}><option value="">全部分类</option>{categories.map(item => <option key={item} value={item}>{item}</option>)}</select></div>
               <div className="field"><label>开始日期</label><input type="date" value={dateFrom} max={dateTo || undefined} onChange={event => updateFilter('date_from', event.target.value)}/></div>
@@ -203,7 +206,7 @@ export function Ledger() {
       {selected.length > 0 && <div className="batch-review-controls"><label>修正日期<input aria-label="批量修正日期" type="date" value={batchDate} onChange={event => setBatchDate(event.target.value)}/></label><label>关联账户<select value={batchAccount} onChange={event => setBatchAccount(event.target.value)}><option value="">保留原账户</option><option value="clear">解除账户关联</option>{accounts.map(row => <option key={row.account_key} value={row.account_key}>{row.name}</option>)}</select></label><Button disabled={confirmReview.isPending} onClick={() => confirmReview.mutate()}>修正并确认所选记录</Button>{confirmReview.isSuccess && <span role="status">已确认</span>}{confirmReview.isError && <p role="alert">操作失败，记录可能冲突或已变更，请刷新后重试。</p>}</div>}
       {undo.length > 0 && <div className="mb-4 flex items-center gap-3 text-sm text-success">分类已更新 <Button variant="secondary" onClick={() => restore.mutate()}>撤销</Button></div>}
       {query.isLoading ? <State kind="loading"/> : query.isError ? <State kind="error" message={query.error.message} retry={() => query.refetch()}/> : <>
-        <TransactionDayList items={items} selected={selected} onSelect={setSelected} onDetail={setDetail} onDelete={item => setDeleteTarget(item)}/>
+        <TransactionDayList items={items} groupByDate={sort === 'date_desc'} selected={selected} onSelect={setSelected} onDetail={setDetail} onDelete={item => setDeleteTarget(item)}/>
         <div ref={loadMoreRef} className="ledger-load-more" role="status">
           {query.isFetchingNextPage ? '正在加载更多账单…' : query.hasNextPage ? `已显示 ${items.length} / ${total} 笔，继续向下滚动` : total ? `已加载全部 ${total} 笔账单` : ''}
         </div>

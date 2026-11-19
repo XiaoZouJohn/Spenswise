@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Chart } from '../Chart'
+import { CategoryIcon } from './CategoryIcon'
+import { AiUsageHint } from '../AiUsageHint'
 import { api, json } from '../../lib/api'
 import { money, nextMonthRange, today } from '../../lib/format'
 import { categoryChartColors, chartColors, chartSemanticColors } from '../../lib/tokens'
@@ -18,7 +20,7 @@ export function LedgerPortrait({ data, rangeLabel, onCategory }: { data: PageDat
     tooltip: { trigger: 'axis', valueFormatter: value => money(Number(value)) },
     series: [{ type: 'bar', barWidth: 18, data: [{ value: data.expense_cents ?? 0, itemStyle: { color: chartColors[1] } }, { value: data.income_cents ?? 0, itemStyle: { color: chartColors[0] } }] }],
   }), [data.expense_cents, data.income_cents])
-  return <div className="ledger-portrait"><div><span className="workspace-eyebrow">{rangeLabel || '当前筛选范围'}</span><p><strong>{data.total} 笔</strong>记录。统计覆盖全部匹配结果，不限当前页。</p></div><div className="ledger-chart-columns"><Chart option={option} height={180} label="筛选范围内收入与净支出对照"/><div className="ledger-category-list">{data.category_spend?.map(item => <button key={String(item.category)} onClick={() => onCategory?.(String(item.category))}><span>{String(item.category)}</span><strong>{money(Number(item.amount_cents))}</strong></button>)}</div></div><p>收入 {money(data.income_cents ?? 0)} · 净支出 {money(data.expense_cents ?? 0)} · 收支结余 {money(data.net_flow_cents ?? 0)}。退款冲减支出，转账不计收支。</p></div>
+  return <div className="ledger-portrait"><div><span className="workspace-eyebrow">{rangeLabel || '当前筛选范围'}</span><p><strong>{data.total} 笔</strong>记录。统计覆盖全部匹配结果，不限当前页。</p></div><div className="ledger-chart-columns"><Chart option={option} height={180} label="筛选范围内收入与净支出对照"/><div className="ledger-category-list">{data.category_spend?.map(item => <button key={String(item.category)} onClick={() => onCategory?.(String(item.category))}><span className="portrait-category-name"><CategoryIcon category={String(item.category)}/>{String(item.category)}</span><strong>{money(Number(item.amount_cents))}</strong></button>)}</div></div><p>收入 {money(data.income_cents ?? 0)} · 净支出 {money(data.expense_cents ?? 0)} · 收支结余 {money(data.net_flow_cents ?? 0)}。退款冲减支出，转账不计收支。</p></div>
 }
 
 export function ForecastPortrait() {
@@ -69,7 +71,7 @@ export function ForecastPortrait() {
 
   return <section className="forecast-portrait" aria-labelledby="forecast-portrait-title">
     <header className="forecast-portrait-head">
-      <div><span className="workspace-eyebrow">{nextMonth.start} 至 {nextMonth.end}</span><h2 id="forecast-portrait-title">下个月收支预测</h2><p>左边看这个月花在哪，右边看看下个月可能怎么花。</p></div>
+      <div><span className="workspace-eyebrow">{nextMonth.start} 至 {nextMonth.end}</span><h2 id="forecast-portrait-title">下个月收支预测</h2><p>左边看这个月花在哪，右边看看下个月可能怎么花。 <AiUsageHint feature="forecast"/></p></div>
       <span className="forecast-model-tag"><Sparkles size={14}/>{modelLabel}</span>
     </header>
     {query.isPending && <div className="forecast-status" role="status">正在估算下个月的支出…</div>}

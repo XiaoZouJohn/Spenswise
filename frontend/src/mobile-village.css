@@ -1,0 +1,239 @@
+/* Mobile views share a full-screen village scene without coordinate hotspots. */
+.mobile-scene-frame, .mobile-map-view { display: none; }
+
+@media (max-width: 1100px) {
+  .village-v2, .village-v2.is-home, .village-v2.has-workspace {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: clip;
+    transform: none;
+    transition: none;
+  }
+  .village-v2 .village-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    width: 100%;
+    height: 60px;
+    min-height: 60px;
+    padding: 7px 14px;
+    background: var(--paper-soft);
+  }
+  .village-v2 .village-district-nav, .village-v2 .village-location-menu { display: none; }
+  .village-v2 .village-main, .village-v2.is-home .village-main,
+  .village-v2.has-workspace .village-main {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    height: auto;
+    min-height: calc(100dvh - 60px);
+    padding: 0 0 calc(80px + env(safe-area-inset-bottom));
+    pointer-events: auto;
+  }
+  .village-v2 .mobile-scene-frame {
+    position: fixed;
+    display: block;
+    z-index: 0;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--village-sky);
+    pointer-events: none;
+  }
+  .mobile-scene-frame .village-scene {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .mobile-scene-frame .village-video,
+  .mobile-scene-frame .village-poster {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 64% center;
+  }
+  .mobile-scene-frame .village-video { background: var(--village-sky) url('/media/village/village-v1.webp') center / cover; }
+  .mobile-scene-frame .village-spatial-layer { display: none !important; }
+  .mobile-scene-frame .village-light { background: transparent !important; }
+  .village-v2.is-home[data-compact-mode=map] .mobile-scene-frame .village-video,
+  .village-v2.is-home[data-compact-mode=map] .mobile-scene-frame .village-poster { object-position: 58% center; }
+
+  .village-v2.is-home[data-compact-mode=story] .village-story-slot {
+    display: block;
+    flex: none;
+    width: 100%;
+    max-width: 740px;
+    min-width: 0;
+    height: auto;
+    margin: 0 auto;
+    padding: 12px 12px 0;
+    animation: none;
+  }
+  .village-v2.is-home[data-compact-mode=places] .village-story-slot,
+  .village-v2.is-home[data-compact-mode=map] .village-story-slot,
+  .village-v2.has-workspace .village-story-slot { display: none !important; }
+  .village-v2 .story-paper {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .village-v2 .story-scroll,
+  .village-v2.is-home .story-scroll {
+    flex: none;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+    touch-action: auto;
+  }
+  .village-v2 .story-scroll > section { scroll-margin-top: 125px; }
+  .village-v2 .story-index {
+    position: sticky;
+    top: 60px;
+    z-index: 6;
+    gap: 2px;
+    padding: 7px 8px;
+    background: var(--paper-deep);
+  }
+  .village-v2 .story-index button { min-width: 0; font-size: 12px; line-height: 1.25; }
+  .village-v2 .story-index button > span { font-size: 18px; }
+  .village-v2 .story-masthead { flex-wrap: wrap; gap: 10px; }
+  .village-v2 .story-month-picker { margin-left: auto; }
+  .village-v2 .story-generation > p:not([role]) { display: block; }
+
+  .village-v2 .mobile-map-view { display: none; }
+  .village-v2.is-home[data-compact-mode=places] .village-main { background: var(--paper-soft); }
+  .village-v2.is-home[data-compact-mode=map] .mobile-map-view {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    min-height: calc(100dvh - 140px - env(safe-area-inset-bottom));
+    padding: 20px 16px 24px;
+  }
+  .mobile-map-view > div { align-self: flex-start; max-width: 300px; padding: 14px 18px; background: color-mix(in srgb, var(--paper-soft) 91%, transparent); }
+  .mobile-map-view > div > span { color: var(--forest); font-size: 12px; }
+  .mobile-map-view h1 { margin: 0; font-family: var(--font-display); font-size: 25px; color: var(--forest); }
+  .mobile-map-view p { margin: 7px 0 0; color: var(--ink-secondary); font-size: 14px; }
+  .mobile-map-view nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 5px; background: color-mix(in srgb, var(--paper-soft) 94%, transparent); }
+  .mobile-map-view nav a { display: flex; align-items: center; justify-content: center; gap: 2px; min-width: 0; padding: 10px 2px; color: var(--forest); font-size: 13px; text-decoration: none; }
+  .village-v2.is-home .compact-places { display: none !important; }
+  .village-v2.is-home[data-compact-mode=places] .compact-places {
+    display: flex !important;
+    position: relative;
+    inset: auto;
+    flex-direction: column;
+    gap: 10px;
+    width: min(100%, 740px);
+    min-height: calc(100dvh - 140px - env(safe-area-inset-bottom));
+    height: auto;
+    max-height: none;
+    margin: 0 auto;
+    padding: 22px 12px 18px;
+    overflow: visible;
+    background: var(--paper-soft);
+    pointer-events: auto;
+  }
+  .mobile-village-destinations { scroll-margin-top: 68px; }
+  .mobile-village-destinations header { padding: 0 8px 7px; }
+  .mobile-village-destinations header span { color: var(--forest); font-size: 12px; font-weight: 600; letter-spacing: .08em; }
+  .mobile-village-destinations header h2 { margin: 3px 0; color: var(--ink); font-family: var(--font-display); font-size: 24px; font-weight: 500; }
+  .mobile-village-destinations header p { margin: 0; color: var(--ink-secondary); font-size: 13px; }
+  .village-v2 .compact-places a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 90px;
+    padding: 13px 16px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--paper-soft);
+    box-shadow: none;
+  }
+  .village-v2 .compact-places a > .village-illustration { display: inline-block; flex: 0 0 44px; width: 44px; height: 58px; background-size: 400% 300%; }
+  .village-v2 .compact-places a > span:not(.village-illustration) { display: block; flex: 1; min-width: 0; }
+  .village-v2 .compact-places strong { display: block; font-family: var(--font-display); font-size: 20px; font-weight: 500; }
+  .village-v2 .compact-places small { display: block; margin-top: 2px; font-size: 13px; }
+  .village-v2 .compact-places em { display: block; margin-top: 5px; color: var(--forest); font-size: 12px; font-style: normal; }
+  .village-v2 .compact-places a > svg { flex: none; color: var(--forest); }
+
+  .village-v2.has-workspace .building-workspace,
+  .village-v2[data-compact-mode=workspace] .building-workspace {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: min(calc(100% - 24px), 740px);
+    max-width: none;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    margin: 12px auto 0;
+    overflow: visible;
+    animation: none;
+  }
+  .village-v2 .workspace-content { flex: 1; min-height: 0; overflow: visible; scrollbar-gutter: auto; }
+  .village-v2 .building-workspace-head { gap: 12px; }
+  .village-v2 .building-workspace-head > span { display: flex; }
+  .village-v2 .building-tabs { overflow-x: auto; white-space: nowrap; }
+  .village-v2 .village-budget-strip { display: none; }
+
+  .village-v2 .compact-navigation {
+    position: fixed;
+    z-index: 40;
+    inset: auto 0 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+    max-width: none;
+    height: calc(64px + env(safe-area-inset-bottom));
+    padding: 4px 8px env(safe-area-inset-bottom);
+    transform: none;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--paper-soft);
+    box-shadow: none;
+  }
+  .village-v2 .compact-navigation a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    padding: 4px;
+    color: var(--ink-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .village-v2 .compact-navigation a[aria-current=page] { color: var(--forest); }
+  .village-v2 .compact-navigation a[aria-current=page]::after { content: ''; width: 18px; height: 2px; background: var(--forest); }
+}
+
+@media (max-width: 600px) {
+  .village-v2 .village-topbar { gap: 7px; padding-inline: 11px; }
+  .village-v2 .village-brand { font-size: 16px; }
+  .village-v2 .village-space-switch { display: none; }
+  .village-v2 .story-masthead h1 { font-size: 20px; }
+  .village-v2 .story-generation { grid-template-columns: minmax(0, 1fr) 125px; }
+  .village-v2 .story-index button { font-size: 11px; }
+  .village-v2 .building-workspace-head > span { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .village-v2 .story-scroll, .village-v2 .mobile-village-destinations { scroll-behavior: auto; }
+}

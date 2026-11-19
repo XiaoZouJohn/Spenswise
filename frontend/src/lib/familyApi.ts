@@ -53,6 +53,7 @@ export const familyApi = {
   me: () => sdk.meApiAuthMeGet(),
   register: (data: { email: string; password: string; display_name: string }) => sdk.registerApiAuthRegisterPost({ requestBody: data }),
   login: (data: { email: string; password: string }) => sdk.loginApiAuthLoginPost({ requestBody: data }),
+  guest: () => sdk.guestLoginApiAuthGuestPost(),
   logout: () => sdk.logoutApiAuthLogoutPost(),
   claimLegacy: (code: string) => sdk.claimLegacyApiAuthClaimLegacyPost({ requestBody: { code } }),
   updateMe: (display_name: string) => sdk.updateProfileApiUsersMePut({ requestBody: { display_name } }),
