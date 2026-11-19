@@ -1,7 +1,7 @@
 import json
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models import Transaction
@@ -141,14 +141,7 @@ def review(db: Session, ids: list[int], owner_id: int) -> list[dict]:
     return _review_items(db, items, owner_id)
 
 
-def review_all(db: Session, owner_id: int) -> dict:
-    if not enabled(db, owner_id):
-        raise ValueError("请先授权并配置 AI 连接")
-    items = list(
-        db.scalars(
-            select(Transaction).where(Transaction.owner_id == owner_id).order_by(Transaction.id)
-        ).all()
-    )
+def _review_grouped(db: Session, items: list[Transaction], owner_id: int) -> dict:
     if not items:
         return {"suggestions": [], "total": 0, "groups_reviewed": 0}
 
@@ -191,6 +184,37 @@ def review_all(db: Session, owner_id: int) -> dict:
         "total": len(items),
         "groups_reviewed": len(representatives),
     }
+
+
+def review_all(db: Session, owner_id: int) -> dict:
+    if not enabled(db, owner_id):
+        raise ValueError("请先授权并配置 AI 连接")
+    items = list(
+        db.scalars(
+            select(Transaction).where(Transaction.owner_id == owner_id).order_by(Transaction.id)
+        ).all()
+    )
+    return _review_grouped(db, items, owner_id)
+
+
+def review_pending(db: Session, owner_id: int) -> dict:
+    """Ask DeepSeek only about transactions still waiting for confirmation."""
+    if not enabled(db, owner_id):
+        raise ValueError("请先授权并配置 AI 连接")
+    items = list(
+        db.scalars(
+            select(Transaction)
+            .where(
+                Transaction.owner_id == owner_id,
+                or_(
+                    Transaction.category == "待确认",
+                    Transaction.reviewed.is_(False) & (Transaction.confidence < 80),
+                ),
+            )
+            .order_by(Transaction.id)
+        ).all()
+    )
+    return _review_grouped(db, items, owner_id)
 
 
 def apply_suggestions(db: Session, suggestions: list[dict], owner_id: int) -> dict:

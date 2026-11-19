@@ -610,6 +610,14 @@ def review_all_ai(user: User = Depends(current_user), db: Session = Depends(get_
         raise HTTPException(403, detail={"code": "AI_UNAVAILABLE", "message": str(exc)}) from exc
 
 
+@app.post("/api/ai/review-pending-transactions")
+def review_pending_ai(user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    try:
+        return ai.review_pending(db, user.id)
+    except ValueError as exc:
+        raise HTTPException(403, detail={"code": "AI_UNAVAILABLE", "message": str(exc)}) from exc
+
+
 @app.post("/api/ai/apply-transaction-categories")
 def apply_ai_categories(
     value: AiCategoryApplyIn,
