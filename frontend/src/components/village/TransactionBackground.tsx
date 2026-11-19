@@ -24,7 +24,7 @@ export function TransactionBackground({ transactionId, month }: { transactionId:
       <label>简短说明<Textarea value={value.note} maxLength={2000} onChange={event => setDraft({ ...value, note: event.target.value })}/></label>
       <label><input type="checkbox" checked={value.deferred} onChange={event => setDraft({ ...value, deferred: event.target.checked })}/>稍后回看，不放入当前待办</label>
       <Button disabled={save.isPending} onClick={() => save.mutate()}>保存背景并标记事件</Button>
-      {save.isSuccess && <p role="status">背景已保存</p>}{save.isError && <p role="alert" className="text-danger">保存失败或版本已变化，请重新读取</p>}
+      {save.isSuccess && <p role="status">背景已保存</p>}{save.isError && <p role="alert" className="text-danger">暂时没保存成功，请重新打开后核对</p>}
     </div>}
     </details>
     <Link className="story-action" to={`/logs?new=1&transaction=${transactionId}&month=${month}`}>留下一句话，关联这笔账单 ↗</Link>

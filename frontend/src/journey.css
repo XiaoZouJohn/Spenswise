@@ -1,4 +1,3 @@
-.journey-album::before{content:'';position:absolute;inset:7px;border:1px solid var(--line);border-radius:3px;pointer-events:none}
 .journey-eyebrow{margin:0 0 8px;color:var(--forest);font-size:12px;font-weight:700;letter-spacing:.12em}
 .journey-album h2{margin:0 0 12px;color:var(--ink);font:500 30px/1.35 var(--font-display)}
 .village-guide-trigger{display:inline-flex;align-items:center;gap:5px;min-height:36px;padding:5px 9px;border:1px solid var(--line);border-radius:5px;background:var(--paper-soft);color:var(--forest);font-size:13px;font-weight:600}.village-guide-trigger:hover{border-color:var(--forest)}.village-guide-trigger:focus-visible{outline:3px solid var(--gold);outline-offset:2px}

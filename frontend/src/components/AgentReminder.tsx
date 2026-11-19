@@ -7,9 +7,9 @@ import { useSession } from '../lib/session'
 import { Badge, Button, Card, SectionTitle, State } from './ui'
 
 const reasons: Record<string, string> = {
-  consent_required: 'AI 分析未开启，当前根据本地账本规则提示。',
-  not_configured: '尚未配置可用的 DeepSeek 连接，当前使用本地规则。',
-  model_unavailable: 'AI 暂时不可用，已保留本地提醒，可稍后重试。',
+  consent_required: 'AI 提醒已关闭，仍可查看账本提醒。',
+  not_configured: '连接 DeepSeek 后，可以查看 AI 建议。',
+  model_unavailable: '暂时无法获取 AI 建议，稍后再试。',
   ready: '当前为本地分析，可点“更新分析”获取 AI 建议。',
 }
 
@@ -81,7 +81,7 @@ export function AgentReminder({ ownerId, quiet = false }: { ownerId: number; qui
         if (!manual && !analysis.preferences.automatic_enabled) setOpen(false)
       } catch {
         if (alive && ticket === epoch) {
-          setError('暂时无法更新简报，账本仍可正常使用。')
+          setError('简报暂时无法更新，请稍后再试。')
           if (manual) setOpen(true)
         }
       } finally {
@@ -128,14 +128,14 @@ export function AgentReminder({ ownerId, quiet = false }: { ownerId: number; qui
     </Button>
     {open && <section id="agent-briefing" role="region" aria-label="Agent 财务简报" className="agent-panel" onKeyDown={event => { if (event.key === 'Escape') setOpen(false) }}>
       <header className="flex items-start justify-between gap-3">
-        <div><div className="flex items-center gap-2 font-semibold"><Sparkles size={18}/>Agent 财务简报</div><p className="mb-0 mt-1 text-xs text-muted">{report?.as_of} · 仅分析你的个人记录</p></div>
+        <div><div className="flex items-center gap-2 font-semibold"><Sparkles size={18}/>小猫帮你看账本</div><p className="mb-0 mt-1 text-xs text-muted">{report?.as_of} · 你的个人账本</p></div>
         <Button variant="ghost" aria-label="关闭简报" onClick={() => setOpen(false)}><X size={18}/></Button>
       </header>
       {report && <>
-        <div className="my-3 flex items-center gap-2"><Badge tone={report.source === 'ai' ? 'success' : 'neutral'}>{report.source === 'ai' ? 'DeepSeek 建议 · 本地事实' : '本地规则'}</Badge>{busy && <span role="status" className="text-xs text-muted">正在生成 AI 建议…</span>}</div>
+        <div className="my-3 flex items-center gap-2"><Badge tone={report.source === 'ai' ? 'success' : 'neutral'}>{report.source === 'ai' ? '小猫分析' : '账本提醒'}</Badge>{busy && <span role="status" className="text-xs text-muted">正在翻看账本…</span>}</div>
         <AgentCards cards={report.cards} onNavigate={() => setOpen(false)}/>
         {report.pending_import && <p className="text-xs text-muted">账单正在导入，结束后会统一更新分析。</p>}
-        {report.source === 'local' && <p className="text-xs leading-5 text-muted">{reasons[report.reason] || '当前使用本地规则。'}</p>}
+        {report.source === 'local' && <p className="text-xs leading-5 text-muted">{reasons[report.reason] || '正在显示账本提醒。'}</p>}
       </>}
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
       <footer className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
@@ -149,8 +149,8 @@ export function AgentReminder({ ownerId, quiet = false }: { ownerId: number; qui
 export function AgentCards({ cards, onNavigate }: { cards: AgentBrief['cards']; onNavigate?: () => void }) {
   return <div className="space-y-3">{cards.map(card => <article key={card.id} className="agent-item">
     <div className="flex items-center gap-2"><Badge tone={card.tone === 'warning' ? 'warning' : card.tone === 'encouragement' ? 'success' : 'neutral'}>{card.tone === 'warning' ? '留意' : card.tone === 'encouragement' ? '鼓励' : '建议'}</Badge><h3 className="m-0 text-sm font-semibold">{card.title}</h3></div>
-    <p className="mb-2 mt-3 text-sm leading-6">{card.message}</p>
-    <p className="my-2 text-xs leading-5 text-muted">依据：{card.evidence}</p>
+    <p className="mb-2 mt-3 whitespace-pre-line text-sm leading-6">{card.message}</p>
+    <p className="my-2 text-xs leading-5 text-muted">账本里：{card.evidence}</p>
     <Link to={card.href} onClick={onNavigate} className="text-xs font-semibold text-accent underline">查看相关记录</Link>
   </article>)}</div>
 }
@@ -181,8 +181,8 @@ export function AgentReminderSettings() {
     <SectionTitle title="Agent 自动提醒"/>
     {query.isPending ? <State kind="loading"/> : query.isError ? <State kind="error" retry={() => query.refetch()}/> : <div className="space-y-4 text-sm">
       <label className="flex items-start gap-3"><input type="checkbox" className="mt-1" checked={save.isPending ? save.variables.automatic_enabled ?? query.data.automatic_enabled : query.data.automatic_enabled} disabled={save.isPending} onChange={event => save.mutate({ automatic_enabled: event.target.checked })}/>打开软件和重要变化时自动提醒</label>
-      <p className="m-0 leading-6 text-muted">打开软件和风险升级时更新简报，洞察进入 Story；村庄界面不自动弹窗抢占阅读。刷新、切页和同等级的小额变化不重复生成。关闭后仍能从顶部手动查看。</p>
-      <p className="m-0 leading-6 text-muted">Agent 简报仅发送本人账本汇总和提醒依据；聊天按需读取最新账单。无连接或分析失败时仍提供本地提醒。</p>
+      <p className="m-0 leading-6 text-muted">打开富贵村时，提醒你留意值得关注的收支变化。你也可以随时从顶栏查看简报。</p>
+      <p className="m-0 leading-6 text-muted">AI 简报会使用你的账本汇总和提醒依据；聊天时可按需查询账单。没有连接时，仍可查看账本提醒。</p>
     </div>}
     {save.isPending && <p role="status" className="mb-0 text-sm text-muted">正在保存；若有进行中的 AI 请求，需等待它结束。</p>}
     {save.isSuccess && <p role="status" className="mb-0 text-sm text-success">提醒设置已保存</p>}
