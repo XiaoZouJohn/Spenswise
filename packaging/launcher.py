@@ -195,14 +195,38 @@ def load_env(path: Path) -> None:
             os.environ[key] = value
 
 
+class ExistingVersionRunningError(RuntimeError):
+    """A running local server is serving a different packaged frontend."""
+
+
 def existing_instance_url(port: int = DEFAULT_PORT) -> str | None:
-    url = f"http://127.0.0.1:{port}"
-    try:
-        with urllib.request.urlopen(f"{url}/api/health", timeout=0.8) as response:
-            if response.status == 200 and b'"ok"' in response.read(200):
-                return url
-    except Exception:
-        return None
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    bundled_index = resource_dir() / "frontend_dist" / "index.html"
+    for current_port in range(port, port + 20):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            probe.settimeout(0.1)
+            if probe.connect_ex(("127.0.0.1", current_port)) != 0:
+                continue
+        url = f"http://127.0.0.1:{current_port}"
+        try:
+            with opener.open(f"{url}/api/health", timeout=0.8) as response:
+                healthy = response.status == 200 and b'"ok"' in response.read(200)
+        except OSError:
+            continue
+        if not healthy:
+            continue
+        if bundled_index.is_file():
+            try:
+                with opener.open(f"{url}/", timeout=2) as response:
+                    same_frontend = response.status == 200 and response.read() == bundled_index.read_bytes()
+            except OSError:
+                same_frontend = False
+            if not same_frontend:
+                raise ExistingVersionRunningError(
+                    "检测到旧版 SpendWise 仍在运行。请先关闭旧版启动窗口，"
+                    "再双击新版 EXE；当前不会打开旧页面。"
+                )
+        return url
     return None
 
 
@@ -339,6 +363,13 @@ def main() -> int:
 
         uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning", access_log=False)
         return 0
+    except ExistingVersionRunningError as exc:
+        print(f"\nSpendWise 启动提示：{exc}")
+        try:
+            input("\n按回车键关闭窗口……")
+        except EOFError:
+            pass
+        return 1
     except KeyboardInterrupt:
         return 0
     except Exception:

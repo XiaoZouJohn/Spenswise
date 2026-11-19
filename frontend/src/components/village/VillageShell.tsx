@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSPrope
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, BookOpen, Building2, Compass, Settings, UserRound, UsersRound } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, BookOpen, Building2, ChevronDown, ChevronUp, Compass, RotateCw, Settings, UserRound, UsersRound, X } from 'lucide-react'
 import { AgentReminder } from '../AgentReminder'
 import { BudgetWarning } from '../BudgetWarning'
 import { Overview } from '../../pages/Overview'
@@ -65,6 +65,9 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
   const [context, setContext] = useState<AssistantContext | null>(null)
   const [draft, setDraft] = useState<AssistantDraft | undefined>()
   const [menu, setMenu] = useState(false)
+  const [mobileHeaderOpen, setMobileHeaderOpen] = useState(true)
+  const [mobileStoryOpen, setMobileStoryOpen] = useState(false)
+  const mobileHeaderTimer = useRef<number | null>(null)
   const [conversation, setConversation] = useState<string | null>(null)
   const monthParameter = new URLSearchParams(location.search).get('month')
   const validMonth = monthParameter && /^\d{4}-(0[1-9]|1[0-2])$/.test(monthParameter) ? monthParameter : null
@@ -83,6 +86,41 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
     setAiMounted(true); setAiOpen(true)
   }, [])
   const closeAssistant = useCallback(() => { setAiOpen(false); restoreFocus.current?.focus() }, [])
+  const revealMobileHeader = useCallback(() => {
+    setMobileHeaderOpen(true)
+    if (mobileHeaderTimer.current !== null) window.clearTimeout(mobileHeaderTimer.current)
+    mobileHeaderTimer.current = window.setTimeout(() => setMobileHeaderOpen(false), 3200)
+  }, [])
+  useEffect(() => {
+    if (!home) {
+      setMobileStoryOpen(false)
+      return
+    }
+    revealMobileHeader()
+    let touchStartY: number | null = null
+    const onTouchStart = (event: TouchEvent) => {
+      const touch = event.touches[0]
+      touchStartY = touch && touch.clientY <= 48 ? touch.clientY : null
+    }
+    const onTouchMove = (event: TouchEvent) => {
+      const touch = event.touches[0]
+      if (touchStartY === null || !touch || touch.clientY - touchStartY < 30) return
+      touchStartY = null
+      revealMobileHeader()
+    }
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: true })
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove', onTouchMove)
+      if (mobileHeaderTimer.current !== null) window.clearTimeout(mobileHeaderTimer.current)
+    }
+  }, [home, revealMobileHeader])
+  useEffect(() => {
+    if (!menu) return
+    if (mobileHeaderTimer.current !== null) window.clearTimeout(mobileHeaderTimer.current)
+    setMobileHeaderOpen(true)
+  }, [menu])
   useEffect(() => { setCompactMode(workspace ? 'workspace' : homeMode) }, [workspace, homeMode])
   useEffect(() => {
     setMenu(false)
@@ -99,20 +137,22 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
     return () => document.removeEventListener('keydown', onKey)
   }, [aiOpen, closeAssistant])
   return <VillageProvider value={{ chapter, setChapter, selectedCategory, selectCategory, ask, month, business: business.data }}>
-    <div className={`village-shell village-v2 ${workspace ? 'has-workspace' : 'is-home'}`} data-compact-mode={compactMode} style={{ '--village-canvas-width': '100%', '--village-panel-height': 'calc(100dvh - 170px)' } as CSSProperties}>
+    <div className={`village-shell village-v2 ${workspace ? 'has-workspace' : 'is-home'} ${mobileHeaderOpen ? 'is-mobile-header-open' : 'is-mobile-header-collapsed'} ${mobileStoryOpen ? 'is-mobile-story-open' : ''}`} data-compact-mode={compactMode} style={{ '--village-canvas-width': '100%', '--village-panel-height': 'calc(100dvh - 170px)' } as CSSProperties}>
       <VillageScene chapter={chapter} selectedCategory={selectedCategory} categoryAmount={overview.data?.categories.find(item => item.category === selectedCategory)?.amount_cents} workspace={workspace} hasData={!!overview.data?.facts.transaction_count} flow={overview.data ? { income: overview.data.facts.income_cents, expense: overview.data.facts.expense_cents } : undefined}/>
       <a className="skip-to-content" href="#village-content">跳到主要内容</a>
       <header className="village-topbar">
         <Link to="/overview" className="village-brand"><Illustration name="village"/><span>富贵村<small>SPENDWISE</small></span></Link>
         <div className="village-space-switch" aria-label="财务空间"><NavLink to="/overview" className={!family ? 'is-active' : ''}>个人空间</NavLink><NavLink to="/family" className={family ? 'is-active' : ''}><UsersRound size={14}/>家庭组</NavLink></div>
-        <div className="village-header-actions"><button className="village-guide-trigger" onClick={() => { if (tourStep > 0 && tourPaused) { setTourPaused(false); navigate(tourSteps[tourStep - 1].path); return } autoGuideStarted.current = true; setTourLocal(1); setTourPaused(false); setTourIntro(value => value + 1); navigate('/overview'); saveGuide({ dismiss_welcome: true, tour_step: 1 }) }}><BookOpen size={17}/>{tourStep > 0 && tourPaused ? '继续指引' : '使用指引'}</button><AgentReminder ownerId={session.user.id} quiet/><Link to="/settings#ai-connection" aria-label="设置" className="village-icon-button"><Settings size={18}/></Link><Link to="/user" className="village-user" aria-label="个人资料"><UserRound size={17}/><span>{session.user.display_name}</span></Link></div>
+        <div className="village-header-actions"><button className="village-guide-trigger" onClick={() => { if (tourStep > 0 && tourPaused) { setTourPaused(false); navigate(tourSteps[tourStep - 1].path); return } autoGuideStarted.current = true; setTourLocal(1); setTourPaused(false); setTourIntro(value => value + 1); navigate('/overview'); saveGuide({ dismiss_welcome: true, tour_step: 1 }) }}><BookOpen size={17}/>{tourStep > 0 && tourPaused ? '继续指引' : '使用指引'}</button><AgentReminder ownerId={session.user.id} quiet/><Link to="/settings#ai-connection" aria-label="设置" className="village-icon-button"><Settings size={18}/></Link><Link to="/user" className="village-user" aria-label="个人资料"><UserRound size={17}/><span>{session.user.display_name}</span></Link><button type="button" className="mobile-home-header-collapse" aria-label="收起顶部栏" onClick={() => setMobileHeaderOpen(false)}><ChevronUp size={18}/></button></div>
       </header>
+      {home && <button type="button" className="mobile-home-header-reveal" aria-label="展开顶部栏" aria-expanded={mobileHeaderOpen} onClick={revealMobileHeader}><ChevronDown size={17}/><span>下滑展开</span></button>}
       <nav className="village-district-nav" aria-label="地点导航">
         <Link to="/overview" className={home ? 'is-active' : ''}><Illustration name="ledger"/>本月 Story</Link>
         {buildings.map(b => <NavLink to={b.href} key={b.id} className={!home && current.id === b.id && !family ? 'is-active' : ''}>{b.name}<span>{b.task}</span></NavLink>)}
         <button onClick={() => setMenu(v => !v)} aria-expanded={menu}><Compass size={15}/>全部地点</button>
       </nav>
-      {menu && <nav className="village-location-menu" aria-label="全部地点">{buildings.map(b => <Link to={b.href} key={b.id} onClick={() => setMenu(false)}>{b.name}<span>{b.task}</span><ArrowUpRight size={15}/></Link>)}</nav>}
+      {menu && <button type="button" className="mobile-menu-backdrop" aria-label="关闭全部地点菜单" onClick={() => setMenu(false)}/>}
+      {menu && <nav className="village-location-menu" aria-label="全部地点">{buildings.map(b => <Link to={b.href} key={b.id} onClick={() => setMenu(false)}>{b.name}<span>{b.task}</span><ArrowUpRight size={15}/></Link>)}<Link className="mobile-location-extra" to="/logs" onClick={() => setMenu(false)}>生活记录<Illustration name="ledger"/></Link><Link className="mobile-location-extra" to="/family" onClick={() => setMenu(false)}>家庭事务<UsersRound size={15}/></Link><Link className="mobile-location-extra" to="/user" onClick={() => setMenu(false)}>个人资料<UserRound size={15}/></Link><Link className="mobile-location-extra" to="/settings" onClick={() => setMenu(false)}>预算与设置<Settings size={15}/></Link></nav>}
       <nav className="compact-navigation" aria-label="移动端视图"><button aria-pressed={compactMode === 'places' && home} onClick={() => { setHomeMode('places'); if (workspace) navigate('/overview'); else setCompactMode('places') }}><Compass size={16}/>村庄地图</button><button aria-pressed={compactMode === 'story' && home} onClick={() => { setHomeMode('story'); if (workspace) navigate('/overview'); else setCompactMode('story') }}><BookOpen size={16}/>本月 Story</button>{workspace && <button aria-pressed={compactMode === 'workspace'} onClick={() => setCompactMode('workspace')}><Building2 size={16}/>管理页面</button>}</nav>
       <main id="village-content" className="village-main" tabIndex={-1} onClickCapture={event => {
         const target = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href="/overview"]')
@@ -122,12 +162,16 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
         <div className="village-story-slot"><Overview/></div>
         <nav className="compact-places" aria-label="建筑地点">{buildings.map(building => <Link to={building.href} key={building.id}><Illustration name={building.id}/><span><strong>{building.name}</strong><small>{building.task}</small></span><span>{business.data?.buildings[building.id]?.label}</span></Link>)}</nav>
         <AnimatePresence mode="wait">{workspace && <motion.section key={location.pathname} initial={{ opacity: 0, x: reducedMotion ? 0 : 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: reducedMotion ? 0 : 16 }} transition={{ duration: reducedMotion ? 0 : .28, ease: 'easeOut' }} className="building-workspace" aria-label={`${family ? '家庭空间' : current.name}工作区`}>
-          <header className="building-workspace-head"><span><Building2 size={15}/>{family ? '家庭组 · 家庭事务' : `${current.name} · ${current.task}`}</span><Link to="/overview"><ArrowLeft size={16}/>返回村庄</Link></header>
+          <header className="building-workspace-head"><span><Building2 size={15}/><span className="workspace-title-desktop">{family ? '家庭组 · 家庭事务' : `${current.name} · ${current.task}`}</span><strong className="workspace-title-mobile">{family ? '家庭事务' : current.name}</strong></span><Link to="/overview"><ArrowLeft size={16}/><span>返回村庄</span></Link></header>
           {family && session.family && <nav className="building-tabs" aria-label="家庭功能">{familyNav.map(([href, label]) => <NavLink key={href} end={href === '/family'} to={href}>{label}</NavLink>)}</nav>}
           {!family && current.id === 'hall' && <nav className="building-tabs" aria-label="议事厅功能"><NavLink to="/review">月度回顾</NavLink><NavLink to="/logs">生活记录</NavLink><NavLink to="/settings">预算与设置</NavLink><NavLink to="/user">个人资料</NavLink></nav>}
           <div className="workspace-content" key={location.pathname}>{children}</div>
         </motion.section>}</AnimatePresence>
       </main>
+      {home && <button type="button" className="mobile-home-story-button" aria-expanded={mobileStoryOpen} onClick={() => setMobileStoryOpen(value => !value)}><BookOpen size={17}/>本月 Story</button>}
+      {home && mobileStoryOpen && <button type="button" className="mobile-home-story-close" aria-label="关闭本月 Story" onClick={() => setMobileStoryOpen(false)}><X size={18}/></button>}
+      {home && <section className="mobile-home-rotate-prompt" aria-label="横屏浏览提示"><RotateCw size={34}/><h2>横屏逛富贵村</h2><p>将手机旋转为横屏，即可进入完整村庄场景。</p><Link to="/ledger">暂时直接进入账房</Link></section>}
+      {workspace && <section className="mobile-workspace-rotate-prompt" aria-label="竖屏操作提示"><RotateCw size={34}/><h2>请切回竖屏操作</h2><p>账房、钱庄与集市在竖屏下更方便查看和填写。</p><Link to="/overview">返回村庄</Link></section>}
       {!family && <div className="village-budget-strip"><BudgetWarning draft={budgetPreview} autoOpen={false}/></div>}
       {!family && <AiLauncher onOpen={position => {
         restoreFocus.current = document.activeElement as HTMLElement
@@ -138,6 +182,14 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
 
       {!family && <JourneyAwardNotice/>}
       {tourStep > 0 && !tourPaused && <JourneyTour step={tourStep} introToken={tourIntro} onMove={moveTour} onPause={() => setTourPaused(true)}/>}
+
+      <nav className="mobile-primary-nav" aria-label="手机端主导航">
+        <Link to="/overview" className={home ? 'is-active' : ''}><Illustration name="village"/><span>村庄</span></Link>
+        <NavLink to="/ledger"><Illustration name="ledger"/><span>账房</span></NavLink>
+        <NavLink to="/accounts"><Illustration name="bank"/><span>钱庄</span></NavLink>
+        <NavLink to="/simulate"><Illustration name="market"/><span>集市</span></NavLink>
+        <button type="button" className={menu || family || ['/review', '/logs', '/settings', '/user'].includes(location.pathname) ? 'is-active' : ''} aria-expanded={menu} onClick={() => setMenu(value => !value)}><Compass size={21}/><span>更多</span></button>
+      </nav>
 
     </div>
   </VillageProvider>
