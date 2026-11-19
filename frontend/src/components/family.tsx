@@ -40,7 +40,7 @@ export function FamilyCashflowRunway({ days, events, assumptions, onEvent }: { d
           return onEvent && item.source_ids?.length ? <button key={item.id} type="button" className="family-event-row" onClick={() => onEvent(item)} aria-label={`查看${item.label}来源`}>{content}</button> : <div key={item.id} className="family-event-row">{content}</div>
         })}</div> : <p className="text-sm text-muted">目前没有待处理的收入或账单事件。</p>}
       </div>
-      {!!assumptions?.length && <p className="mb-0 mt-3 text-sm text-muted">计算假设：{assumptions.join('；')}</p>}
+      {!!assumptions?.length && <p className="mb-0 mt-3 text-sm text-muted">预测依据：{assumptions.join('；')}</p>}
     </> : <State kind="empty" message={noMovement ? '按现有账单，未来 30 天暂无可推演的净现金流变化' : '尚无足够的共享交易数据，无法绘制现金流'}/>}
   </Card>
 }
@@ -104,6 +104,6 @@ export function FamilyScenarioPreview({ preview }: { preview: ProposalPreview })
     {preview.timeline.length ? <Chart option={option} height={300}/> : <State kind="empty" message="没有可对比的未来现金流"/>}
     {preview.goal_impact && <div className="rounded-control border border-line p-4 text-sm"><strong className="block text-base">储蓄目标日期影响</strong><div className="mt-2 flex flex-wrap gap-x-6 gap-y-1"><span>原预计达成：{preview.goal_impact.estimated_before_date ? fullDate(preview.goal_impact.estimated_before_date) : '暂无可估日期'}</span><span>加入提案后：{preview.goal_impact.estimated_after_date ? fullDate(preview.goal_impact.estimated_after_date) : '暂无可估日期'}</span></div>{preview.goal_impact.delay_months != null && <p className="mb-0 mt-2 text-muted">预计推迟 {preview.goal_impact.delay_months} 个月。估算基于目标已记录金额及每月投入。</p>}</div>}
     <p className="m-0 text-sm leading-6 text-muted">{balance ? '曲线使用已授权账户起点计算余额。' : '曲线展示累计预计净现金流变化；可在钱庄补充账户起点。'}未来收入可在计划中补充。</p>
-    {!!preview.forecast_assumptions?.length && <p className="m-0 text-sm leading-6 text-muted">计算假设：{preview.forecast_assumptions.join('；')}</p>}
+    {!!preview.forecast_assumptions?.length && <p className="m-0 text-sm leading-6 text-muted">预测依据：{preview.forecast_assumptions.join('；')}</p>}
   </div>
 }

@@ -8,7 +8,7 @@ export function Chart({ option, height = 300, onClick, label = '财务趋势图'
   useEffect(() => {
     if (!ref.current) return
     const chart = echarts.init(ref.current)
-    chart.setOption({ textStyle: { fontSize: 12 }, ...option, animationDuration: 400, animation: !matchMedia('(prefers-reduced-motion: reduce)').matches, aria: { enabled: true, label: { description: label } } })
+    chart.setOption({ textStyle: { fontSize: 12, fontFamily: getComputedStyle(document.documentElement).getPropertyValue('--font-body').trim() }, ...option, animationDuration: 400, animation: !matchMedia('(prefers-reduced-motion: reduce)').matches, aria: { enabled: true, label: { description: label } } })
     if (onClick) chart.on('click', onClick)
     const observer = new ResizeObserver(() => chart.resize())
     observer.observe(ref.current)

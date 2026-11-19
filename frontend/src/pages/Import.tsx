@@ -64,7 +64,7 @@ export function ImportPanel() {
     {!!history.data?.jobs.length && <details className="import-history"><summary>继续查看导入任务 · {history.data.jobs.length}</summary>{history.data.jobs.map(item => <button key={item.id} className="life-reference" onClick={() => setJobId(item.id)}><span>{item.filename}</span><span>{jobStatusLabel[item.status] || item.status} · 新增 {item.inserted} · 重复 {item.duplicates} · 异常 {item.errors?.length ?? 0}</span></button>)}</details>}
     <div className="rounded-panel border border-line bg-canvas/50 p-4">
       <SectionTitle title="选择文件"/>
-      <p className="text-sm text-muted">支持微信、支付宝等 CSV、TXT、XLSX 账单。系统会自动寻找表头并匹配常见字段，导入前仍可手动调整。</p>
+      <p className="text-sm text-muted">支持导入微信、支付宝等平台的 CSV、TXT、XLSX 账单。导入前可以核对字段。</p>
       <div className="flex flex-wrap items-center gap-3">
         <input type="file" accept=".csv,.txt,.xlsx" onChange={event => { setFile(event.target.files?.[0] || null); setPreview(null); setJobId('') }}/>
         <Button disabled={!file || upload.isPending} onClick={() => upload.mutate()}>{upload.isPending ? '正在读取…' : '读取并预览'}</Button>

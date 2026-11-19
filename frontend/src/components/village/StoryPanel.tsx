@@ -99,7 +99,7 @@ export function Story() {
       <label className="story-version-picker"><span>历史版本</span><select aria-label="历史版本" value={edition || ''} onChange={event => { const next = new URLSearchParams(params); if (event.target.value) next.set('edition', event.target.value); else next.delete('edition'); setParams(next) }}><option value="">最新版本</option><option value="facts">当前账本事实</option>{completed.map((item, index) => <option key={item.id} value={item.id}>{month.replace('-', '年')}月 · 第{completed.length - index}版</option>)}</select></label>
       <p>将依据本月账目生成，并参考你允许使用的生活记录。</p>
       {(generate.isError || latest?.status === 'failed') && <p role="alert">{latest?.error_message || '无法整理，请检查 AI 连接与授权后重试。'}</p>}
-      {data.stale && <p role="status">账本或生活记录已更新，可重新整理本月纪事。</p>}
+      {data.stale && <p role="status">账本或生活记录有更新，可以重新生成回顾。</p>}
       {task && <p role="status">{task.status === 'pending' ? '任务排队中' : '正在组织纪事'} · 离开后可回来查看</p>}
     </div>
     <nav className="story-index" aria-label="Story 章节">{chapters.map((chapter, index) => <button key={chapter} onClick={() => jump(chapter)} className={currentChapter === chapter ? 'is-active' : ''} aria-current={currentChapter === chapter ? 'step' : undefined}><span>{String(index + 1).padStart(2, '0')}</span>{navigationLabels[chapter]}</button>)}</nav>
@@ -112,13 +112,13 @@ export function Story() {
           {index === 0 && <Illustration name="merchant" className="story-merchant"/>}
           <AiMarkdown content={part.body} className="story-narrative"/>
           <div className="story-fact-lines">{part.facts.slice(0, 3).map(fact => <Link key={fact.label} to={fact.source?.href || ledgerHref(month)}><span>{fact.label}</span><strong>{money(fact.amount_cents)}</strong></Link>)}</div>
-          {chapter === 'spending' && <div className="story-categories">{data.categories.map(item => <Link key={item.category} to={`${ledgerHref(month, item.category)}`} onMouseEnter={() => village?.selectCategory(item.category)}><span>{item.category}</span><strong>{money(item.amount_cents)}</strong><small>同口径上月 {money(item.previous_cents)}</small><small>{item.change_cents > 0 ? '+' : ''}{money(item.change_cents)}</small></Link>)}</div>}
+          {chapter === 'spending' && <div className="story-categories">{data.categories.map(item => <Link key={item.category} to={`${ledgerHref(month, item.category)}`} onMouseEnter={() => village?.selectCategory(item.category)}><span>{item.category}</span><strong>{money(item.amount_cents)}</strong><small>上月同期 {money(item.previous_cents)}</small><small>{item.change_cents > 0 ? '+' : ''}{money(item.change_cents)}</small></Link>)}</div>}
           {chapter === 'memories' && <div className="story-memory-list">{data.logs.slice(0, 5).map(log => <Link key={log.id} to={`/logs?log=${log.id}`}><time>{log.event_date}</time><strong>{log.title || log.content.slice(0, 30)}</strong><span>{log.content.slice(0, 100)}</span></Link>)}<Link className="story-action" to={`/logs?new=1&month=${month}`}>值得留下的一件事 ↗</Link></div>}
           {chapter === 'next' && data.review_completed && <p className="review-completed">本月回顾已完成</p>}
           <div className="story-chapter-actions"><Link to={chapterActions[chapter].href} className="story-action">{chapterActions[chapter].label} <span aria-hidden="true">↗</span></Link></div>
         </motion.section>
       })}
-      <CharacterHint text={village?.business?.character_hint || '只记下对你有意义的事。其余的可以稍后再看。'}/>
+      <CharacterHint text={village?.business?.character_hint || '想起值得留下的事，随时记下来。'}/>
     </div>
     <footer className="story-footer"><button className="story-primary" onClick={ask}>就当前纪事问问助手 ↗</button><Illustration name="sprig"/></footer>
   </article>

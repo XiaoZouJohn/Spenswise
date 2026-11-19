@@ -164,7 +164,7 @@ export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: B
   }
 
   return <div className="page space-y-6">
-    <header id="budget"><p className="mb-1 text-sm text-muted">商会大厅 / 每月沿用的消费标准</p><h1 className="m-0 text-3xl font-semibold">预算与设置</h1></header>
+    <header id="budget"><p className="mb-1 text-sm text-muted">议事厅 / 每月沿用的消费标准</p><h1 className="m-0 text-3xl font-semibold">预算与设置</h1></header>
     {query.isLoading ? <State kind="loading"/> : query.isError ? <State kind="error" retry={() => query.refetch()}/> : form && <>
       <Card>
         <SectionTitle title="总预算与账户"/>
@@ -172,7 +172,7 @@ export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: B
           <AmountInput label="每月总消费上限" value={form.monthly_budget_cents} onChange={value => changeForm({ ...form, monthly_budget_cents: value })}/>
           <AmountInput label="账户期初余额" value={form.opening_balance_cents} onChange={value => changeForm({ ...form, opening_balance_cents: value })}/>
         </div>
-        <p className="mb-0 text-xs text-muted">消费上限按当月支出扣除退款计算；收入和转账不抵扣消费。账户余额单独计算。</p>
+        <p className="mb-0 text-xs text-muted">消费上限按本月实际支出计算，退款会抵扣支出。</p>
       </Card>
       <Card>
         <SectionTitle title="历史记录覆盖"/>
@@ -199,7 +199,7 @@ export function SettingsPage({ onBudgetPreview }: { onBudgetPreview?: (status: B
     </>}
     <CenterDialog open={agreementOpen} onOpenChange={() => {}} title="同意 AI 服务协议" dismissible={false}>
       <div className="space-y-4 text-sm leading-7">
-        <p className="m-0">连接 DeepSeek 后，SpendWise 会默认开启下列 AI 功能：</p>
+        <p className="m-0">连接 DeepSeek 后，可以使用以下 AI 功能：</p>
         <ul className="m-0 space-y-2 pl-5">
           <li>使用必要的账单文本辅助分类。</li>
           <li>使用月度与分类汇总复核消费预测。</li>

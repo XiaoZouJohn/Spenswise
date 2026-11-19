@@ -65,15 +65,14 @@ export function ForecastPortrait() {
     }],
   }), [forecastRows])
   const result = query.data
-  const qualityLabel = result?.data_quality === 'usable' ? '历史数据充足' : result?.data_quality === 'limited' ? '历史数据有限' : '等待更多完整账单'
   const modelLabel = result?.ai_review?.status === 'applied' ? 'DeepSeek 已复核' : '本地预测模型'
 
   return <section className="forecast-portrait" aria-labelledby="forecast-portrait-title">
     <header className="forecast-portrait-head">
-      <div><span className="workspace-eyebrow">{nextMonth.start} 至 {nextMonth.end}</span><h2 id="forecast-portrait-title">下个月收支预测</h2><p>左侧回看本月实际分类，右侧依据完整历史月份推演下个月分类支出。</p></div>
+      <div><span className="workspace-eyebrow">{nextMonth.start} 至 {nextMonth.end}</span><h2 id="forecast-portrait-title">下个月收支预测</h2><p>左边看这个月花在哪，右边看看下个月可能怎么花。</p></div>
       <span className="forecast-model-tag"><Sparkles size={14}/>{modelLabel}</span>
     </header>
-    {query.isPending && <div className="forecast-status" role="status">正在整理历史账单，计算下个月的支出结构…</div>}
+    {query.isPending && <div className="forecast-status" role="status">正在估算下个月的支出…</div>}
     {query.isError && <div className="forecast-status is-error" role="alert"><span>预测暂时无法显示。</span><button onClick={() => query.refetch()}>重新计算</button></div>}
     {result && <>
       <div className="forecast-metrics">
@@ -85,7 +84,7 @@ export function ForecastPortrait() {
         <article className="forecast-chart-panel"><div className="forecast-chart-title"><div><span>本月分类支出</span><small>{overview.data?.month ?? today().slice(0, 7)} 已发生消费占比</small></div><b>实际 · 扇形图</b></div>{currentRows.length ? <Chart option={pieOption} height={270} label="本月实际分类支出占比扇形图"/> : <div className="forecast-chart-empty">本月还没有可展示的分类支出。</div>}</article>
         <article className="forecast-chart-panel"><div className="forecast-chart-title"><div><span>下月分类预测</span><small>固定支出与日常消费合并展示</small></div><b>预测 · 柱状图</b></div>{forecastRows.length ? <Chart option={barOption} height={Math.max(250, Math.min(390, forecastRows.length * 38 + 70))} label="下个月各分类预测支出柱状图"/> : <div className="forecast-chart-empty">暂时没有可展示的分类预测。</div>}</article>
       </div>
-      <footer className="forecast-portrait-foot"><span>{qualityLabel} · 识别周期账单 {result.recurring_bills.length} 项</span><span>预测基于账本历史，不代表实际必然支出</span><Link to="/simulate">调整条件并模拟一笔消费 →</Link></footer>
+      <footer className="forecast-portrait-foot"><span>预测依据过去的账单，实际支出可能不同</span><Link to="/simulate">调整条件并模拟一笔消费 →</Link></footer>
     </>}
   </section>
 }
@@ -99,5 +98,5 @@ export function AccountsPortrait({ assets, confirmed, onEdit }: { assets: Accoun
     series: [{ type: 'bar', barMaxWidth: 22, data: assets.map(a => ({ value: a.kind === 'liability' ? -a.balance_cents : a.balance_cents, itemStyle: { color: a.kind === 'liability' ? chartColors[1] : chartColors[0] } })) }],
   }), [assets])
   if (!assets.length) return null
-  return <section className="asset-portrait"><div className="asset-portrait-head"><div><h2>已记录的资产与负债</h2><p>逐项展示各账户的最新快照。负债向左，资产向右；完整净资产请核对覆盖范围。</p></div><span className="story-source-tag">{confirmed ? '已确认纳入范围 · 仍需核对快照有效期' : '覆盖范围尚未确认'}</span></div><Chart option={option} height={Math.max(180, Math.min(600, assets.length * 40 + 60))} label="已记录账户的资产负债对照，点击账户编辑快照" onClick={params => { const item = assets[params.dataIndex]; if (item) onEdit(item) }}/></section>
+  return <section className="asset-portrait"><div className="asset-portrait-head"><div><h2>账户里的资产与负债</h2><p>负债在左，资产在右。点开账户，就能更新余额。</p></div><span className="story-source-tag">{confirmed ? '家庭共享范围已确认' : '账户快照'}</span></div><Chart option={option} height={Math.max(180, Math.min(600, assets.length * 40 + 60))} label="已记录账户的资产负债对照，点击账户编辑快照" onClick={params => { const item = assets[params.dataIndex]; if (item) onEdit(item) }}/></section>
 }

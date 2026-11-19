@@ -22,7 +22,7 @@ export function BudgetLimitsEditor({
   }
 
   return <div className="space-y-3">
-    <p className="m-0 text-sm text-muted">设置后每个月沿用同一上限；未设置的分类只受总预算约束。</p>
+    <p className="m-0 text-sm text-muted">分类上限会沿用到每个月。没有单独设置的类别，仍受总预算限制。</p>
     <div className="grid gap-3 md:grid-cols-2">
       {categories.map(category => {
         const current = items.find(item => item.category === category)

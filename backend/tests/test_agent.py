@@ -154,14 +154,24 @@ def test_model_receives_only_summaries_and_cache_invalidates(clients, monkeypatc
         assert "private account note" not in payload
         calls.append(payload)
         return json.dumps(
-            {"items": [{"id": "budget:total", "message": "可以先检查弹性消费，逐步调整。"}]},
+            {
+                "items": [
+                    {
+                        "id": "budget:total",
+                        "conclusion": "本月总预算已超额",
+                        "analysis": "已记录支出超过预算限额。",
+                        "suggestion": "先核对主要支出类别，再决定是否调整预算。",
+                    }
+                ]
+            },
             ensure_ascii=False,
         )
 
     monkeypatch.setattr(ai, "ask", answer)
     first_report = first.post("/api/agent/brief").json()
     assert first_report["source"] == "ai"
-    assert "弹性消费" in first_report["cards"][0]["message"]
+    assert first_report["cards"][0]["title"] == "本月总预算已超额"
+    assert "核对主要支出类别" in first_report["cards"][0]["message"]
     assert first.post("/api/agent/brief").json()["source"] == "ai"
     assert len(calls) == 1
     expense(first, 1000, merchant="new")
@@ -173,7 +183,23 @@ def test_model_receives_only_summaries_and_cache_invalidates(clients, monkeypatc
 
 
 @pytest.mark.parametrize(
-    "output", ["not-json", '{"items": [{"id": "budget:total", "message": "你赚了999999元"}]}']
+    "output",
+    [
+        "not-json",
+        json.dumps(
+            {
+                "items": [
+                    {
+                        "id": "budget:total",
+                        "conclusion": "你赚了999999元",
+                        "analysis": "已记录支出超过预算。",
+                        "suggestion": "",
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        ),
+    ],
 )
 def test_malformed_model_response_falls_back_without_invented_money(clients, monkeypatch, output):
     first, _, _ = clients
@@ -195,7 +221,19 @@ def test_revocation_during_model_request_discards_result(clients, monkeypatch):
             row = db.get(Setting, (1, "agent_preferences"))
             row.value = json.dumps({"automatic_enabled": True, "ai_enabled": False})
             db.commit()
-        return '{"items": [{"id":"budget:total", "message":"不应显示的模型结果"}]}'
+        return json.dumps(
+            {
+                "items": [
+                    {
+                        "id": "budget:total",
+                        "conclusion": "不应显示的模型结果",
+                        "analysis": "支出发生了变化。",
+                        "suggestion": "",
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        )
 
     monkeypatch.setattr(ai, "ask", answer)
     response = first.post("/api/agent/brief")

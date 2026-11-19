@@ -350,12 +350,12 @@ def simulate(db: Session, request: ScenarioIn, as_of: date | None = None, *, own
         if request.balance_date < today and not forecast_math.covered(
             request.balance_date + timedelta(days=1), today, settings["history_coverage"]
         ):
-            warnings_list.append("快照日后的账本覆盖未确认，余额推算可能遗漏交易。")
+            warnings_list.append("余额快照之后的账目还没核对，想看最新余额可以到钱庄更新。")
     else:
         current = 0
         basis = "net_cashflow"
-        warnings_list.append("未提供余额快照：时间轴显示从今日起累计净现金流变化，不代表账户余额。")
-    warnings_list.append("仅计入手动确认的未来收入；额外支出须排除已包含的日常消费和周期账单。")
+        warnings_list.append("时间轴从今天的现金流变化开始，账户余额可以到钱庄查看。")
+    warnings_list.append("未来收入按你确认的安排计算；新增支出记得避开已有的日常消费和周期账单。")
     bridge_days = (period_start - today).days - 1
     bridge_bills = recurring(rows, today + timedelta(days=1), bridge_days, observed_through=today)
     bridge_variable = round(variable * bridge_days / horizon)

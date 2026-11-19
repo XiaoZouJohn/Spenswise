@@ -15,7 +15,7 @@ export function ForecastOptions({ value, onChange, categories }: {
         <AmountInput label="快照日结束时的余额" value={value.balance_cents} onChange={balance_cents => onChange({ ...value, balance_cents })}/>
         <div className="field"><label>快照日期</label><input aria-label="快照日期" type="date" max={today()} value={value.balance_date ?? ''} onChange={e => onChange({ ...value, balance_date: e.target.value })}/></div>
       </div>}
-      <p className="text-xs text-muted">仅添加尚未入账的确认收支。额外支出不要重复填写日常消费、已识别账单或上面的计划购买。</p>
+      <p className="text-xs text-muted">填写还没有记入账本的确定收支，避免与已有账单和计划重复。</p>
       {events.map((item, i) => <div key={i} className="mb-3 grid gap-2 rounded-control border border-line p-3 sm:grid-cols-2">
         <input aria-label={`收支日期 ${i + 1}`} type="date" value={item.date} onChange={e => onChange({ ...value, cash_events: events.map((x, j) => j === i ? { ...x, date: e.target.value } : x) })}/>
         <select aria-label={`收支类型 ${i + 1}`} value={item.kind} onChange={e => onChange({ ...value, cash_events: events.map((x, j) => j === i ? { ...x, kind: e.target.value as 'income' | 'expense' } : x) })}><option value="income">确认收入</option><option value="expense">额外支出</option></select>
@@ -24,8 +24,8 @@ export function ForecastOptions({ value, onChange, categories }: {
       </div>)}
       <Button variant="secondary" onClick={() => onChange({ ...value, cash_events: [...events, { date: value.purchase_date, kind: 'income', amount_cents: 0 }] })}>添加确认收支</Button>
     </Disclosure>
-    <Disclosure title="分类削减偏好" description="默认最多削减 40%；保护类别始终不削减">
-      <p className="text-xs text-muted">最低保留是该分类可变消费的最低额度；影响权重越大，越优先保留该分类。固定账单不参与削减。</p>
+    <Disclosure title="分类削减偏好" description="最多调整 40%；已保护的类别保持原金额">
+      <p className="text-xs text-muted">设置每类消费至少保留多少。权重越高，模拟时越少调整这一类；固定账单保持原样。</p>
       {rules.map((item, i) => <div key={item.category} className="mb-3 grid gap-3 rounded-control border border-line p-3 sm:grid-cols-2">
         <strong className="text-sm">{item.category}</strong>
         <AmountInput label={`${item.category}最低保留`} value={item.minimum_cents ?? 0} onChange={minimum_cents => onChange({ ...value, category_constraints: rules.map((x, j) => j === i ? { ...x, minimum_cents } : x) })}/>
@@ -40,9 +40,9 @@ export function ForecastOptions({ value, onChange, categories }: {
 
 export function ForecastEvidence({ result }: { result: ScenarioResult }) {
   return <div className="forecast-evidence space-y-2 text-sm" data-testid="forecast-evidence">
-    <Badge tone={result.data_quality === 'usable' ? 'neutral' : 'warning'}>{result.data_quality === 'insufficient' ? '历史不足 · 仅供试算' : result.data_quality === 'limited' ? '历史较少' : result.data_quality === 'usable' ? '历史预测' : '旧版结果 · 建议重新试算'}</Badge>
+    <Badge tone={result.data_quality === 'usable' ? 'neutral' : 'warning'}>{result.data_quality === 'insufficient' ? '历史账单较少' : result.data_quality === 'limited' ? '历史较少' : result.data_quality === 'usable' ? '历史预测' : '请重新计算'}</Badge>
     {result.fixed_expense_cents != null && <p>预计支出构成：固定账单 <Money cents={result.fixed_expense_cents}/>，可变消费 <Money cents={result.variable_expense_cents ?? 0}/>，额外支出 <Money cents={result.planned_expense_cents ?? 0}/>。可变消费中 AI 调整 <Money cents={result.ai_delta_cents ?? 0}/>。</p>}
-    <p className="text-muted">历史偏差范围尚未校准为置信区间。{result.coverage_status === 'confirmed' ? '已使用你确认的完整记录区间。' : '历史完整性尚未确认，空白月份未按零消费处理。'}</p>
+    <p className="text-muted">预测范围根据过去的收支变化估算。{result.coverage_status === 'confirmed' ? '已使用你确认的完整记录区间。' : '请确认账单记录完整，预测才会计入没有消费的月份。'}</p>
     {result.warnings?.map(warning => <p className="text-muted" key={warning}>{warning}</p>)}
   </div>
 }
@@ -51,7 +51,7 @@ export function HistoryCoverageEditor({ value, onChange }: {
   value: NonNullable<SettingsData['history_coverage']>; onChange: (value: NonNullable<SettingsData['history_coverage']>) => void
 }) {
   return <div className="forecast-options space-y-3">
-    <p className="text-sm text-muted">只添加确认已完整记录所有收支的时间段。该区间内没有账单的月份将按零消费参与预测。</p>
+    <p className="text-sm text-muted">选择收支记录完整的日期范围。范围内没有账单的月份会按零消费计算。</p>
     {value.map((item, i) => <div key={i} className="grid gap-3 sm:grid-cols-3">
       <div className="field"><label>完整记录开始日期</label><input aria-label={`覆盖开始 ${i + 1}`} type="date" max={item.end_date} value={item.start_date} onChange={e => { if (e.target.value) onChange(value.map((x, j) => j === i ? { ...x, start_date: e.target.value } : x)) }}/></div>
       <div className="field"><label>完整记录结束日期</label><input aria-label={`覆盖结束 ${i + 1}`} type="date" min={item.start_date} max={today()} value={item.end_date} onChange={e => { if (e.target.value) onChange(value.map((x, j) => j === i ? { ...x, end_date: e.target.value } : x)) }}/></div>

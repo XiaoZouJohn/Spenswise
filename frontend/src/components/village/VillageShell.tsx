@@ -112,7 +112,7 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
         {buildings.map(b => <NavLink to={b.href} key={b.id} className={!home && current.id === b.id && !family ? 'is-active' : ''}>{b.name}<span>{b.task}</span></NavLink>)}
         <button onClick={() => setMenu(v => !v)} aria-expanded={menu}><Compass size={15}/>全部地点</button>
       </nav>
-      {menu && <nav className="village-location-menu" aria-label="全部地点">{buildings.map(b => <Link to={b.href} key={b.id} onClick={() => setMenu(false)}>{b.name}<span>{b.task}</span><ArrowUpRight size={15}/></Link>)}<Link to="/logs" onClick={() => setMenu(false)}>生活记录<Illustration name="ledger"/></Link><Link to="/family" onClick={() => setMenu(false)}>家庭事务<UsersRound size={15}/></Link><Link to="/user" onClick={() => setMenu(false)}>个人资料<UserRound size={15}/></Link><Link to="/settings" onClick={() => setMenu(false)}>预算与设置<Settings size={15}/></Link></nav>}
+      {menu && <nav className="village-location-menu" aria-label="全部地点">{buildings.map(b => <Link to={b.href} key={b.id} onClick={() => setMenu(false)}>{b.name}<span>{b.task}</span><ArrowUpRight size={15}/></Link>)}</nav>}
       <nav className="compact-navigation" aria-label="移动端视图"><button aria-pressed={compactMode === 'places' && home} onClick={() => { setHomeMode('places'); if (workspace) navigate('/overview'); else setCompactMode('places') }}><Compass size={16}/>村庄地图</button><button aria-pressed={compactMode === 'story' && home} onClick={() => { setHomeMode('story'); if (workspace) navigate('/overview'); else setCompactMode('story') }}><BookOpen size={16}/>本月 Story</button>{workspace && <button aria-pressed={compactMode === 'workspace'} onClick={() => setCompactMode('workspace')}><Building2 size={16}/>管理页面</button>}</nav>
       <main id="village-content" className="village-main" tabIndex={-1} onClickCapture={event => {
         const target = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href="/overview"]')
@@ -122,9 +122,9 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
         <div className="village-story-slot"><Overview/></div>
         <nav className="compact-places" aria-label="建筑地点">{buildings.map(building => <Link to={building.href} key={building.id}><Illustration name={building.id}/><span><strong>{building.name}</strong><small>{building.task}</small></span><span>{business.data?.buildings[building.id]?.label}</span></Link>)}</nav>
         <AnimatePresence mode="wait">{workspace && <motion.section key={location.pathname} initial={{ opacity: 0, x: reducedMotion ? 0 : 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: reducedMotion ? 0 : 16 }} transition={{ duration: reducedMotion ? 0 : .28, ease: 'easeOut' }} className="building-workspace" aria-label={`${family ? '家庭空间' : current.name}工作区`}>
-          <header className="building-workspace-head"><span><Building2 size={15}/>{family ? '议事厅 · 家庭事务' : `${current.name} · ${current.task}`}</span><Link to="/overview"><ArrowLeft size={16}/>返回村庄</Link></header>
+          <header className="building-workspace-head"><span><Building2 size={15}/>{family ? '家庭组 · 家庭事务' : `${current.name} · ${current.task}`}</span><Link to="/overview"><ArrowLeft size={16}/>返回村庄</Link></header>
           {family && session.family && <nav className="building-tabs" aria-label="家庭功能">{familyNav.map(([href, label]) => <NavLink key={href} end={href === '/family'} to={href}>{label}</NavLink>)}</nav>}
-          {!family && current.id === 'hall' && <nav className="building-tabs" aria-label="议事厅功能"><NavLink to="/review">月度回顾</NavLink><NavLink to="/logs">生活记录</NavLink><NavLink to="/settings">预算与设置</NavLink><NavLink to="/family">家庭事务</NavLink><NavLink to="/user">个人资料</NavLink></nav>}
+          {!family && current.id === 'hall' && <nav className="building-tabs" aria-label="议事厅功能"><NavLink to="/review">月度回顾</NavLink><NavLink to="/logs">生活记录</NavLink><NavLink to="/settings">预算与设置</NavLink><NavLink to="/user">个人资料</NavLink></nav>}
           <div className="workspace-content" key={location.pathname}>{children}</div>
         </motion.section>}</AnimatePresence>
       </main>

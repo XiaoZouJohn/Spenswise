@@ -40,7 +40,7 @@ function ReviewDocument({ month, data }: { month: string; data: MonthlyReviewOut
       await form.clear(stored)
       for (const key of ['chronicle', 'village-state']) void client.invalidateQueries({ queryKey: [key] })
       void client.invalidateQueries({ queryKey: journeyKey })
-    } catch { setError('保存失败，可能已在其他窗口更新。草稿已保留，请重新读取后合并。') }
+    } catch { setError('回顾暂时没保存成功，草稿还在。请重新打开后核对。') }
     finally { setBusy(false) }
   }
   async function reload() {
@@ -53,8 +53,8 @@ function ReviewDocument({ month, data }: { month: string; data: MonthlyReviewOut
   return <div className="review-document">
     <div className="review-status"><Illustration name="hall"/><strong>{month} 月度回顾</strong><Badge tone={changed || data.ledger_changed ? 'warning' : 'success'}>{changed ? '草稿' : data.ledger_changed ? '账本已更新' : data.saved_at ? '已保存' : '尚未保存'}</Badge><span>版本 {data.revision}{data.saved_at && ` · ${new Date(data.saved_at).toLocaleString('zh-CN')}`}</span></div>
     <div className="review-columns">
-      <section className="review-facts"><h2>账本事实</h2><StoryMetrics income={facts.income_cents} expense={facts.expense_cents} surplus={facts.net_flow_cents}/><p>个人账本 · 已记录 {facts.transaction_count} 笔 · 人民币</p><p>退款冲减净支出，转账不计收支。账户余额与净资产在钱庄分别核对。</p><StoryAction to={ledgerHref(month)}>核对本月流水</StoryAction><StoryAction to="/accounts">查看账户覆盖</StoryAction>
-        {data.ledger_changed && <p role="status">账本与保存时的事实已有变化。请核对当前数字后保存新版本。</p>}
+      <section className="review-facts"><h2>账本事实</h2><StoryMetrics income={facts.income_cents} expense={facts.expense_cents} surplus={facts.net_flow_cents}/><p>个人账本 · 本月 {facts.transaction_count} 笔 · 人民币</p><StoryAction to={ledgerHref(month)}>查看本月流水</StoryAction><StoryAction to="/accounts">看看账户</StoryAction>
+        {data.ledger_changed && <p role="status">账本有更新。请核对本月数字后再保存回顾。</p>}
         {data.saved_facts && <details><summary>保存时的事实</summary><p>收入 {String(data.saved_facts.income_cents)} 分 · 净支出 {String(data.saved_facts.expense_cents)} 分</p></details>}
       </section>
       <section className="review-notes"><h2>你的回顾</h2>

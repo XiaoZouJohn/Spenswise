@@ -259,6 +259,11 @@ def test_story_facts_comparison_and_source_privacy(village, monkeypatch):
         village_story.generate(db, job["id"])
         assert db.get(StoryEdition, job["id"]).status == "completed"
     assert private["content"] not in str(captured) and log["content"] in str(captured)
+    story_prompt = captured[0][0]["content"]
+    assert "## 2. 分析原则" in story_prompt
+    assert "## 5. 表达风格" in story_prompt
+    assert "## 6. 月度 Story 输出要求" in story_prompt
+    assert "自动简报最多输出3条" not in story_prompt
     data = first.get("/api/village/story/2026-10").json()
     assert data["facts"]["expense_cents"] == 50000
     assert data["facts"]["net_flow_cents"] == 150000
