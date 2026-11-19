@@ -34,6 +34,7 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
     else if (url.pathname === '/ai/status') result = await sdk.aiStatusApiAiStatusGet()
     else if (url.pathname === '/ai/review-transactions' && method === 'POST') result = await sdk.reviewAiApiAiReviewTransactionsPost({ requestBody: body })
     else if (url.pathname === '/ai/review-all-transactions' && method === 'POST') result = await sdk.reviewAllAiApiAiReviewAllTransactionsPost()
+    else if (url.pathname === '/ai/review-pending-transactions' && method === 'POST') result = await sdk.reviewPendingAiApiAiReviewPendingTransactionsPost()
     else if (url.pathname === '/ai/apply-transaction-categories' && method === 'POST') result = await sdk.applyAiCategoriesApiAiApplyTransactionCategoriesPost({ requestBody: body })
     else throw new Error(`未接入的 API: ${method} ${path}`)
     return result as T

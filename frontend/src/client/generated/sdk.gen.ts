@@ -1940,6 +1940,18 @@ export const reviewAllAiApiAiReviewAllTransactionsPost = (): CancelablePromise<R
 };
 
 /**
+ * Review Pending Ai
+ * @returns unknown Successful Response
+ * @throws ApiError
+ */
+export const reviewPendingAiApiAiReviewPendingTransactionsPost = (): CancelablePromise<unknown> => {
+    return __request(OpenAPI, {
+        method: 'POST',
+        url: '/api/ai/review-pending-transactions'
+    });
+};
+
+/**
  * Apply Ai Categories
  * @param data The data for the request.
  * @param data.requestBody

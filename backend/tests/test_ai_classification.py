@@ -197,3 +197,77 @@ def test_ai_review_all_groups_repeated_transactions(tmp_path, monkeypatch):
         "交通",
         "教育",
     ]
+
+
+def test_ai_review_pending_excludes_confirmed_transactions(tmp_path, monkeypatch):
+    engine = create_engine(f"sqlite:///{tmp_path / 'ai-review-pending.db'}")
+    Base.metadata.create_all(engine)
+    with Session(engine) as db:
+        db.add(User(id=1, email="pending@example.com", display_name="Owner", password_hash="test"))
+        db.add_all(
+            [
+                Transaction(
+                    id=1,
+                    owner_id=1,
+                    tx_date=date(2026, 11, 1),
+                    amount_cents=1800,
+                    tx_type="expense",
+                    merchant="校园食堂",
+                    description="午餐",
+                    category="待确认",
+                    confidence=0,
+                    reviewed=False,
+                    fingerprint="pending-1",
+                ),
+                Transaction(
+                    id=2,
+                    owner_id=1,
+                    tx_date=date(2026, 11, 2),
+                    amount_cents=300,
+                    tx_type="expense",
+                    merchant="校园公交",
+                    description="乘车码",
+                    category="交通",
+                    confidence=65,
+                    reviewed=False,
+                    fingerprint="pending-2",
+                ),
+                Transaction(
+                    id=3,
+                    owner_id=1,
+                    tx_date=date(2026, 11, 3),
+                    amount_cents=9900,
+                    tx_type="expense",
+                    merchant="书店",
+                    description="教材",
+                    category="教育",
+                    confidence=90,
+                    reviewed=True,
+                    fingerprint="confirmed-3",
+                ),
+            ]
+        )
+        db.commit()
+
+        monkeypatch.setattr(ai, "enabled", lambda _db, _owner_id: True)
+        monkeypatch.setattr(
+            ai,
+            "ask",
+            lambda messages, _db, _owner_id: __import__("json").dumps(
+                [
+                    {
+                        "id": item["id"],
+                        "category": "餐饮" if "食堂" in item["merchant"] else "交通",
+                        "confidence": 90,
+                        "reason": "用途明确",
+                    }
+                    for item in __import__("json").loads(messages[1]["content"])
+                ],
+                ensure_ascii=False,
+            ),
+        )
+
+        result = ai.review_pending(db, owner_id=1)
+
+    assert result["total"] == 2
+    assert [item["id"] for item in result["suggestions"]] == [1, 2]

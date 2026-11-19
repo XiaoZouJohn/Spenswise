@@ -1,11 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ForecastPortrait } from '../components/village/FinancialPortraits'
 import { AiClassificationPanel } from '../components/AiClassificationPanel'
+import { PendingReviewDialog } from '../components/PendingReviewDialog'
 import { AmountInput, CategoryPicker, TransactionDetail } from '../components/business'
-import { TransactionTable } from '../components/TransactionTable'
+import { TransactionDayList } from '../components/TransactionDayList'
 import { Badge, Button, Card, CenterDialog, DetailDialog, Disclosure, SectionTitle, State } from '../components/ui'
 import { ImportPanel } from './Import'
 import { api, json } from '../lib/api'
@@ -27,8 +28,9 @@ export function Ledger() {
   const cache = useQueryClient()
   const [search, setSearch] = useSearchParams()
   const [adding, setAdding] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
   useEffect(() => { if (search.get('new') === '1') setAdding(true) }, [search])
-  const [page, setPage] = useState(1)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
   const [selected, setSelected] = useState<number[]>([])
   const [detailSelection, setDetail] = useState<Transaction | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
@@ -48,7 +50,7 @@ export function Ledger() {
   const dateFrom = search.get('date_from') || ''
   const dateTo = search.get('date_to') || ''
   const ids = search.get('ids') || ''
-  const requestParams = new URLSearchParams({ page: String(page), page_size: '25', review: String(review) })
+  const requestParams = new URLSearchParams({ page_size: '40', review: String(review) })
   if (filterCategory) requestParams.set('category', filterCategory)
   if (txType) requestParams.set('tx_type', txType)
   if (merchant) requestParams.set('merchant', merchant)
@@ -63,17 +65,34 @@ export function Ledger() {
   const shownDetail = detailSelection ?? linkedDetail.data?.items[0] ?? null
 
   const detail = shownDetail
-  const query = useQuery({
+  const query = useInfiniteQuery({
     queryKey: ['transactions', requestParams.toString()],
-    queryFn: () => api<PageData>(`/transactions?${requestParams.toString()}`),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams(requestParams)
+      params.set('page', String(pageParam))
+      return api<PageData>(`/transactions?${params.toString()}`)
+    },
+    getNextPageParam: pageData => pageData.page * pageData.page_size < pageData.total ? pageData.page + 1 : undefined,
   })
+  const items = query.data?.pages.flatMap(pageData => pageData.items) ?? []
+  const total = query.data?.pages[0]?.total ?? 0
+
+  useEffect(() => {
+    const node = loadMoreRef.current
+    if (!node || !query.hasNextPage) return
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0]?.isIntersecting && !query.isFetchingNextPage) void query.fetchNextPage()
+    }, { rootMargin: '320px 0px' })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [query.fetchNextPage, query.hasNextPage, query.isFetchingNextPage])
 
   const updateFilter = (key: string, value: string) => {
     const next = new URLSearchParams(search)
     if (value) next.set(key, value)
     else next.delete(key)
     setSearch(next)
-    setPage(1)
     setSelected([])
   }
   const refresh = () => {
@@ -109,7 +128,6 @@ export function Ledger() {
       else setSelected(current => current.filter(id => id !== target.id))
       setDeleteTarget(null)
       setDetail(null)
-      setPage(1)
       refresh()
     },
   })
@@ -131,9 +149,9 @@ export function Ledger() {
   const activeFilterCount = [review, filterCategory, txType, merchant, dateFrom, dateTo, ids].filter(Boolean).length
   return <div className="page ledger-page space-y-6">
     <header><p className="mb-1 text-sm text-muted">交易与分类</p><h1 className="m-0 text-3xl font-semibold">账本</h1></header>
-    <div className="ledger-toolbar"><Button onClick={() => updateFilter('import', '1')}>导入账单</Button><Button variant="secondary" onClick={() => setAdding(true)}>记一笔</Button><Button variant={review ? 'primary' : 'secondary'} onClick={() => updateFilter('review', review ? '' : '1')}>待处理</Button></div>
+    <div className="ledger-toolbar"><Button onClick={() => updateFilter('import', '1')}>导入账单</Button><Button variant="secondary" onClick={() => setAdding(true)}>记一笔</Button><Button variant="secondary" onClick={() => setReviewOpen(true)}>待处理{status.data ? ` ${status.data.unreviewed}` : ''}</Button></div>
     <JourneyTipCard kind="ledger"/>
-    {status.data && <div className="pending-strip"><button onClick={() => updateFilter('category', '待确认')}>未分类 <strong>{status.data.unclassified}</strong></button><button onClick={() => updateFilter('review', '1')}>待核对 <strong>{status.data.unreviewed}</strong></button><button onClick={() => updateFilter('import', '1')}>导入异常 <strong>{status.data.import_errors}</strong></button></div>}
+    {status.data && <div className="pending-strip"><button onClick={() => updateFilter('category', '待确认')}>未分类 <strong>{status.data.unclassified}</strong></button><button onClick={() => setReviewOpen(true)}>待核对 <strong>{status.data.unreviewed}</strong></button><button onClick={() => updateFilter('import', '1')}>导入异常 <strong>{status.data.import_errors}</strong></button></div>}
     <ForecastPortrait/>
     <div className="ledger-cross-actions"><span>从记录进入计划</span><Link className="story-text-action" to={`/simulate?category=${encodeURIComponent(filterCategory || '当前消费')}&from=${encodeURIComponent('/ledger?' + search.toString())}`}>在集市比较一项消费 →</Link></div>
 
@@ -154,8 +172,8 @@ export function Ledger() {
 
     <Card>
       <SectionTitle title="交易记录" action={<div className="flex flex-wrap gap-2">
-        <Button variant={review ? 'primary' : 'secondary'} onClick={() => updateFilter('review', review ? '' : '1')}>待审核</Button>
-        <Button variant="secondary" onClick={() => { setSearch({}); setMerchantDraft(''); setPage(1); setSelected([]) }}>全部账单</Button>
+        <Button variant="secondary" onClick={() => setReviewOpen(true)}>待审核{status.data ? ` ${status.data.unreviewed}` : ''}</Button>
+        <Button variant="secondary" onClick={() => { setSearch({}); setMerchantDraft(''); setSelected([]) }}>全部账单</Button>
         <Button variant="danger" disabled={query.isLoading} onClick={() => setDeleteTarget('all')}><Trash2 size={16}/>删除全部</Button>
       </div>}/>
 
@@ -174,21 +192,25 @@ export function Ledger() {
             </div>
             <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted">
               <span>{activeFilterCount ? `已启用 ${activeFilterCount} 个筛选条件` : '当前显示全部账单'}</span>
-              {activeFilterCount > 0 && <Button variant="ghost" onClick={() => { setSearch({}); setMerchantDraft(''); setPage(1); setSelected([]) }}>重置筛选</Button>}
+              {activeFilterCount > 0 && <Button variant="ghost" onClick={() => { setSearch({}); setMerchantDraft(''); setSelected([]) }}>重置筛选</Button>}
             </div>
           </div>
         </Disclosure>
       </div>
 
-      <AiClassificationPanel items={query.data?.items || []} selectedIds={selected} onSaved={before => { setUndo(before); setSelected([]); refresh() }}/>
+      <AiClassificationPanel items={items} selectedIds={selected} onSaved={before => { setUndo(before); setSelected([]); refresh() }}/>
       {selected.length > 0 && <div className="mb-4 flex flex-wrap items-center gap-3 rounded-control bg-canvas p-3 text-sm">已选 {selected.length} 笔 <CategoryPicker value={category} onChange={setCategory} categories={['保留原分类', ...categories]}/><Button onClick={() => batch.mutate()} disabled={batch.isPending || category === '保留原分类'}>批量修改分类</Button></div>}
       {selected.length > 0 && <div className="batch-review-controls"><label>修正日期<input aria-label="批量修正日期" type="date" value={batchDate} onChange={event => setBatchDate(event.target.value)}/></label><label>关联账户<select value={batchAccount} onChange={event => setBatchAccount(event.target.value)}><option value="">保留原账户</option><option value="clear">解除账户关联</option>{accounts.map(row => <option key={row.account_key} value={row.account_key}>{row.name}</option>)}</select></label><Button disabled={confirmReview.isPending} onClick={() => confirmReview.mutate()}>修正并确认所选记录</Button>{confirmReview.isSuccess && <span role="status">已确认</span>}{confirmReview.isError && <p role="alert">操作失败，记录可能冲突或已变更，请刷新后重试。</p>}</div>}
       {undo.length > 0 && <div className="mb-4 flex items-center gap-3 text-sm text-success">分类已更新 <Button variant="secondary" onClick={() => restore.mutate()}>撤销</Button></div>}
       {query.isLoading ? <State kind="loading"/> : query.isError ? <State kind="error" message={query.error.message} retry={() => query.refetch()}/> : <>
-        <TransactionTable items={query.data?.items || []} selected={selected} onSelect={setSelected} onDetail={setDetail} onDelete={item => setDeleteTarget(item)}/>
-        <div className="mt-4 flex items-center justify-between text-sm text-muted"><span>共 {query.data?.total || 0} 笔</span><div className="flex gap-2"><Button variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>上一页</Button><Button variant="secondary" disabled={page * 25 >= (query.data?.total || 0)} onClick={() => setPage(page + 1)}>下一页</Button></div></div>
+        <TransactionDayList items={items} selected={selected} onSelect={setSelected} onDetail={setDetail} onDelete={item => setDeleteTarget(item)}/>
+        <div ref={loadMoreRef} className="ledger-load-more" role="status">
+          {query.isFetchingNextPage ? '正在加载更多账单…' : query.hasNextPage ? `已显示 ${items.length} / ${total} 笔，继续向下滚动` : total ? `已加载全部 ${total} 笔账单` : ''}
+        </div>
       </>}
     </Card>
+
+    <PendingReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} accounts={accounts} onChanged={refresh}/>
 
     <DetailDialog open={!!shownDetail} onOpenChange={open => { if (!open) { setDetail(null); updateFilter('detail', '') } }} title="账单详情">
       {shownDetail && <TransactionBackground key={shownDetail.id} transactionId={shownDetail.id} month={shownDetail.tx_date.slice(0, 7)}/>}
