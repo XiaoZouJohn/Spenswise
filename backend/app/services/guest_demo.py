@@ -2,6 +2,7 @@
 
 import secrets
 from datetime import datetime, timedelta
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
@@ -12,6 +13,7 @@ from app.schemas import TransactionIn
 from . import budget, ledger
 
 GUEST_DOMAIN = "guest.spendwise.invalid"
+TransactionType = Literal["expense", "income", "transfer", "refund"]
 
 
 def is_guest(user: User | None) -> bool:
@@ -32,7 +34,7 @@ def create(db: Session) -> User:
     today = datetime.now(ZoneInfo("Asia/Shanghai")).date()
     for offset in range(89, -1, -1):
         day = today - timedelta(days=offset)
-        rows = []
+        rows: list[tuple[int, TransactionType, str, str]] = []
         if day.day == 3:
             rows.append((880000, "income", "工资收入", "收入"))
         if day.day == 5:

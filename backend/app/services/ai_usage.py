@@ -5,6 +5,7 @@ import os
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from threading import Lock
+from typing import Any, cast
 
 from redis import Redis
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -73,7 +74,7 @@ def snapshot(owner_id: int) -> dict:
     keys = [f"spendwise:ai:calls:{day}:{owner_id}:{feature}" for feature in features]
     keys.append(f"spendwise:ai:tokens:{day}")
     try:
-        values = _client().mget(keys)
+        values = cast(list[str | None], _client().mget(keys))
         counts = [int(value or 0) for value in values[:-1]]
         tokens_used = int(values[-1] or 0)
     except (RedisConnectionError, RedisTimeoutError):
@@ -117,16 +118,21 @@ def reserve(
         + 60,
     )
     try:
-        result = _client().eval(
-            _RESERVE,
-            2,
-            f"spendwise:ai:calls:{day}:{owner_id}:{feature}",
-            f"spendwise:ai:tokens:{day}",
-            limit,
-            amount,
-            GLOBAL_DAILY_TOKENS,
-            ttl,
-            1 if count_call else 0,
+        result = int(
+            cast(
+                Any,
+                _client().eval(
+                    _RESERVE,
+                    2,
+                    f"spendwise:ai:calls:{day}:{owner_id}:{feature}",
+                    f"spendwise:ai:tokens:{day}",
+                    str(limit),
+                    str(amount),
+                    str(GLOBAL_DAILY_TOKENS),
+                    str(ttl),
+                    "1" if count_call else "0",
+                ),
+            )
         )
     except (RedisConnectionError, RedisTimeoutError):
         if not _local_development():
