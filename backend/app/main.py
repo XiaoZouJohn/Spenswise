@@ -27,7 +27,6 @@ from .routes_review import router as review_router
 from .routes_village import router as village_router
 from .schemas import (
     AiCategoryApplyIn,
-    AiConnectionIn,
     AiConnectionOut,
     AiStatusOut,
     BatchCategory,
@@ -35,8 +34,6 @@ from .schemas import (
     BudgetStatus,
     ChatConversationDetail,
     ChatConversationOut,
-    ChatLedgerConsentIn,
-    ChatLedgerConsentOut,
     ChatRequest,
     ImportConfirm,
     OverviewOut,
@@ -52,9 +49,10 @@ from .schemas import (
 )
 from .services import (
     ai,
+    ai_agreement,
     ai_chat,
     ai_connection,
-    ai_ledger_consent,
+    ai_usage,
     budget,
     forecast,
     imports,
@@ -156,6 +154,7 @@ def transactions(
     review: bool = False,
     account_key: str | None = None,
     ids: str | None = None,
+    sort: Literal["date_desc", "amount_asc", "amount_desc"] = "date_desc",
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ) -> Page:
@@ -183,6 +182,7 @@ def transactions(
             review=review,
             account_key=account_key,
             ids=selected_ids,
+            sort=sort,
         )
     except ValueError as exc:
         raise HTTPException(422, detail={"code": "INVALID_FILTER", "message": str(exc)}) from exc
@@ -463,9 +463,26 @@ def task_status(
 @app.get("/api/ai/status", response_model=AiStatusOut)
 def ai_status(user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
     return {
-        "consent": budget.get_settings(db, user.id)["ai_consent"],
+        "consent": ai_agreement.accepted(db, user.id),
         **ai_connection.status(db, user.id),
     }
+
+
+@app.get("/api/ai/agreement")
+def get_ai_agreement(user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    return {"accepted": ai_agreement.accepted(db, user.id), "version": ai_agreement.VERSION}
+
+
+@app.get("/api/ai/usage")
+def get_ai_usage(user: User = Depends(current_user)) -> dict:
+    return ai_usage.snapshot(user.id)
+
+
+@app.post("/api/ai/agreement")
+def accept_ai_agreement(user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    ai_agreement.accept(db, user.id)
+    db.commit()
+    return {"accepted": True, "version": ai_agreement.VERSION}
 
 
 @app.get("/api/ai/connection", response_model=AiConnectionOut)
@@ -473,43 +490,11 @@ def get_ai_connection(user: User = Depends(current_user), db: Session = Depends(
     return ai_connection.status(db, user.id)
 
 
-@app.put("/api/ai/connection", response_model=AiConnectionOut)
-def put_ai_connection(
-    value: AiConnectionIn, user: User = Depends(current_user), db: Session = Depends(get_db)
-) -> dict:
-    try:
-        result = ai_connection.save(
-            db, value.api_key, value.model, value.clear_key, owner_id=user.id
-        )
-        db.commit()
-        return result
-    except ValueError as exc:
-        db.rollback()
-        raise HTTPException(
-            422, detail={"code": "INVALID_AI_CONNECTION", "message": str(exc)}
-        ) from exc
-
-
 @app.get("/api/ai/conversations", response_model=list[ChatConversationOut])
 def list_ai_conversations(
     user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> list[dict]:
     return ai_chat.list_conversations(db, user.id)
-
-
-@app.get("/api/ai/chat/ledger-consent", response_model=ChatLedgerConsentOut)
-def get_chat_ledger_consent(
-    user: User = Depends(current_user), db: Session = Depends(get_db)
-) -> dict:
-    return ai_chat.ledger_consent_status(db, user.id)
-
-
-@app.put("/api/ai/chat/ledger-consent", response_model=ChatLedgerConsentOut)
-def put_chat_ledger_consent(
-    value: ChatLedgerConsentIn, user: User = Depends(current_user), db: Session = Depends(get_db)
-) -> dict:
-    ai_ledger_consent.set_enabled(db, user.id, value.enabled)
-    return ai_chat.ledger_consent_status(db, user.id)
 
 
 @app.get("/api/ai/conversations/{conversation_id}", response_model=ChatConversationDetail)
@@ -563,7 +548,7 @@ def stream_ai_chat(
 def ai_explain(
     value: ScenarioIn, user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> dict:
-    if not budget.get_settings(db, user.id)["ai_consent"]:
+    if not ai_agreement.accepted(db, user.id):
         raise HTTPException(
             403, detail={"code": "AI_CONSENT_REQUIRED", "message": "请先授权 AI 使用数据"}
         )

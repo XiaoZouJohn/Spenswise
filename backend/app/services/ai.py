@@ -6,8 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Transaction
 
-from . import ai_connection
-from .budget import get_settings
+from . import ai_agreement, ai_connection, ai_usage
 
 ALLOWED = {
     "餐饮",
@@ -29,29 +28,47 @@ ALLOWED = {
 
 
 def enabled(db: Session, owner_id: int) -> bool:
-    return (
-        get_settings(db, owner_id)["ai_consent"]
-        and ai_connection.status(db, owner_id)["configured"]
-    )
+    return ai_agreement.accepted(db, owner_id) and ai_connection.status(db, owner_id)["configured"]
 
 
-def ask(messages: list[dict], db: Session, owner_id: int) -> str:
+def ask(
+    messages: list[dict],
+    db: Session,
+    owner_id: int,
+    feature: str = "classification",
+    *,
+    count_call: bool = True,
+    json_output: bool = False,
+) -> str:
     key, model = ai_connection.resolve(db, owner_id)
-    response = httpx.post(
-        f"{ai_connection.DEEPSEEK_URL}/chat/completions",
-        headers={"Authorization": f"Bearer {key}"},
-        json={
+    reservation = ai_usage.reserve(owner_id, feature, messages, 2048, count_call=count_call)
+    used = 0
+    try:
+        body = {
             "model": model,
             "messages": messages,
             "thinking": {"type": "disabled"},
-        },
-        timeout=20,
-    )
-    response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"]
+            "max_tokens": 2048,
+        }
+        if json_output:
+            body["response_format"] = {"type": "json_object"}
+        response = httpx.post(
+            f"{ai_connection.DEEPSEEK_URL}/chat/completions",
+            headers={"Authorization": f"Bearer {key}"},
+            json=body,
+            timeout=60 if feature == "story" else 20,
+        )
+        response.raise_for_status()
+        result = response.json()
+        used = int((result.get("usage") or {}).get("total_tokens") or 0)
+        return result["choices"][0]["message"]["content"]
+    finally:
+        ai_usage.settle(reservation, used)
 
 
-def _review_items(db: Session, items: list[Transaction], owner_id: int) -> list[dict]:
+def _review_items(
+    db: Session, items: list[Transaction], owner_id: int, *, count_call: bool = True
+) -> list[dict]:
     # Never send amounts, account balances, or full ledger history.
     payload = [
         {
@@ -77,6 +94,7 @@ def _review_items(db: Session, items: list[Transaction], owner_id: int) -> list[
         ],
         db,
         owner_id,
+        count_call=count_call,
     )
     cleaned = answer.strip()
     if cleaned.startswith("```"):
@@ -160,7 +178,7 @@ def _review_grouped(db: Session, items: list[Transaction], owner_id: int) -> dic
     representative_suggestions: dict[int, dict] = {}
     for start in range(0, len(representatives), 30):
         batch = representatives[start : start + 30]
-        for suggestion in _review_items(db, batch, owner_id):
+        for suggestion in _review_items(db, batch, owner_id, count_call=start == 0):
             representative_suggestions[suggestion["id"]] = suggestion
 
     suggestions = []

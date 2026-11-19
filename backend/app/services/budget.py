@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models import CategoryBudget, Setting, Transaction
 
+from . import ai_agreement
 from .ledger import version
 from .money import signed_amount
 
@@ -20,7 +21,7 @@ def get_settings(db: Session, owner_id: int) -> dict:
     return {
         "monthly_budget_cents": int(values["monthly_budget_cents"]),
         "opening_balance_cents": int(values["opening_balance_cents"]),
-        "ai_consent": values["ai_consent"] == "true",
+        "ai_consent": ai_agreement.accepted(db, owner_id),
         "category_budgets": [
             {"category": row.category, "limit_cents": row.limit_cents}
             for row in db.scalars(
@@ -37,6 +38,7 @@ def get_settings(db: Session, owner_id: int) -> dict:
 
 def save_settings(db: Session, data: dict, owner_id: int) -> dict:
     data = dict(data)
+    data.pop("ai_consent", None)
     category_budgets = data.pop("category_budgets", None)
     for key, value in data.items():
         if key == "history_coverage" and value is None:

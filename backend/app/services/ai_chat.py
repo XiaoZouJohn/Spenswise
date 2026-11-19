@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.db import SessionLocal
 from app.models import ChatConversation, ChatMessage
 
-from . import ai_connection, ai_ledger_consent, ledger_skill, life_log_skill
+from . import ai_connection, ai_ledger_consent, ai_usage, ledger_skill, life_log_skill
 
 SYSTEM_PROMPT = (
     "你是富贵村的小猫财务助手，陪用户看清收支、回顾生活、安排下一步。"
@@ -46,11 +46,6 @@ class InvalidChatMessage(ValueError):
 
 def ledger_consent_status(db: Session, owner_id: int) -> dict:
     return {"enabled": ai_ledger_consent.enabled(db, owner_id), "scope": LEDGER_SCOPE}
-
-
-def set_ledger_consent(db: Session, enabled: bool, owner_id: int) -> dict:
-    ai_ledger_consent.set_enabled(db, owner_id, enabled)
-    return ledger_consent_status(db, owner_id)
 
 
 @dataclass(frozen=True)
@@ -151,7 +146,7 @@ def delete_conversation(db: Session, conversation_id: str, owner_id: int) -> boo
     return True
 
 
-async def _upstream(chat: PreparedChat) -> AsyncIterator[dict]:
+async def _upstream(chat: PreparedChat, *, count_call: bool) -> AsyncIterator[dict]:
     payload = {
         "model": chat.model,
         "messages": chat.messages,
@@ -162,6 +157,9 @@ async def _upstream(chat: PreparedChat) -> AsyncIterator[dict]:
     if chat.used_ledger:
         payload["tools"] = [ledger_skill.TOOL, life_log_skill.TOOL]
         payload["tool_choice"] = "auto"
+    reservation = ai_usage.reserve(
+        chat.owner_id, "chat", chat.messages, 4096, count_call=count_call
+    )
     async with httpx.AsyncClient(timeout=httpx.Timeout(120, connect=10)) as client:
         if chat.used_ledger:
             with SessionLocal() as db:
@@ -186,6 +184,9 @@ async def _upstream(chat: PreparedChat) -> AsyncIterator[dict]:
                     item = json.loads(data)
                 except json.JSONDecodeError:
                     continue
+                usage = item.get("usage")
+                if usage and usage.get("total_tokens") is not None:
+                    ai_usage.settle(reservation, int(usage["total_tokens"]))
                 if item.get("choices"):
                     yield item["choices"][0].get("delta") or {}
 
@@ -241,7 +242,7 @@ async def stream_reply(chat: PreparedChat) -> AsyncIterator[str]:
     phase = "connecting"
     yield _event("status", {"phase": phase})
     try:
-        for _ in range(4):
+        for round_index in range(4):
             if chat.used_ledger:
                 with SessionLocal() as db:
                     if not ai_ledger_consent.enabled(db, chat.owner_id):
@@ -249,7 +250,7 @@ async def stream_reply(chat: PreparedChat) -> AsyncIterator[str]:
             calls: dict[int, dict] = {}
             round_reasoning = ""
             round_content = ""
-            async for delta in _upstream(chat):
+            async for delta in _upstream(chat, count_call=round_index == 0):
                 thought = delta.get("reasoning_content") or ""
                 content = delta.get("content") or ""
                 if thought:

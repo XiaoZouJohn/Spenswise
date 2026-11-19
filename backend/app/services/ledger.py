@@ -91,6 +91,7 @@ def list_transactions(
     review: bool = False,
     account_key: str | None = None,
     ids: list[int] | None = None,
+    sort: str = "date_desc",
 ) -> tuple[list[Transaction], int, dict]:
     if date_from and date_to and date_from > date_to:
         raise ValueError("开始日期不能晚于结束日期")
@@ -156,11 +157,18 @@ def list_transactions(
             .order_by(category_expression.desc())
         )
     ]
+    if sort not in {"date_desc", "amount_asc", "amount_desc"}:
+        raise ValueError("不支持的排序方式")
+    ordering = (
+        (Transaction.amount_cents.asc(), Transaction.tx_date.desc(), Transaction.id.desc())
+        if sort == "amount_asc"
+        else (Transaction.amount_cents.desc(), Transaction.tx_date.desc(), Transaction.id.desc())
+        if sort == "amount_desc"
+        else (Transaction.tx_date.desc(), Transaction.id.desc())
+    )
     items = list(
         db.scalars(
-            statement.order_by(Transaction.tx_date.desc(), Transaction.id.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
+            statement.order_by(*ordering).offset((page - 1) * page_size).limit(page_size)
         ).all()
     )
     return (

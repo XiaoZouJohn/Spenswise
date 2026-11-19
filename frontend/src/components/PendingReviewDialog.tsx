@@ -1,12 +1,12 @@
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { api, json } from '../lib/api'
 import { lifeApi } from '../lib/lifeApi'
 import { money } from '../lib/format'
 import type { PageData, Transaction } from '../types'
 import { CategoryPicker } from './business'
+import { AiUsageHint } from './AiUsageHint'
 import { Badge, Button, CenterDialog, State } from './ui'
 
 const categories = ['餐饮', '交通', '购物', '居住', '医疗健康', '娱乐', '旅行', '通讯', '教育', '日用品', '人情往来', '收入', '退款', '转账', '其他']
@@ -212,8 +212,8 @@ export function PendingReviewDialog({
     <div className="mt-5 flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="m-0 text-sm leading-6 text-muted">AI 仅发送交易类型、商户和商品文本，不会发送金额；不确定项仍由你决定。</p>
       <div className="flex shrink-0 flex-wrap gap-2">
-        {!aiReady && <Button variant="secondary" asChild><Link to="/settings">连接 DeepSeek</Link></Button>}
         <Button variant="secondary" disabled={!aiReady || processWithAi.isPending || confirmAll.isPending || total === 0} onClick={() => processWithAi.mutate()}><Sparkles size={16}/>{processWithAi.isPending ? 'DeepSeek 处理中…' : 'AI 一键处理'}</Button>
+        <AiUsageHint feature="classification"/>
         <Button disabled={confirmAll.isPending || processWithAi.isPending || confirmCandidates.length === 0} onClick={() => confirmAll.mutate(confirmCandidates)}><CheckCircle2 size={16}/>{confirmAll.isPending ? '正在确认…' : `一键确认全部（${confirmCandidates.length}）`}</Button>
       </div>
     </div>

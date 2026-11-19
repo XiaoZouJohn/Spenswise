@@ -251,36 +251,6 @@ export const AiCategorySuggestionInSchema = {
     title: 'AiCategorySuggestionIn'
 } as const;
 
-export const AiConnectionInSchema = {
-    properties: {
-        api_key: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 512
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Api Key'
-        },
-        model: {
-            type: 'string',
-            enum: ['deepseek-flash', 'deepseek-v4-pro'],
-            title: 'Model',
-            default: 'deepseek-flash'
-        },
-        clear_key: {
-            type: 'boolean',
-            title: 'Clear Key',
-            default: false
-        }
-    },
-    type: 'object',
-    title: 'AiConnectionIn'
-} as const;
-
 export const AiConnectionOutSchema = {
     properties: {
         configured: {
@@ -919,34 +889,6 @@ export const ChatConversationOutSchema = {
     type: 'object',
     required: ['id', 'title', 'created_at'],
     title: 'ChatConversationOut'
-} as const;
-
-export const ChatLedgerConsentInSchema = {
-    properties: {
-        enabled: {
-            type: 'boolean',
-            title: 'Enabled'
-        }
-    },
-    type: 'object',
-    required: ['enabled'],
-    title: 'ChatLedgerConsentIn'
-} as const;
-
-export const ChatLedgerConsentOutSchema = {
-    properties: {
-        enabled: {
-            type: 'boolean',
-            title: 'Enabled'
-        },
-        scope: {
-            type: 'string',
-            title: 'Scope'
-        }
-    },
-    type: 'object',
-    required: ['enabled', 'scope'],
-    title: 'ChatLedgerConsentOut'
 } as const;
 
 export const ChatMessageOutSchema = {
@@ -3209,6 +3151,13 @@ export const ScenarioResultSchema = {
             },
             type: 'array',
             title: 'Recurring Bills'
+        },
+        category_forecast: {
+            items: {
+                '$ref': '#/components/schemas/CategorySpend'
+            },
+            type: 'array',
+            title: 'Category Forecast'
         },
         source_transaction_ids: {
             items: {

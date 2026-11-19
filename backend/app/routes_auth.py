@@ -60,7 +60,7 @@ from .schemas import (
     UserOut,
     UserUpdate,
 )
-from .services import account, households, village_journey
+from .services import account, guest_demo, households, village_journey
 
 router = APIRouter(prefix="/api")
 
@@ -123,6 +123,15 @@ def login(
         raise HTTPException(
             401, detail={"code": "INVALID_CREDENTIALS", "message": "邮箱或密码错误"}
         )
+    token = create_session(db, user.id)
+    db.commit()
+    _set_cookie(response, request, token)
+    return _profile(db, user)
+
+
+@router.post("/auth/guest", response_model=SessionOut)
+def guest_login(request: Request, response: Response, db: Session = Depends(get_db)) -> dict:
+    user = guest_demo.create(db)
     token = create_session(db, user.id)
     db.commit()
     _set_cookie(response, request, token)

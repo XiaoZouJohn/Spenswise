@@ -6,6 +6,7 @@ import App from './App'
 import './styles.css'
 import './village.css'
 import './village-v2.css'
+import './mobile-village.css'
 import './journey.css'
 
 const client = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 20_000 } } })

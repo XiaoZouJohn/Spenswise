@@ -1,10 +1,10 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Sparkles, X } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { api, json } from '../lib/api'
 import type { Transaction } from '../types'
 import { CategoryPicker } from './business'
+import { AiUsageHint } from './AiUsageHint'
 import { Badge, Button, CenterDialog } from './ui'
 
 const categories = [
@@ -94,13 +94,13 @@ export function AiClassificationPanel({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <strong>DeepSeek 智能分类</strong>
-            {status.data && <Badge tone={ready ? 'success' : 'warning'}>{ready ? `${status.data.model} 已就绪` : '需要配置'}</Badge>}
+            {status.data && <Badge tone={ready ? 'success' : 'warning'}>{ready ? `${status.data.model} 已就绪` : '暂不可用'}</Badge>}
+            <AiUsageHint feature="classification"/>
           </div>
           <p className="mb-0 mt-1 text-sm leading-6 text-muted">只发送交易类型、商户和商品文本，不发送金额。AI 结果由你确认后才会写入账本。</p>
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
-        {!ready && <Button variant="secondary" asChild><Link to="/settings">前往设置连接并授权</Link></Button>}
         {selectedIds.length > 0 && <Button
           variant="secondary"
           disabled={!ready || reviewPending || selectedIds.length > 30}

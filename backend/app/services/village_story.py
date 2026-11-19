@@ -1,10 +1,12 @@
 """Versioned monthly chronicles with server-owned facts and revocable source references."""
 
 import json
+import logging
 import re
 import uuid
 from datetime import timedelta
 
+import httpx
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -12,6 +14,8 @@ from app.models import StoryEdition, StoryPart, Transaction
 
 from . import agent, ai, ai_ledger_consent, monthly_review
 from . import village_life as life
+
+logger = logging.getLogger(__name__)
 
 CHAPTERS = [
     ("summary", "这个月发生了什么"),
@@ -291,6 +295,8 @@ def generate(db: Session, task_id: str):
                 ],
                 db,
                 owner_id,
+                feature="story",
+                json_output=True,
             )
         cleaned = (
             raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
@@ -353,11 +359,45 @@ def generate(db: Session, task_id: str):
         job.status = "completed"
         job.updated_at = life.now()
         db.commit()
-    except Exception:
+    except Exception as error:
+        status_code = (
+            error.response.status_code if isinstance(error, httpx.HTTPStatusError) else None
+        )
+        logger.warning(
+            "Story generation failed for edition %s: %s%s",
+            task_id,
+            type(error).__name__,
+            f" (HTTP {status_code})" if status_code else "",
+        )
         db.rollback()
         job = db.get(StoryEdition, task_id)
         if job:
             job.status = "failed"
-            job.error_message = "纪事整理失败，请检查 AI 连接、授权或账本变化后重试；原版本仍保留。"
+            if status_code in {401, 403}:
+                job.error_message = "AI 服务认证失败，请检查服务器上的 API Key。"
+            elif status_code == 402:
+                job.error_message = "AI 服务余额不足，请检查 DeepSeek 账户。"
+            elif status_code == 429:
+                job.error_message = "AI 服务请求较多，请稍后重试。"
+            elif status_code == 400:
+                job.error_message = "AI 服务拒绝了回顾请求，请查看后端日志并核对模型配置。"
+            elif status_code and status_code >= 500:
+                job.error_message = "AI 服务暂时不可用，请稍后重试。"
+            elif isinstance(error, httpx.TimeoutException):
+                job.error_message = "AI 服务响应超时，请重试。"
+            elif isinstance(error, httpx.RequestError):
+                job.error_message = "无法连接 AI 服务，请检查服务器网络。"
+            elif isinstance(error, PermissionError):
+                job.error_message = "请先同意 AI 使用协议，再生成本月回顾。"
+            elif isinstance(error, ValueError) and "次数" in str(error):
+                job.error_message = "今天的 AI 回顾次数已用完，明天再试。"
+            elif isinstance(error, ValueError) and "额度" in str(error):
+                job.error_message = "今天的 AI 服务额度已用完，明天再试。"
+            elif isinstance(error, ValueError) and "生成期间" in str(error):
+                job.error_message = "生成期间账本有更新，请重新生成本月回顾。"
+            elif isinstance(error, (ValueError, json.JSONDecodeError, KeyError)):
+                job.error_message = "AI 回顾返回格式不符合要求，请重试。"
+            else:
+                job.error_message = "本月回顾生成失败，请查看后端日志中的 Story 错误类型。"
             job.updated_at = life.now()
             db.commit()

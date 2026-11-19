@@ -69,14 +69,6 @@ export type AiCategorySuggestionIn = {
     reason?: string;
 };
 
-export type AiConnectionIn = {
-    api_key?: (string | null);
-    model?: 'deepseek-flash' | 'deepseek-v4-pro';
-    clear_key?: boolean;
-};
-
-export type model = 'deepseek-flash' | 'deepseek-v4-pro';
-
 export type AiConnectionOut = {
     configured: boolean;
     model: string;
@@ -230,15 +222,6 @@ export type ChatConversationOut = {
     id: string;
     title: string;
     created_at: string;
-};
-
-export type ChatLedgerConsentIn = {
-    enabled: boolean;
-};
-
-export type ChatLedgerConsentOut = {
-    enabled: boolean;
-    scope: string;
 };
 
 export type ChatMessageOut = {
@@ -885,6 +868,8 @@ export type LoginApiAuthLoginPostData = {
 
 export type LoginApiAuthLoginPostResponse = (SessionOut);
 
+export type GuestLoginApiAuthGuestPostResponse = (SessionOut);
+
 export type MeApiAuthMeGetResponse = (SessionOut);
 
 export type LogoutApiAuthLogoutPostResponse = ({
@@ -1318,6 +1303,7 @@ export type TransactionsApiTransactionsGetData = {
     page?: number;
     pageSize?: number;
     review?: boolean;
+    sort?: 'date_desc' | 'amount_asc' | 'amount_desc';
     txType?: ('expense' | 'income' | 'refund' | 'transfer' | null);
 };
 
@@ -1407,23 +1393,21 @@ export type TaskStatusApiTasksTaskIdGetResponse = ({
 
 export type AiStatusApiAiStatusGetResponse = (AiStatusOut);
 
+export type GetAiAgreementApiAiAgreementGetResponse = ({
+    [key: string]: unknown;
+});
+
+export type AcceptAiAgreementApiAiAgreementPostResponse = ({
+    [key: string]: unknown;
+});
+
+export type GetAiUsageApiAiUsageGetResponse = ({
+    [key: string]: unknown;
+});
+
 export type GetAiConnectionApiAiConnectionGetResponse = (AiConnectionOut);
 
-export type PutAiConnectionApiAiConnectionPutData = {
-    requestBody: AiConnectionIn;
-};
-
-export type PutAiConnectionApiAiConnectionPutResponse = (AiConnectionOut);
-
 export type ListAiConversationsApiAiConversationsGetResponse = (Array<ChatConversationOut>);
-
-export type GetChatLedgerConsentApiAiChatLedgerConsentGetResponse = (ChatLedgerConsentOut);
-
-export type PutChatLedgerConsentApiAiChatLedgerConsentPutData = {
-    requestBody: ChatLedgerConsentIn;
-};
-
-export type PutChatLedgerConsentApiAiChatLedgerConsentPutResponse = (ChatLedgerConsentOut);
 
 export type GetAiConversationApiAiConversationsConversationIdGetData = {
     conversationId: string;
@@ -1466,6 +1450,10 @@ export type ReviewAiApiAiReviewTransactionsPostResponse = ({
 });
 
 export type ReviewAllAiApiAiReviewAllTransactionsPostResponse = ({
+    [key: string]: unknown;
+});
+
+export type ReviewPendingAiApiAiReviewPendingTransactionsPostResponse = ({
     [key: string]: unknown;
 });
 

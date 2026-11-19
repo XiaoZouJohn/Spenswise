@@ -2,18 +2,13 @@ import { Trash2 } from 'lucide-react'
 import type { Transaction } from '../types'
 import { money, transactionTypeLabel } from '../lib/format'
 import { State } from './ui'
+import { CategoryIcon } from './village/CategoryIcon'
 
 type DayGroup = {
   date: string
   items: Transaction[]
   expense: number
   income: number
-}
-
-const categoryMarks: Record<string, string> = {
-  餐饮: '餐', 交通: '行', 购物: '购', 居住: '住', 医疗健康: '医', 娱乐: '娱',
-  旅行: '旅', 通讯: '讯', 教育: '学', 日用品: '用', 人情往来: '礼', 收入: '收',
-  退款: '退', 转账: '转', 其他: '其', 待确认: '?',
 }
 
 function groupByDay(items: Transaction[]) {
@@ -53,14 +48,16 @@ export function TransactionDayList({
   onSelect,
   onDetail,
   onDelete,
+  groupByDate = true,
 }: {
   items: Transaction[]
   selected?: number[]
   onSelect?: (ids: number[]) => void
   onDetail: (item: Transaction) => void
   onDelete?: (item: Transaction) => void
+  groupByDate?: boolean
 }) {
-  const groups = groupByDay(items)
+  const groups = groupByDate ? groupByDay(items) : items.map(item => ({ date: item.tx_date, items: [item], expense: item.tx_type === 'expense' ? item.amount_cents : 0, income: item.tx_type === 'income' || item.tx_type === 'refund' ? item.amount_cents : 0 }))
   if (!groups.length) return <State kind="empty"/>
 
   const toggle = (item: Transaction) => {
@@ -71,15 +68,15 @@ export function TransactionDayList({
   return <div className="ledger-day-list">
     {groups.map(group => {
       const label = dateParts(group.date)
-      return <section className="ledger-day-card" key={group.date} aria-labelledby={`ledger-day-${group.date}`}>
+      return <section className="ledger-day-card" key={groupByDate ? group.date : group.items[0].id} aria-labelledby={`ledger-day-${group.items[0].id}`}>
         <header className="ledger-day-head">
-          <h3 id={`ledger-day-${group.date}`}>{label.day}<span>（{label.weekday}）</span></h3>
-          <p><span>支 {money(group.expense)}</span><i/> <span>收 {money(group.income)}</span></p>
+          <h3 id={`ledger-day-${group.items[0].id}`}>{label.day}<span>（{label.weekday}）</span></h3>
+          {groupByDate && <p><span>支 {money(group.expense)}</span><i/> <span>收 {money(group.income)}</span></p>}
         </header>
         <div className="ledger-day-entries">
           {group.items.map(item => <article className={`ledger-day-entry ${selected.includes(item.id) ? 'is-selected' : ''}`} key={item.id}>
             {onSelect && <input type="checkbox" aria-label={`选择账单 ${item.id}`} checked={selected.includes(item.id)} onChange={() => toggle(item)}/>} 
-            <span className={`ledger-entry-mark ${amountClass(item)}`} aria-hidden="true">{(categoryMarks[item.category] ?? item.category.slice(0, 1)) || '账'}</span>
+            <CategoryIcon category={item.category} className={`ledger-entry-mark ${amountClass(item)}`}/>
             <button className="ledger-entry-main" onClick={() => onDetail(item)}>
               <strong>{item.merchant || item.description || '未命名账单'}</strong>
               <small>{transactionTypeLabel(item.tx_type)} · {item.category}{item.description && item.description !== item.merchant ? ` · ${item.description}` : ''}</small>

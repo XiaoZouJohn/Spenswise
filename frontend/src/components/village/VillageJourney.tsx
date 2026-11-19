@@ -36,7 +36,7 @@ export const tourSteps = [
   { title: '生活记录 · 给每一笔开销一个故事', path: '/logs', target: '.life-logs-page', body: '一笔消费背后，往往还有一段值得记住的经历。一次旅行、一顿聚餐，或者一个深思熟虑后的决定，都可以写在这里。你可以关联已有账单，也可以单独记录生活中的点滴。愿意的话，还可以授权 AI 参考这些记录，让它在分析收支时多了解一点你的真实生活。' },
   { title: 'AI 助手 · 有问题，随时问问小猫', path: '/overview', target: '.ai-launcher', body: '看不懂某笔账目？想知道最近的钱都花去了哪里？或者正在考虑下一步怎么安排？点击角落里的小猫，随时和财务助手聊聊。它可以结合你正在查看的章节和地点回答问题。对话窗还可以拖动、缩放或收起，方便你一边整理账目，一边交流想法。' },
   { title: '家庭组 · 和家人一起打理生活', path: '/family', target: '.building-workspace-head', body: '一个人的账本可以记录自己的生活，一家人的账本则能装下更多共同的计划。邀请家人加入，设置账目共享范围，一起查看家庭预算、共同目标和议事提案。个人空间与家庭空间可以随时切换，各自的生活与共同的安排都能妥善安顿。' },
-  { title: '设置 · 按照自己的习惯来安排', path: '/settings', target: '.building-workspace-head', body: '每个人的生活节奏都不一样，预算和财务计划也应该如此。在这里调整预算、AI 连接和其他使用偏好，让富贵村更贴合你的日常。顶栏的财务简报也会适时提醒你留意预算变化和待处理事项。' },
+  { title: '预算 · 安排每月花费', path: '/settings', target: '.building-workspace-head', body: '在这里设置每月总预算，再给餐饮、交通等类别分配额度。以后想调整计划，回到议事厅就能找到预算。' },
   { title: '个人中心 · 收藏一路走来的小成就', path: '/user', target: '.journey-album', body: '每一次坚持记录，都值得留下一枚纪念。来个人中心看看自己的成就吧：连续登录、完成生活日志、持续达成月度收支计划，都可能为你带来新的勋章。这里也可以管理个人资料、登录设备和导出数据。忘记了村里的路线？随时点击顶栏的「使用指引」，再来看看就好。' },
 ] as const
 
@@ -71,7 +71,8 @@ export function JourneyTour({ step, introToken, onMove, onPause }: { step: numbe
       setPosition({ left: Math.max(12, Math.min(left, window.innerWidth - width - 12)), top: Math.max(12, Math.min(top, window.innerHeight - height - 12)), right: 'auto', bottom: 'auto' })
     }
     const mark = () => {
-      const target = document.querySelector(item.target)
+      const mobileDestinations = step === 2 && window.matchMedia('(max-width: 1100px)').matches
+      const target = document.querySelector(mobileDestinations ? '.mobile-village-destinations' : item.target)
       if (target === marked) return
       marked?.classList.remove('journey-highlight')
       target?.classList.add('journey-highlight')

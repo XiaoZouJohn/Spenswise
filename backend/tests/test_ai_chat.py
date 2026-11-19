@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db import Base, get_db
 from app.main import app
-from app.models import AiConnection, Transaction, User
-from app.services import ai_chat, ai_connection, ledger_skill
+from app.models import Setting, Transaction, User
+from app.services import ai_agreement, ai_chat, ai_connection, ai_usage, ledger_skill
 
 
 def test_encrypted_connection_and_streamed_chat(tmp_path: Path, monkeypatch):
@@ -21,12 +21,10 @@ def test_encrypted_connection_and_streamed_chat(tmp_path: Path, monkeypatch):
         f"sqlite:///{tmp_path / 'chat.db'}", connect_args={"check_same_thread": False}
     )
     Base.metadata.create_all(engine)
-    monkeypatch.setenv("AI_KEY_FILE", str(tmp_path / "secret" / "fernet.key"))
-    monkeypatch.delenv("AI_ENCRYPTION_KEY", raising=False)
-    monkeypatch.delenv("AI_API_KEY", raising=False)
+    monkeypatch.setenv("AI_API_KEY", "test-secret-key-123")
     monkeypatch.setattr(ai_chat, "SessionLocal", sessionmaker(bind=engine))
 
-    async def fake_upstream(chat: ai_chat.PreparedChat):
+    async def fake_upstream(chat: ai_chat.PreparedChat, *, count_call: bool):
         assert chat.thinking is True
         assert [item["role"] for item in chat.messages] == ["system", "user"]
         assert "房租商户" not in str(chat.messages)
@@ -73,18 +71,18 @@ def test_encrypted_connection_and_streamed_chat(tmp_path: Path, monkeypatch):
             )
             db.commit()
 
-        saved = client.put(
-            "/api/ai/connection", json={"api_key": "test-secret-key-123", "model": "deepseek-flash"}
-        )
-        assert saved.status_code == 200
+        saved = client.get("/api/ai/connection")
         assert saved.json()["configured"] is True
-        assert "api_key" not in saved.text
         assert "test-secret-key-123" not in saved.text
         assert client.get("/api/ai/status").json()["consent"] is False
-        assert client.get("/api/ai/chat/ledger-consent").json()["enabled"] is True
+        assert (
+            client.post(
+                "/api/ai/chat/stream", json={"message": "hello", "thinking": False}
+            ).status_code
+            == 409
+        )
+        assert client.post("/api/ai/agreement").json()["accepted"] is True
         with Session(engine) as db:
-            encrypted = db.get(AiConnection, 1).encrypted_key
-            assert "test-secret-key-123" not in encrypted
             assert ai_connection.resolve(db, 1)[0] == "test-secret-key-123"
 
         response = client.post(
@@ -102,10 +100,6 @@ def test_encrypted_connection_and_streamed_chat(tmp_path: Path, monkeypatch):
         assert detail["messages"][1]["reasoning"] == "先梳理问题。"
         assert detail["messages"][1]["content"] == "可以先查看预算设置。"
 
-        assert (
-            client.put("/api/ai/chat/ledger-consent", json={"enabled": True}).json()["enabled"]
-            is True
-        )
         with_ledger = client.post(
             "/api/ai/chat/stream",
             json={"conversation_id": None, "message": "查看我的账单", "thinking": True},
@@ -113,10 +107,9 @@ def test_encrypted_connection_and_streamed_chat(tmp_path: Path, monkeypatch):
         assert with_ledger.status_code == 200
         assert "event: done" in with_ledger.text
         ledger_conversation = client.get("/api/ai/conversations").json()[0]["id"]
-        assert (
-            client.put("/api/ai/chat/ledger-consent", json={"enabled": False}).json()["enabled"]
-            is False
-        )
+        with Session(engine) as db:
+            db.delete(db.get(Setting, (1, ai_agreement.KEY)))
+            db.commit()
         blocked = client.post(
             "/api/ai/chat/stream",
             json={"conversation_id": ledger_conversation, "message": "继续", "thinking": True},
@@ -128,6 +121,9 @@ def test_encrypted_connection_and_streamed_chat(tmp_path: Path, monkeypatch):
 
 def test_deepseek_stream_contract(monkeypatch):
     seen: dict = {}
+    settled = []
+    monkeypatch.setattr(ai_usage, "reserve", lambda *_args, **_kwargs: ("2026-11-19", 5000))
+    monkeypatch.setattr(ai_usage, "settle", lambda reservation, total: settled.append(total))
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen.update(json.loads(request.content))
@@ -135,6 +131,10 @@ def test_deepseek_stream_contract(monkeypatch):
         assert request.headers["authorization"] == "Bearer local-test-key"
         body = 'data: {"choices":[{"delta":{"reasoning_content":"思考"}}]}\n\n'
         body += 'data: {"choices":[{"delta":{"content":"回答"}}]}\n\n'
+        body += (
+            'data: {"choices":[{"delta":{},"finish_reason":"stop"}],'
+            '"usage":{"total_tokens":42}}\n\n'
+        )
         body += "data: [DONE]\n\n"
         return httpx.Response(200, text=body, headers={"content-type": "text/event-stream"})
 
@@ -159,9 +159,10 @@ def test_deepseek_stream_contract(monkeypatch):
     )
 
     async def collect():
-        return [part async for part in ai_chat._upstream(chat)]
+        return [part async for part in ai_chat._upstream(chat, count_call=True)]
 
-    assert asyncio.run(collect()) == [{"reasoning_content": "思考"}, {"content": "回答"}]
+    assert asyncio.run(collect()) == [{"reasoning_content": "思考"}, {"content": "回答"}, {}]
+    assert settled == [42]
     assert seen["thinking"] == {"type": "enabled"}
     assert seen["stream"] is True
     assert seen["model"] == "deepseek-flash"
@@ -174,8 +175,6 @@ def test_invalid_chat_message_and_legacy_connection_recovery(tmp_path: Path, mon
     Base.metadata.create_all(engine)
     monkeypatch.setenv("AI_MODEL", "deepseek-chat")
     monkeypatch.setenv("AI_API_KEY", "env-backup-key")
-    monkeypatch.setenv("AI_KEY_FILE", str(tmp_path / "original" / "fernet.key"))
-    monkeypatch.delenv("AI_ENCRYPTION_KEY", raising=False)
 
     def test_db():
         with Session(engine) as db:
@@ -211,22 +210,14 @@ def test_invalid_chat_message_and_legacy_connection_recovery(tmp_path: Path, mon
         assert legacy.json()["configured"] is True
         assert legacy.json()["model"] == "deepseek-flash"
 
-        monkeypatch.delenv("AI_API_KEY")
-        saved = client.put(
-            "/api/ai/connection",
-            json={
-                "api_key": "stored-secret-key",
-                "model": "deepseek-flash",
-            },
-        )
-        assert saved.status_code == 200
-        monkeypatch.setenv("AI_KEY_FILE", str(tmp_path / "missing" / "fernet.key"))
+        assert client.put("/api/ai/connection", json={"api_key": "user-key"}).status_code == 405
+        assert client.post("/api/ai/agreement").status_code == 200
         monkeypatch.setenv("AI_API_KEY", "env-backup-key")
         with Session(engine) as db:
             assert ai_connection.resolve(db, 1) == ("env-backup-key", "deepseek-flash")
         assert client.get("/api/ai/connection").json()["configured"] is True
-        changed = client.put("/api/ai/connection", json={"model": "deepseek-v4-pro"})
-        assert changed.status_code == 200
+        monkeypatch.setenv("AI_MODEL", "deepseek-v4-pro")
+        changed = client.get("/api/ai/connection")
         assert changed.json()["model"] == "deepseek-v4-pro"
         with Session(engine) as db:
             assert ai_connection.resolve(db, 1) == ("env-backup-key", "deepseek-v4-pro")
@@ -244,18 +235,19 @@ def test_revocation_between_prepare_and_send_keeps_ledger_off_upstream(
     Base.metadata.create_all(engine)
     monkeypatch.setenv("AI_API_KEY", "test-env-key")
     monkeypatch.setattr(ai_chat, "SessionLocal", sessionmaker(bind=engine))
+    monkeypatch.setattr(ai_usage, "reserve", lambda *_args, **_kwargs: ("2026-11-19", 5000))
 
     with Session(engine) as db:
-        ai_chat.set_ledger_consent(db, True, 1)
+        ai_agreement.accept(db, 1)
         db.commit()
         prepared = ai_chat.prepare(db, None, "Review my bills", False, 1)
         assert prepared.used_ledger is True
-        ai_chat.set_ledger_consent(db, False, 1)
+        db.delete(db.get(Setting, (1, ai_agreement.KEY)))
         db.commit()
 
     upstream_calls = []
 
-    async def fake_upstream(_chat):
+    async def fake_upstream(_chat, *, count_call: bool):
         upstream_calls.append(True)
         yield {"content": "should not be sent"}
 
@@ -268,7 +260,7 @@ def test_revocation_between_prepare_and_send_keeps_ledger_off_upstream(
     assert upstream_calls == []
 
     async def collect_upstream():
-        return [delta async for delta in ai_chat._upstream(prepared)]
+        return [delta async for delta in ai_chat._upstream(prepared, count_call=True)]
 
     with pytest.raises(PermissionError):
         asyncio.run(collect_upstream())
@@ -289,7 +281,8 @@ def test_ledger_tool_reads_latest_owner_rows_and_excludes_notes(tmp_path: Path, 
             ]
         )
         db.commit()
-        ai_chat.set_ledger_consent(db, True, 1)
+        ai_agreement.accept(db, 1)
+        db.commit()
         prepared = ai_chat.prepare(db, None, "刚记的餐饮账单是什么？", False, 1)
         assert prepared.used_ledger is True
         for owner_id, merchant in [(1, "新记账单"), (2, "他人私账")]:
@@ -317,7 +310,7 @@ def test_ledger_tool_reads_latest_owner_rows_and_excludes_notes(tmp_path: Path, 
 
     sent = []
 
-    async def fake_upstream(chat):
+    async def fake_upstream(chat, *, count_call: bool):
         sent.append(chat.messages)
         if len(sent) == 1:
             yield {"content": "我会先查看最新账单。"}

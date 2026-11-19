@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
 import { Bot, Check, ChevronDown, ChevronRight, CircleAlert, LoaderCircle, Plus, Send, Square, WandSparkles } from 'lucide-react'
 import { Button, State } from '../components/ui'
 import { AiMarkdown } from '../components/AiMarkdown'
+import { AiUsageHint } from '../components/AiUsageHint'
 import { useSession } from '../lib/session'
 import type { AssistantContext, AssistantDraft } from '../components/village/VillageContext'
 import {
-  getAiConnection, getAiConversation, getAiConversations, getAiLedgerConsent, streamAiChat,
+  getAiConnection, getAiConversation, getAiConversations, streamAiChat,
   type AiMessage,
 } from '../lib/aiChat'
 
@@ -48,7 +48,6 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
   const selectedConversationKey = `spendwise-ai-selected-conversation:${session.data?.user.id ?? 'anonymous'}`
   const [selectedId, setSelectedId] = useState<string | null>(() => initialConversationId || localStorage.getItem(selectedConversationKey))
   const connection = useQuery({ queryKey: ['ai-connection'], queryFn: getAiConnection })
-  const ledgerConsent = useQuery({ queryKey: ['ai-ledger-consent'], queryFn: getAiLedgerConsent })
   const conversations = useQuery({ queryKey: ['ai-conversations'], queryFn: getAiConversations })
   const detail = useQuery({ queryKey: ['ai-conversation', selectedId], queryFn: () => getAiConversation(selectedId!), enabled: !!selectedId })
   const [messages, setMessages] = useState<AiMessage[]>([])
@@ -90,8 +89,8 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
   }, [messages, progress])
   useEffect(() => () => abortRef.current?.abort(), [])
 
-  const blockedConversation = !!selectedId && !!detail.data?.used_ledger && ledgerConsent.data?.enabled === false
-  const canSend = !!connection.data?.configured && ledgerConsent.isSuccess && (!selectedId || (detail.isSuccess && !blockedConversation))
+  const blockedConversation = false
+  const canSend = !!connection.data?.configured && (!selectedId || detail.isSuccess)
   const stages = activeThinking
     ? [{ phase: 'connecting', label: '连接' }, { phase: 'thinking', label: '思考' }, { phase: 'answering', label: '回复' }] as const
     : [{ phase: 'connecting', label: '连接' }, { phase: 'answering', label: '回复' }] as const
@@ -193,7 +192,6 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
         <p className="mb-1 text-sm text-muted">DeepSeek</p>
         <h1 className="m-0 text-3xl font-semibold">AI 助手</h1>
       </div>
-      <Link className="inline-flex items-center gap-1 text-sm font-semibold text-accent" to="/settings#ai-connection">连接与授权设置 <ChevronRight size={16}/></Link>
     </header>
 
     <div className="ai-workspace card">
@@ -214,7 +212,7 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
 
       <section className="ai-conversation" aria-label="AI 对话">
         <div className="ai-conversation-head">
-          <div className="flex items-center gap-3"><span className="ai-model-mark"><Bot size={18}/></span><div><div className="text-sm font-semibold">DeepSeek</div><div className="text-xs text-muted">{connection.isLoading ? '正在检查连接' : connection.data?.configured ? '已连接' : '尚未连接'}</div></div></div>
+          <div className="flex items-center gap-3"><span className="ai-model-mark"><Bot size={18}/></span><div><div className="text-sm font-semibold">DeepSeek</div><div className="text-xs text-muted">{connection.isLoading ? '正在检查连接' : connection.data?.configured ? '已连接' : '尚未连接'}</div><AiUsageHint feature="chat"/></div></div>
         </div>
 
         <div className="ai-message-list">
@@ -223,7 +221,7 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
               : messages.length === 0 ? <div className="ai-welcome">
                 <span className="ai-welcome-mark"><WandSparkles size={24}/></span>
                 <h2 className="mb-2 mt-5 text-2xl font-semibold">从一个问题开始</h2>
-                <p className="m-0 max-w-lg text-muted">可以问预算、消费和账单分类。提问及最近的对话会发送给 DeepSeek。{ledgerConsent.isLoading ? '正在确认账本授权。' : ledgerConsent.isError ? '请重试读取账本授权状态。' : ledgerConsent.data?.enabled ? 'AI 账本授权已开启；模型按需读取最新账单。' : 'AI 账本授权已关闭。'}</p>
+                <p className="m-0 max-w-lg text-muted">可以问预算、消费和账单分类。小猫会按需查看与你的问题相关的账目。</p>
               </div> : <div className="ai-messages">
                 {messages.map(message => <article key={message.id} className={`ai-message ${message.role === 'user' ? 'ai-message-user' : ''}`} data-testid="ai-message" data-role={message.role}>
                   <div className="ai-message-mark" aria-hidden="true">{message.role === 'user' ? '你' : <Bot size={16}/>}</div>
@@ -251,8 +249,7 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
           </div>}
           {error && <div role="alert" className="ai-error"><CircleAlert size={16}/><span>{error}</span>{progress === 'error' && <button type="button" className="font-semibold underline" disabled={!draft.trim() || !canSend} onClick={() => void send()}>重新发送</button>}</div>}
           {blockedConversation && <div role="status" className="ai-notice">此对话使用过账单数据；授权已关闭。<button type="button" onClick={() => chooseConversation(null)}>新建对话以继续</button></div>}
-          {ledgerConsent.isError && <div className="ai-notice">暂时无法确认账本授权状态，发送已暂停。<button type="button" onClick={() => ledgerConsent.refetch()}>重试</button></div>}
-          {!connection.isLoading && !connection.data?.configured && <div className="ai-notice">DeepSeek 尚未配置。<Link to="/settings#ai-connection">前往设置</Link></div>}
+          {!connection.isLoading && !connection.data?.configured && <div className="ai-notice">AI 服务暂时不可用，请稍后再试。</div>}
           {connection.isError && <div className="ai-notice">无法确认 AI 连接状态。<button type="button" onClick={() => connection.refetch()}>重试</button></div>}
           <div className="ai-composer card">
             <textarea ref={composerRef} rows={3} value={draft} onChange={event => { setDraft(event.target.value); setPreset('') }} onKeyDown={composerKeyDown} placeholder="输入你想讨论的问题…" aria-label="输入消息" data-testid="ai-composer" disabled={isStreaming || blockedConversation}/>
