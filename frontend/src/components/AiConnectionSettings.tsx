@@ -55,7 +55,7 @@ export function AiConnectionSettings({ onConfigured }: { onConfigured?: () => vo
           />
         </div>
       </div>
-      <p className="mb-0 text-xs text-muted">服务地址：{connection.data.endpoint}。已保存的密钥不会显示在页面上。</p>
+      <p className="mb-0 text-xs text-muted">服务地址：{connection.data.endpoint}。已保存的密钥不会在页面显示。</p>
       <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-line pt-5">
         <Button
           onClick={() => save.mutate({ model, ...(apiKey.trim() ? { api_key: apiKey.trim() } : {}) })}
@@ -73,7 +73,7 @@ export function AiConnectionSettings({ onConfigured }: { onConfigured?: () => vo
         <Button variant="danger" disabled={save.isPending} onClick={() => save.mutate({ model, clear_key: true })}>确认移除</Button>
         <Button variant="ghost" onClick={() => setConfirmClear(false)}>取消</Button>
       </div>}
-      {hasUnsavedInput && connection.data.configured && <p className="mb-0 mt-3 text-sm text-muted">修改连接信息后，请先保存，再测试连接。</p>}
+      {hasUnsavedInput && connection.data.configured && <p className="mb-0 mt-3 text-sm text-muted">请先保存修改，再测试连接。</p>}
       {save.isSuccess && !hasUnsavedInput && <p role="status" className="mb-0 mt-3 text-sm text-success">连接设置已保存。</p>}
       {save.isError && <p role="alert" className="mb-0 mt-3 text-sm text-danger">保存失败：{save.error.message}</p>}
       {test.isSuccess && <p role="status" className={`mb-0 mt-3 text-sm ${test.data.ok ? 'text-success' : 'text-danger'}`}>{test.data.message}</p>}

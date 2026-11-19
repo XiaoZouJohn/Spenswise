@@ -33,7 +33,7 @@ export function LifeLogEditor({ record, transactionId, onSaved, onCancel }: {
       try { await form.clear({ ...stored, revision: stored.revision }) } catch { /* The saved log remains authoritative if draft cleanup fails. */ }
       await Promise.all(['life-logs', 'chronicle', 'village-state', 'market-review', 'transaction-event'].map(key => client.invalidateQueries({ queryKey: [key] })))
       onSaved(stored)
-    } catch { setError('保存失败或记录已更新，已保留草稿。请重新读取版本后合并。') }
+    } catch { setError('记录暂时没保存成功，草稿还在。请重新打开后核对。') }
     finally { setBusy(false) }
   }
   return <form className="life-log-editor" onSubmit={event => { event.preventDefault(); void save() }}>
@@ -43,10 +43,10 @@ export function LifeLogEditor({ record, transactionId, onSaved, onCancel }: {
     <details><summary>关联账单 · 已选 {ids.length} 笔</summary>
       <Input aria-label="搜索关联账单" value={search} onChange={event => setSearch(event.target.value)} placeholder="搜索商户，最多显示100笔"/>
       {rows.isPending ? <State kind="loading"/> : rows.isError ? <State kind="error" retry={() => rows.refetch()}/> : <div className="log-transaction-picker">{rows.data.items.map(tx => <label key={tx.id}><input type="checkbox" checked={ids.includes(tx.id)} onChange={event => form.change({ ...value, transaction_ids: event.target.checked ? [...ids, tx.id] : ids.filter(id => id !== tx.id) })}/><span>{tx.tx_date} · {tx.merchant || tx.category}</span><strong>{money(tx.amount_cents)}</strong></label>)}</div>}
-      <p className="text-sm text-muted">可保留为空。未显示但已选中的关联仍会保存。</p>
+      <p className="text-sm text-muted">没有想关联的账单，也可以直接保存记录。</p>
     </details>
     <label className="log-ai-permission"><input type="checkbox" checked={!!value.ai_allowed} onChange={event => form.change({ ...value, ai_allowed: event.target.checked })}/>允许 AI 在已有账本授权内使用这篇生活记录</label>
-    <p className="text-sm text-muted">默认仅本人可见。勾选后，聊天按需读取，整理纪事时还需确认使用记录范围。</p>
+    <p className="text-sm text-muted">这篇记录仅你可见。开启后，AI 可在你允许的范围内参考它。</p>
     <DraftStatus status={form.status} retry={form.retry} reload={form.reload}/>
     {error && <p role="alert" className="text-danger">{error}</p>}
     <footer className="life-form-actions"><Button type="button" variant="secondary" disabled={busy} onClick={onCancel}>稍后再写</Button><Button type="submit" disabled={busy}>{busy ? '保存中…' : '保存生活记录'}</Button></footer>

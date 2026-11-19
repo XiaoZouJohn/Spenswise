@@ -153,7 +153,7 @@ export function Ledger() {
     <JourneyTipCard kind="ledger"/>
     {status.data && <div className="pending-strip"><button onClick={() => updateFilter('category', '待确认')}>未分类 <strong>{status.data.unclassified}</strong></button><button onClick={() => setReviewOpen(true)}>待核对 <strong>{status.data.unreviewed}</strong></button><button onClick={() => updateFilter('import', '1')}>导入异常 <strong>{status.data.import_errors}</strong></button></div>}
     <ForecastPortrait/>
-    <div className="ledger-cross-actions"><span>从记录进入计划</span><Link className="story-text-action" to={`/simulate?category=${encodeURIComponent(filterCategory || '当前消费')}&from=${encodeURIComponent('/ledger?' + search.toString())}`}>在集市比较一项消费 →</Link></div>
+    <div className="ledger-cross-actions"><Button asChild variant="secondary"><Link to={`/simulate?category=${encodeURIComponent(filterCategory || '当前消费')}&from=${encodeURIComponent('/ledger?' + search.toString())}`}>在集市比较一项消费 →</Link></Button></div>
 
     <DetailDialog open={adding} onOpenChange={open => { setAdding(open); if (!open && search.get('new')) updateFilter('new', '') }} title="新增账单">
       <div className="grid gap-3 md:grid-cols-6">

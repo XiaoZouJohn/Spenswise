@@ -2,6 +2,7 @@
 @font-face { font-family:'SpendWise Noto Sans SC'; src:url('/fonts/noto-sans-sc.woff2') format('woff2'); font-style:normal; font-weight:100 900; font-display:swap; }
 @font-face { font-family:'SpendWise Noto Serif SC'; src:url('/fonts/noto-serif-sc.woff2') format('woff2'); font-style:normal; font-weight:200 900; font-display:swap; }
 @font-face { font-family:'SpendWise Lora'; src:url('/fonts/lora-500.woff2') format('woff2'); font-style:normal; font-weight:500; font-display:swap; }
+@font-face { font-family:'SpendWise Money Numerals'; src:url('/fonts/lora-500.woff2') format('woff2'); font-style:normal; font-weight:100 900; font-display:swap; unicode-range:U+0030-0039,U+002C,U+002E,U+002D,U+2212,U+00A5; }
 @tailwind base; @tailwind components; @tailwind utilities;
 
 :root {
@@ -34,7 +35,7 @@
   --chart-3: var(--gold);
   --chart-4: var(--water);
   --chart-5: var(--forest-light);
-  --font-body: 'SpendWise Noto Sans SC','Noto Sans SC','Microsoft YaHei','PingFang SC',sans-serif;
+  --font-body: 'SpendWise Money Numerals','SpendWise Noto Sans SC','Noto Sans SC','Microsoft YaHei','PingFang SC',sans-serif;
   --font-display: 'SpendWise Noto Serif SC','Noto Serif SC','STSong',serif;
   --font-numeral: 'SpendWise Lora','Lora',Georgia,serif;
   --font-size-body: 15px;

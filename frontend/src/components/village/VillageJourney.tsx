@@ -5,18 +5,18 @@ import { useJourney, useUpdateJourney, type JourneyTip } from '../../lib/journey
 const cat = '/media/village/cat/'
 const achievementArt = '/media/village/achievements/'
 export const keepsakes = [
-  { code: 'login_3', title: '连续登录 3 天', detail: '按每天登录一次计算', href: '/overview', image: 'login-3.png' },
-  { code: 'login_7', title: '连续登录 7 天', detail: '按每天登录一次计算', href: '/overview', image: 'login-7.png' },
+  { code: 'login_3', title: '连续登录 3 天', detail: '每天来看看，连续登录即可获得', href: '/overview', image: 'login-3.png' },
+  { code: 'login_7', title: '连续登录 7 天', detail: '每天来看看，连续登录即可获得', href: '/overview', image: 'login-7.png' },
   { code: 'logs_1', title: '完成 1 篇日志', detail: '保存一篇生活记录', href: '/logs', image: 'logs-1.png' },
   { code: 'logs_5', title: '完成 5 篇日志', detail: '保存五篇生活记录', href: '/logs', image: 'logs-5.png' },
-  { code: 'plan_2', title: '连续 2 个月达成收支计划', detail: '月末收入覆盖支出，且支出在预算内', href: '/review', image: 'plan-2.png' },
-  { code: 'plan_3', title: '连续 3 个月达成收支计划', detail: '每个月均保存回顾并达成计划', href: '/review', image: 'plan-3.png' },
+  { code: 'plan_2', title: '连续 2 个月达成收支计划', detail: '每月保存回顾，留有结余且消费在预算内', href: '/review', image: 'plan-2.png' },
+  { code: 'plan_3', title: '连续 3 个月达成收支计划', detail: '每月保存回顾，留有结余且消费在预算内', href: '/review', image: 'plan-3.png' },
 ] as const
 
 const tips: Record<JourneyTip, { title: string; body: string; image: string }> = {
   ledger: { title: '从真实账目开始', body: '导入前可以预览；确认后才会写进账房。你也可以直接手记一笔。', image: 'guide.png' },
-  story: { title: '账目会变成故事', body: '这里先读出本月账本事实。选择月份后，还可以生成完整回顾。', image: 'read.png' },
-  assistant: { title: '随时问问小猫', body: '可以追问图表和账目，也能请助手带你去相关地点。读取范围沿用现有 AI 授权。', image: 'guide.png' },
+  story: { title: '账目会变成故事', body: '看看这个月的收支，也可以切换月份生成回顾。', image: 'read.png' },
+  assistant: { title: '随时问问小猫', body: '可以问小猫账目和图表，也可以请它带你去相关地点。', image: 'guide.png' },
 }
 export function JourneyTipCard({ kind, className = '' }: { kind: JourneyTip; className?: string }) {
   const { data } = useJourney()
@@ -100,8 +100,8 @@ export function JourneyTour({ step, introToken, onMove, onPause }: { step: numbe
 
 export function VillageAlbum() {
   const { data, isPending, isError, error, refetch } = useJourney()
-  return <section className="journey-album" aria-labelledby="journey-album-title"><div className="journey-album-head"><div><p className="journey-eyebrow">富贵村 · 使用记录</p><h2 id="journey-album-title">我的成就</h2><p>登录从启用成就功能后开始记录；月度计划按已结束的月份核算。</p></div><img src={`${cat}read.png`} alt="读账簿的小猫"/></div>
-    {isPending ? <p>正在翻阅纪念册…</p> : isError ? <div role="alert"><p>成就暂时无法读取。{error instanceof Error ? error.message : '请确认后端已启动。'}</p><button onClick={() => void refetch()}>重新读取</button></div> : <><div className="journey-stamps">{keepsakes.map(item => { const earned = data?.achievements.find(a => a.code === item.code)?.unlocked_at; return <Link to={item.href} className={`journey-stamp ${earned ? 'is-earned' : ''}`} key={item.code}><img className="journey-stamp-art" src={`${achievementArt}${item.image}`} alt="" loading="lazy"/><strong>{item.title}</strong><small>{earned ? `获得于 ${new Date(earned).toLocaleDateString('zh-CN')}` : item.detail}</small></Link> })}</div><p className="journey-album-count">已收藏 {data?.achievements.filter(item => item.unlocked_at).length ?? 0} / {keepsakes.length} 枚纪念</p></>}
+  return <section className="journey-album" aria-labelledby="journey-album-title"><div className="journey-album-head"><div><p className="journey-eyebrow">富贵村 · 使用记录</p><h2 id="journey-album-title">我的成就</h2><p>每一次坚持记录，都值得留下纪念。</p></div><img src={`${cat}read.png`} alt="读账簿的小猫"/></div>
+    {isPending ? <p>正在翻阅纪念册…</p> : isError ? <div role="alert"><p>成就暂时无法读取。{error instanceof Error ? error.message : '请稍后重试。'}</p><button onClick={() => void refetch()}>重新读取</button></div> : <><div className="journey-stamps">{keepsakes.map(item => { const earned = data?.achievements.find(a => a.code === item.code)?.unlocked_at; return <Link to={item.href} className={`journey-stamp ${earned ? 'is-earned' : ''}`} key={item.code}><img className="journey-stamp-art" src={`${achievementArt}${item.image}`} alt="" loading="lazy"/><strong>{item.title}</strong><small>{earned ? `获得于 ${new Date(earned).toLocaleDateString('zh-CN')}` : item.detail}</small></Link> })}</div><p className="journey-album-count">已收藏 {data?.achievements.filter(item => item.unlocked_at).length ?? 0} / {keepsakes.length} 枚纪念</p></>}
   </section>
 }
 

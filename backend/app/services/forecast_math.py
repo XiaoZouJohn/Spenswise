@@ -169,7 +169,7 @@ def monthly_projection(
     warnings = []
     observed_dates: set[date] = set()
     if not coverage:
-        warnings.append("历史覆盖范围尚未确认；无记录月份不按零消费处理。")
+        warnings.append("还没确认过去哪些月份有账单，预测先按现有记录计算。")
     if values:
         weights = [0.82 ** (len(values) - 1 - i) for i in range(len(values))]
         variable = round(sum(v * w for v, w in zip(values, weights, strict=True)) / sum(weights))
@@ -192,7 +192,7 @@ def monthly_projection(
         variable = round(
             net([r for r in eligible if r.tx_date in observed_dates]) * days / max(1, sample_days)
         )
-        warnings.append("完整历史月份不足，当前结果仅供试算，不能视为已验证预测。")
+        warnings.append("这次先用最近一段账目估算，下个月有新记录时可以再看变化。")
     totals: dict[str, int] = defaultdict(int)
     months = {h["month"] for h in history}
     for row in variable_rows:
@@ -208,7 +208,7 @@ def monthly_projection(
     )
     quality = "insufficient" if not history else "limited" if len(history) < 3 else "usable"
     if not rows and not history:
-        warnings.append("没有可用历史；零值代表暂无法估计，不代表未来零支出。")
+        warnings.append("账本里还没有可用的支出记录，暂时算不出下个月的花费。")
     return {
         "expected_cents": fixed + variable,
         "lower_cents": fixed + max(0, variable - spread),
