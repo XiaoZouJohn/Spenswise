@@ -50,6 +50,58 @@ async function selectHistory(page: Page, title: string) {
   await page.locator('.ai-history-item', { hasText: title }).click()
 }
 
+test('助手历史记录纵向展开，删除前确认，删除后更新当前对话', async ({ page }) => {
+  await mockShell(page)
+  await page.route('**/api/village/journey', route => route.fulfill({ json: {
+    revision: 0, welcome_dismissed: true, show_welcome: false, tour_step: 0,
+    seen_tips: ['assistant'], has_transactions: false, login_streak: 0,
+    log_count: 0, plan_streak: 0, achievements: [],
+  } }))
+  const firstId = '44444444-4444-4444-8444-444444444444'
+  const secondId = '66666666-6666-4666-8666-666666666666'
+  let rows = [
+    { id: firstId, title: '预算建议', created_at: '2026-10-10T12:00:00Z' },
+    { id: secondId, title: '消费分析', created_at: '2026-10-09T12:00:00Z' },
+  ]
+  await page.route('**/api/ai/conversations', route => route.fulfill({ json: rows }))
+  await page.route('**/api/ai/conversations/*', route => {
+    const id = route.request().url().split('/').at(-1)!
+    if (route.request().method() === 'DELETE') {
+      rows = rows.filter(item => item.id !== id)
+      return route.fulfill({ json: { deleted: true } })
+    }
+    return route.fulfill({ json: { id, title: rows.find(item => item.id === id)?.title || '', used_ledger: false, messages: [
+      { id: 1, role: 'assistant', content: '这是已保存的回答', reasoning: '', thinking: false },
+    ] } })
+  })
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openChat(page)
+  const toggle = page.getByTestId('ai-history-toggle')
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.locator('.ai-history-row')).toHaveCount(2)
+  await expect(page.locator('.ai-history-list')).toHaveCSS('display', 'block')
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 })
+    const rowTops = await page.locator('.ai-history-row').evaluateAll(items => items.map(item => item.getBoundingClientRect().top))
+    expect(rowTops[1]).toBeGreaterThan(rowTops[0])
+  }
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.locator('.ai-history-item', { hasText: '预算建议' }).click()
+  await expect(page.getByTestId('ai-message')).toContainText('这是已保存的回答')
+  await toggle.click()
+  await page.getByRole('button', { name: '删除对话：预算建议' }).click()
+  await expect(page.getByRole('dialog', { name: '删除聊天记录' })).toBeVisible()
+  await page.getByRole('button', { name: '取消' }).click()
+  await expect(page.locator('.ai-history-row')).toHaveCount(2)
+  await page.getByRole('button', { name: '删除对话：预算建议' }).click()
+  await page.getByRole('button', { name: '确认删除' }).click()
+  await expect(page.locator('.ai-history-row')).toHaveCount(1)
+  await expect(page.getByTestId('ai-message')).toHaveCount(0)
+  await expect(page.getByText('从一个问题开始')).toBeVisible()
+})
+
 test('Story 默认展示，助手可展开收起，路由切换保留会话草稿', async ({ page }) => {
   await mockShell(page)
   await page.route('**/api/ai/conversations', route => route.fulfill({ json: [] }))

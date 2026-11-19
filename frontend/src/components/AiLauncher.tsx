@@ -23,7 +23,8 @@ function initialPosition(): AiBubblePosition {
     if (stored && Number.isFinite(stored.x) && Number.isFinite(stored.y)) return clamp(stored)
   } catch { /* Ignore an invalid saved position. */ }
   const { size, margin, bottom } = metrics()
-  return clamp({ x: margin, y: window.innerHeight - size - bottom })
+  const x = window.innerWidth <= 1100 ? window.innerWidth - size - margin : margin
+  return clamp({ x, y: window.innerHeight - size - bottom })
 }
 
 export function AiLauncher({ onOpen }: { onOpen: (position: AiBubblePosition) => void }) {

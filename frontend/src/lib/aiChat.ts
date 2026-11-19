@@ -34,6 +34,7 @@ export const getAiConnection = () => sdk.getAiConnectionApiAiConnectionGet()
 export const getAiStatus = () => sdk.aiStatusApiAiStatusGet()
 export const getAiConversations = () => sdk.listAiConversationsApiAiConversationsGet()
 export const getAiConversation = (id: string) => sdk.getAiConversationApiAiConversationsConversationIdGet({ conversationId: id })
+export const deleteAiConversation = (id: string) => sdk.deleteAiConversationApiAiConversationsConversationIdDelete({ conversationId: id })
 
 export async function streamAiChat(
   input: { conversation_id: string | null; message: string; thinking: boolean },

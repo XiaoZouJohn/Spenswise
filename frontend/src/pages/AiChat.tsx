@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bot, Check, ChevronDown, ChevronRight, CircleAlert, LoaderCircle, Plus, Send, Square, WandSparkles } from 'lucide-react'
-import { Button, State } from '../components/ui'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Bot, Check, ChevronDown, ChevronRight, CircleAlert, LoaderCircle, Plus, Send, Square, Trash2, WandSparkles } from 'lucide-react'
+import { Button, CenterDialog, State } from '../components/ui'
 import { AiMarkdown } from '../components/AiMarkdown'
 import { AiUsageHint } from '../components/AiUsageHint'
 import { useSession } from '../lib/session'
 import type { AssistantContext, AssistantDraft } from '../components/village/VillageContext'
 import {
-  getAiConnection, getAiConversation, getAiConversations, streamAiChat,
+  deleteAiConversation, getAiConnection, getAiConversation, getAiConversations, streamAiChat,
+  type AiConversationSummary,
   type AiMessage,
 } from '../lib/aiChat'
 
@@ -57,7 +58,9 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
   const [activeThinking, setActiveThinking] = useState(false)
   const [progress, setProgress] = useState<Progress>('idle')
   const [error, setError] = useState('')
-  const [historyOpen, setHistoryOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(mode === 'page')
+  const [deleteTarget, setDeleteTarget] = useState<AiConversationSummary | null>(null)
+  const [composerExpanded, setComposerExpanded] = useState(false)
   const [isStreaming, setStreaming] = useState(false)
   const [openReasoning, setOpenReasoning] = useState<Record<string, boolean>>({})
   const streamingRef = useRef(false)
@@ -108,7 +111,21 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
     setPreset('')
     setError('')
     setProgress('idle')
+    setComposerExpanded(false)
   }
+
+  const removeConversation = useMutation({
+    mutationFn: deleteAiConversation,
+    onSuccess: (_, id) => {
+      if (selectedId === id) {
+        chooseConversation(null)
+        setHistoryOpen(true)
+      }
+      cache.removeQueries({ queryKey: ['ai-conversation', id], exact: true })
+      void cache.invalidateQueries({ queryKey: ['ai-conversations'] })
+      setDeleteTarget(null)
+    },
+  })
 
   async function send(value = draft) {
     const content = value.trim()
@@ -124,6 +141,8 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
     setError('')
     setDraft('')
     setPreset('')
+    setComposerExpanded(false)
+    if (window.matchMedia('(pointer:coarse) and (max-width:767px), (pointer:coarse) and (orientation:landscape) and (max-width:1024px) and (max-height:600px)').matches) composerRef.current?.blur()
     setMessages(previous => [...previous,
       { id: requestId, role: 'user', content, reasoning: null, thinking: false },
       { id: answerId, role: 'assistant', content: '', reasoning: null, thinking },
@@ -150,6 +169,7 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
     } catch (cause) {
       setMessages(previous => previous.filter(item => item.id !== requestId && item.id !== answerId))
       setDraft(content)
+      setComposerExpanded(true)
       if (controller.signal.aborted) {
         setProgress('idle')
         setError('已停止回复，问题已放回输入框。')
@@ -186,7 +206,7 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
     }
   }
 
-  return <div className={mode === 'panel' ? 'ai-chat-embedded' : 'page ai-page'} data-testid="ai-chat-panel" data-initial-conversation={initialConversationId || undefined}>
+  return <div className={`${mode === 'panel' ? 'ai-chat-embedded' : 'page ai-page'} ${messages.length > 0 && !composerExpanded ? 'ai-composer-condensed' : ''}`} data-testid="ai-chat-panel" data-progress={progress} data-initial-conversation={initialConversationId || undefined}>
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="mb-1 text-sm text-muted">DeepSeek</p>
@@ -195,17 +215,20 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
     </header>
 
     <div className="ai-workspace card">
-      <aside className="ai-history" aria-label="对话记录">
+      <aside className={`ai-history ${historyOpen ? 'is-expanded' : ''}`} aria-label="对话记录">
         <div className="ai-history-head">
-          <button type="button" className="ai-history-toggle" aria-expanded={mode === 'page' || historyOpen} onClick={() => setHistoryOpen(value => !value)} data-testid="ai-history-toggle">对话记录 <span className="text-muted">{conversations.data?.length ?? 0}</span><ChevronDown className={mode === 'page' || historyOpen ? 'rotate-180' : ''} size={16}/></button>
+          <button type="button" className="ai-history-toggle" aria-expanded={historyOpen} onClick={() => setHistoryOpen(value => !value)} data-testid="ai-history-toggle">对话记录 <span className="text-muted">{conversations.data?.length ?? 0}</span><ChevronDown className={historyOpen ? 'rotate-180' : ''} size={16}/></button>
           <Button variant="secondary" className="h-8 px-2.5" onClick={() => chooseConversation(null)} disabled={isStreaming}><Plus size={15}/>新对话</Button>
         </div>
-        {(mode === 'page' || historyOpen) && <div className="ai-history-list">
+        {historyOpen && <div className="ai-history-list">
           {conversations.isLoading ? <State kind="loading"/> : conversations.isError ? <State kind="error" message="无法读取对话记录" retry={() => conversations.refetch()}/> : conversations.data?.length
-            ? conversations.data.map(item => <button key={item.id} type="button" className={`ai-history-item ${selectedId === item.id ? 'is-active' : ''}`} aria-current={selectedId === item.id ? 'page' : undefined} onClick={() => chooseConversation(item.id)} disabled={isStreaming}>
-              <span className="min-w-0 truncate">{item.title || '未命名对话'}</span>
-              <time className="shrink-0 text-xs text-muted" dateTime={item.created_at}>{timeLabel(item.created_at)}</time>
-            </button>)
+            ? conversations.data.map(item => <div key={item.id} className="ai-history-row">
+              <button type="button" className={`ai-history-item ${selectedId === item.id ? 'is-active' : ''}`} aria-current={selectedId === item.id ? 'page' : undefined} onClick={() => chooseConversation(item.id)} disabled={isStreaming}>
+                <span className="min-w-0 truncate">{item.title || '未命名对话'}</span>
+                <time className="shrink-0 text-xs text-muted" dateTime={item.created_at}>{timeLabel(item.created_at)}</time>
+              </button>
+              <button type="button" className="ai-history-delete" aria-label={`删除对话：${item.title || '未命名对话'}`} title="删除这条对话" onClick={() => { removeConversation.reset(); setDeleteTarget(item) }} disabled={isStreaming || removeConversation.isPending}><Trash2 size={16}/></button>
+            </div>)
             : <p className="px-4 py-3 text-sm text-muted">还没有对话记录</p>}
         </div>}
       </aside>
@@ -252,7 +275,7 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
           {!connection.isLoading && !connection.data?.configured && <div className="ai-notice">AI 服务暂时不可用，请稍后再试。</div>}
           {connection.isError && <div className="ai-notice">无法确认 AI 连接状态。<button type="button" onClick={() => connection.refetch()}>重试</button></div>}
           <div className="ai-composer card">
-            <textarea ref={composerRef} rows={3} value={draft} onChange={event => { setDraft(event.target.value); setPreset('') }} onKeyDown={composerKeyDown} placeholder="输入你想讨论的问题…" aria-label="输入消息" data-testid="ai-composer" disabled={isStreaming || blockedConversation}/>
+            <textarea ref={composerRef} rows={3} value={draft} onFocus={() => setComposerExpanded(true)} onClick={() => setComposerExpanded(true)} onChange={event => { setDraft(event.target.value); setPreset('') }} onKeyDown={composerKeyDown} placeholder="输入你想讨论的问题…" aria-label="输入消息" data-testid="ai-composer" disabled={isStreaming || blockedConversation}/>
             <div className="ai-composer-tools">
               <label className="flex min-w-0 items-center gap-2 text-xs text-muted" htmlFor="ai-preset-select">
                 <span className="shrink-0">常用提问</span>
@@ -271,5 +294,10 @@ export function AiChat({ mode = 'page', initialConversationId, villageContext, o
         </div>
       </section>
     </div>
+    <CenterDialog open={deleteTarget !== null} onOpenChange={open => { if (!open && !removeConversation.isPending) setDeleteTarget(null) }} title="删除聊天记录">
+      <p className="mt-0 leading-7">确定删除“{deleteTarget?.title || '未命名对话'}”及其中的所有消息吗？删除后无法恢复。</p>
+      <div className="mt-6 flex justify-end gap-2"><Button variant="secondary" disabled={removeConversation.isPending} onClick={() => setDeleteTarget(null)}>取消</Button><Button variant="danger" disabled={!deleteTarget || removeConversation.isPending} onClick={() => { if (deleteTarget) removeConversation.mutate(deleteTarget.id) }}>{removeConversation.isPending ? '正在删除…' : '确认删除'}</Button></div>
+      {removeConversation.isError && <p role="alert" className="mb-0 mt-3 text-sm text-danger">删除失败：{removeConversation.error.message}</p>}
+    </CenterDialog>
   </div>
 }
