@@ -58,6 +58,10 @@
 .building-sign small b { display:inline; font-size:26px; margin-left:8px; }
 .building-sign[data-count]:not([data-count="0"]) { text-shadow:0 0 18px var(--paper-soft), 0 2px 1px var(--paper-soft); }
 .compact-navigation,.compact-places { display:none; }
+.mobile-primary-nav,.mobile-menu-backdrop,.workspace-title-mobile,
+.mobile-home-header-reveal,.mobile-home-header-collapse,.mobile-home-story-button,.mobile-home-story-close,
+.mobile-home-rotate-prompt,.mobile-workspace-rotate-prompt { display:none; }
+.mobile-location-extra { display:none; }
 .life-paper { margin-block:18px; padding:22px 0; }
 .life-paper h2 { margin:0 0 18px; font-size:20px; font-weight:600; }
 .life-paper h3 { font-size:17px; }
@@ -151,6 +155,378 @@
   .sw-drawer { padding:20px; }
   .story-generation { padding-inline:12px; grid-template-columns:minmax(0,1fr) 116px; font-size:11px; }
 }
+
+/* Phone navigation is intentionally isolated from tablet and desktop layouts. */
+@media (max-width:767px) {
+  .village-v2 {
+    height:100dvh;
+    min-height:100dvh;
+    overflow:hidden;
+    padding-bottom:calc(68px + env(safe-area-inset-bottom));
+  }
+  .village-v2 .village-topbar {
+    position:relative;
+    z-index:36;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    min-height:56px;
+    height:56px;
+    padding:6px 12px;
+    background:var(--paper);
+  }
+  .village-v2 .village-brand { min-width:0; font-size:16px; }
+  .village-v2 .village-brand .village-illustration { width:27px; height:36px; }
+  .village-v2 .village-brand small { display:none; }
+  .village-v2 .village-space-switch,
+  .village-v2 .village-guide-trigger,
+  .village-v2 .village-user span { display:none; }
+  .village-v2 .village-header-actions { justify-self:end; gap:4px; }
+  .village-v2 .village-header-actions .agent-entry > button { min-width:36px; min-height:36px; padding:6px; }
+  .village-v2 .compact-navigation,
+  .village-v2 .village-district-nav { display:none; }
+  .village-v2 .village-main {
+    display:block;
+    width:100%;
+    height:calc(100dvh - 56px - 68px - env(safe-area-inset-bottom));
+    min-height:0;
+    padding:8px;
+    overflow:hidden;
+  }
+  .village-v2 .building-workspace,
+  .village-v2 .village-story-slot,
+  .village-v2 .compact-places { height:100%; min-height:0; }
+  .village-v2 .building-workspace { border-radius:8px; }
+  .village-v2 .building-workspace-head {
+    display:grid;
+    grid-template-columns:40px minmax(0,1fr) 40px;
+    align-items:center;
+    min-height:52px;
+    padding:6px 10px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+  }
+  .village-v2 .building-workspace-head > a {
+    grid-column:1;
+    grid-row:1;
+    width:40px;
+    height:40px;
+    justify-content:center;
+    border-radius:50%;
+    color:var(--forest);
+  }
+  .village-v2 .building-workspace-head > a span { display:none; }
+  .village-v2 .building-workspace-head > span {
+    display:flex;
+    grid-column:2;
+    grid-row:1;
+    min-width:0;
+    justify-content:center;
+    text-align:center;
+  }
+  .village-v2 .building-workspace-head > span > svg,
+  .village-v2 .workspace-title-desktop { display:none; }
+  .village-v2 .workspace-title-mobile {
+    display:block;
+    max-width:100%;
+    overflow:hidden;
+    color:var(--ink);
+    font-family:var(--font-display);
+    font-size:18px;
+    font-weight:600;
+    line-height:1.3;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+  }
+  .village-v2 .building-workspace-head::after {
+    content:'';
+    grid-column:3;
+    grid-row:1;
+    width:40px;
+    height:40px;
+  }
+  .village-v2 .building-tabs {
+    gap:8px;
+    padding:4px 12px;
+    overflow-x:auto;
+    scrollbar-width:none;
+    background:var(--paper-soft);
+  }
+  .village-v2 .building-tabs::-webkit-scrollbar { display:none; }
+  .village-v2 .building-tabs a,
+  .village-v2 .building-tabs button {
+    flex:none;
+    min-height:38px;
+    padding:8px 10px;
+    border-radius:18px;
+    font-size:14px;
+  }
+  .village-v2 .building-tabs .active,
+  .village-v2 .building-tabs button[aria-pressed=true] {
+    border-bottom-color:transparent;
+    background:color-mix(in srgb,var(--forest-light) 18%,var(--paper-soft));
+  }
+  .village-v2 .workspace-content {
+    padding:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    scrollbar-width:none;
+  }
+  .village-v2 .workspace-content::-webkit-scrollbar { display:none; }
+  .village-v2 .workspace-content .page { padding:18px 14px 28px; }
+  .mobile-primary-nav {
+    position:fixed;
+    z-index:50;
+    left:0;
+    right:0;
+    bottom:0;
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    height:calc(68px + env(safe-area-inset-bottom));
+    padding:5px 6px env(safe-area-inset-bottom);
+    border-top:1px solid var(--line);
+    background:color-mix(in srgb,var(--paper-soft) 96%,transparent);
+    box-shadow:0 -8px 24px rgb(53 76 64 / 8%);
+    backdrop-filter:blur(14px);
+  }
+  .mobile-primary-nav > a,
+  .mobile-primary-nav > button {
+    display:flex;
+    min-width:0;
+    min-height:56px;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:1px;
+    padding:2px;
+    border:0;
+    border-radius:9px;
+    background:none;
+    color:var(--ink-secondary);
+    font-size:12px;
+    font-weight:600;
+  }
+  .mobile-primary-nav .village-illustration { width:23px; height:31px; }
+  .mobile-primary-nav > button svg { width:21px; height:21px; margin:5px 0 4px; }
+  .mobile-primary-nav > .is-active,
+  .mobile-primary-nav > .active { color:var(--forest); background:color-mix(in srgb,var(--forest-light) 16%,transparent); }
+  .mobile-primary-nav > .is-active .village-illustration,
+  .mobile-primary-nav > .active .village-illustration { filter:drop-shadow(0 2px 3px rgb(53 76 64 / 20%)); }
+  .mobile-menu-backdrop {
+    position:fixed;
+    z-index:47;
+    inset:0 0 calc(68px + env(safe-area-inset-bottom));
+    display:block;
+    border:0;
+    background:rgb(32 49 40 / 18%);
+  }
+  .village-v2 .village-location-menu {
+    position:fixed;
+    z-index:48;
+    top:auto;
+    right:10px;
+    bottom:calc(76px + env(safe-area-inset-bottom));
+    left:10px;
+    width:auto;
+    max-height:min(62dvh,520px);
+    overflow-y:auto;
+    padding:8px;
+    border-radius:14px;
+    box-shadow:var(--shadow-dialog);
+  }
+  .village-v2 .village-location-menu a { min-height:48px; padding:10px 12px; }
+  .village-v2 .village-location-menu a span { margin-left:auto; }
+  .village-v2 .village-location-menu .mobile-location-extra { display:flex; }
+  .village-v2 .village-budget-strip { bottom:calc(78px + env(safe-area-inset-bottom)); }
+  .village-v2 .ai-launcher { z-index:46; }
+  .village-v2 .review-actions { bottom:0; }
+}
+
+/* Portrait phones use task-focused workspaces; the village itself asks for landscape. */
+@media (max-width:767px) and (orientation:portrait) {
+  .village-v2.is-home .mobile-primary-nav,
+  .village-v2.is-home .ai-launcher,
+  .village-v2.is-home .village-budget-strip { display:none; }
+  .mobile-home-rotate-prompt {
+    position:fixed;
+    z-index:80;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:28px;
+    background:var(--paper-soft);
+    color:var(--ink);
+    text-align:center;
+  }
+  .mobile-home-rotate-prompt svg { color:var(--forest); animation:mobile-rotate-hint 1.8s ease-in-out infinite; }
+  .mobile-home-rotate-prompt h2 { margin:4px 0 0; font-family:var(--font-display); font-size:24px; }
+  .mobile-home-rotate-prompt p { max-width:280px; margin:0; color:var(--ink-secondary); font-size:15px; }
+  .mobile-home-rotate-prompt a { margin-top:8px; padding:10px 16px; border:1px solid var(--forest-light); border-radius:8px; color:var(--forest); font-size:14px; font-weight:600; }
+}
+
+/* A phone held horizontally becomes the original full-screen village. */
+@media (orientation:landscape) and (max-width:1024px) and (max-height:600px) {
+  .village-v2.is-home {
+    --building-label-x-pad:92px;
+    --building-label-y-top:58px;
+    --building-label-y-bottom:54px;
+    width:100vw;
+    height:100dvh;
+    min-height:100dvh;
+    padding:0;
+    overflow:hidden;
+    background:var(--village-sky);
+  }
+  .village-v2.is-home .village-scene { position:fixed; inset:0; display:block; width:100vw; height:100dvh; }
+  .village-v2.is-home .village-spatial-layer { display:block; }
+  .village-v2.is-home .village-light { background:rgb(249 244 232 / 3%); }
+  .village-v2.is-home .scene-financial-focus { display:none; }
+  .village-v2.is-home .building-sign { min-width:130px; max-width:190px; padding:8px 10px; }
+  .village-v2.is-home .building-sign strong {
+    font-size:clamp(23px,4vw,34px);
+    letter-spacing:2px;
+    -webkit-text-stroke:4px var(--paper-soft);
+  }
+  .village-v2.is-home .building-sign small {
+    margin-top:2px;
+    font-size:clamp(12px,1.8vw,17px);
+    -webkit-text-stroke:3px var(--paper-soft);
+  }
+  .village-v2.is-home .building-sign small b { font-size:inherit; }
+  .village-v2.is-home .village-topbar {
+    position:fixed;
+    z-index:46;
+    top:0;
+    right:0;
+    left:0;
+    display:grid;
+    grid-template-columns:minmax(150px,1fr) auto minmax(150px,1fr);
+    min-height:50px;
+    height:50px;
+    padding:4px 14px;
+    background:color-mix(in srgb,var(--paper-soft) 88%,transparent);
+    box-shadow:0 8px 24px rgb(31 49 40 / 8%);
+    backdrop-filter:blur(12px);
+    transition:transform .28s ease,opacity .2s ease;
+  }
+  .village-v2.is-home.is-mobile-header-collapsed .village-topbar { transform:translateY(calc(-100% - 6px)); opacity:0; pointer-events:none; }
+  .village-v2.is-home .village-brand { justify-self:start; font-size:16px; }
+  .village-v2.is-home .village-brand .village-illustration { width:27px; height:36px; }
+  .village-v2.is-home .village-brand small { display:none; }
+  .village-v2.is-home .village-space-switch { display:flex; justify-self:center; }
+  .village-v2.is-home .village-space-switch a { padding:5px 10px; font-size:12px; }
+  .village-v2.is-home .village-header-actions { justify-self:end; gap:5px; }
+  .village-v2.is-home .village-guide-trigger,
+  .village-v2.is-home .village-header-actions .agent-entry,
+  .village-v2.is-home .village-user { display:none; }
+  .village-v2.is-home .village-header-actions .village-icon-button { display:inline-flex; min-width:36px; min-height:36px; }
+  .mobile-home-header-collapse { display:grid; width:36px; height:36px; place-items:center; border:0; border-radius:50%; background:none; color:var(--forest); }
+  .mobile-home-header-reveal {
+    position:fixed;
+    z-index:45;
+    top:0;
+    left:50%;
+    display:flex;
+    min-width:82px;
+    height:27px;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    padding:0 10px;
+    transform:translateX(-50%);
+    border:1px solid var(--line);
+    border-top:0;
+    border-radius:0 0 12px 12px;
+    background:color-mix(in srgb,var(--paper-soft) 90%,transparent);
+    box-shadow:0 5px 16px rgb(31 49 40 / 10%);
+    color:var(--forest);
+    font-size:11px;
+    opacity:1;
+    transition:opacity .2s ease,transform .2s ease;
+  }
+  .village-v2.is-home.is-mobile-header-open .mobile-home-header-reveal { opacity:0; transform:translate(-50%,-100%); pointer-events:none; }
+  .village-v2.is-home .village-district-nav,
+  .village-v2.is-home .compact-navigation,
+  .village-v2.is-home .compact-places,
+  .village-v2.is-home .mobile-primary-nav,
+  .village-v2.is-home .mobile-home-rotate-prompt { display:none; }
+  .village-v2.is-home .village-main { display:none; }
+  .village-v2.is-home.is-mobile-story-open .village-main {
+    position:fixed;
+    z-index:44;
+    inset:12px auto 12px 12px;
+    display:block;
+    width:min(390px,48vw);
+    height:auto;
+    min-height:0;
+    padding:0;
+    overflow:hidden;
+    pointer-events:auto;
+  }
+  .village-v2.is-home.is-mobile-story-open .village-story-slot { display:block; width:100%; min-width:0; max-width:none; height:100%; margin:0; padding:0; }
+  .village-v2.is-home.is-mobile-story-open .story-paper { width:100%; height:100%; min-height:0; }
+  .mobile-home-story-button {
+    position:fixed;
+    z-index:41;
+    left:14px;
+    bottom:14px;
+    display:inline-flex;
+    min-height:40px;
+    align-items:center;
+    gap:7px;
+    padding:8px 14px;
+    border:1px solid var(--forest-light);
+    border-radius:20px;
+    background:color-mix(in srgb,var(--paper-soft) 91%,transparent);
+    box-shadow:var(--shadow-panel);
+    color:var(--forest);
+    font-size:13px;
+    font-weight:600;
+    backdrop-filter:blur(10px);
+  }
+  .village-v2.is-mobile-story-open .mobile-home-story-button { display:none; }
+  .mobile-home-story-close {
+    position:fixed;
+    z-index:45;
+    top:18px;
+    left:min(350px,calc(48vw - 28px));
+    display:grid;
+    width:34px;
+    height:34px;
+    place-items:center;
+    border:1px solid var(--line);
+    border-radius:50%;
+    background:var(--paper-soft);
+    color:var(--forest);
+    box-shadow:var(--shadow-panel);
+  }
+  .village-v2.is-home .village-budget-strip { bottom:14px; right:14px; max-width:min(300px,38vw); }
+  .village-v2.is-home .ai-launcher { z-index:42; }
+  .village-v2.has-workspace .mobile-workspace-rotate-prompt {
+    position:fixed;
+    z-index:80;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    padding:24px;
+    background:var(--paper-soft);
+    text-align:center;
+  }
+  .mobile-workspace-rotate-prompt svg { color:var(--forest); animation:mobile-rotate-hint 1.8s ease-in-out infinite; }
+  .mobile-workspace-rotate-prompt h2 { margin:3px 0 0; font-family:var(--font-display); font-size:23px; }
+  .mobile-workspace-rotate-prompt p { margin:0; color:var(--ink-secondary); font-size:14px; }
+  .mobile-workspace-rotate-prompt a { margin-top:5px; color:var(--forest); font-size:14px; font-weight:600; }
+}
+
+@keyframes mobile-rotate-hint {
+  0%,100% { transform:rotate(0); }
+  50% { transform:rotate(22deg); }
+}
 @media (prefers-reduced-motion:reduce) { .village-v2 *, .sw-drawer { scroll-behavior:auto; animation-duration:.01ms!important; transition-duration:.01ms!important; } }
 .market-page .forecast-options { border-top:1px solid var(--line); padding-top:18px; color:var(--ink); }
 .market-page .forecast-options details { border:1px solid var(--line); background:var(--paper-soft); }
@@ -160,7 +536,7 @@
 
 /* Mobile: the animated village is the landscape entry; workspaces remain readable in portrait. */
 .mobile-map-rotate,.mobile-workspace-rotate { display:none; }
-@media (max-width:1100px) {
+@media (min-width:768px) and (max-width:1100px) {
   .village-v2 { min-height:100dvh; overflow:hidden; }
   .village-v2 .village-scene { position:fixed; inset:0; width:100%; height:100dvh; }
   .village-v2 .village-poster,.village-v2 .village-video { object-position:center center; }
@@ -187,16 +563,7 @@
   .village-v2 .village-budget-strip { display:none; }
   .village-v2 .scene-financial-focus { display:none; }
 }
-@media (max-width:700px) and (orientation:portrait) {
-  .village-v2.is-home[data-compact-mode=places] .building-sign { display:none; }
-  .village-v2.is-home[data-compact-mode=places] .compact-places { display:flex; position:fixed; z-index:3; left:0; right:0; bottom:72px; width:auto; height:auto; max-height:68px; flex-direction:row; justify-content:center; gap:0; margin:0; padding:8px 10px; overflow-x:auto; overflow-y:hidden; background:linear-gradient(0deg,rgba(248,245,232,.94),rgba(248,245,232,.76)); }
-  .village-v2.is-home[data-compact-mode=places] .compact-places a { flex:1 0 auto; min-width:72px; justify-content:center; padding:5px 8px; gap:0; border:0; border-right:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
-  .village-v2.is-home[data-compact-mode=places] .compact-places a:last-child { border-right:0; }
-  .village-v2.is-home[data-compact-mode=places] .compact-places .village-illustration,.village-v2.is-home[data-compact-mode=places] .compact-places small,.village-v2.is-home[data-compact-mode=places] .compact-places a>span:last-child { display:none; }
-  .village-v2.is-home[data-compact-mode=places] .compact-places strong { font-size:15px; }
-  .mobile-map-rotate { display:block; position:fixed; z-index:3; top:74px; right:12px; padding:7px 10px; background:var(--paper-soft); color:var(--forest); font-size:12px; border:1px solid var(--line); }
-}
-@media (max-width:1100px) and (orientation:landscape) {
+@media (min-width:768px) and (max-width:1100px) and (orientation:landscape) {
   .mobile-workspace-rotate { display:block; position:fixed; z-index:39; right:12px; bottom:74px; padding:7px 10px; background:var(--paper-soft); color:var(--forest); font-size:12px; border:1px solid var(--line); }
 }
 @media (min-width:1101px) and (max-width:1400px) and (max-height:700px) {
@@ -210,7 +577,7 @@
 @media (prefers-reduced-motion:reduce) { .village-v2[data-compact-mode=story] .village-story-slot,.village-v2[data-compact-mode=workspace] .building-workspace { animation:none; } }
 
 /* On phones the home canvas is landscape, with Story anchored beside the village. */
-@media (max-width:1100px) {
+@media (min-width:768px) and (max-width:1100px) {
   .village-v2 { position:fixed; top:0; left:0; width:100vw; height:100dvh; min-height:0; transform:rotate(0deg); transform-origin:top left; transition:top .56s cubic-bezier(.2,.7,.2,1),left .56s cubic-bezier(.2,.7,.2,1),width .56s cubic-bezier(.2,.7,.2,1),height .56s cubic-bezier(.2,.7,.2,1),transform .56s cubic-bezier(.2,.7,.2,1); will-change:transform; }
   .village-v2 .village-video,.village-v2 .village-poster,.village-v2 .village-light { transition:opacity .35s ease,filter .35s ease,transform .35s ease,background .35s ease; }
   .village-v2.is-home .village-scene { pointer-events:auto; }
@@ -226,14 +593,14 @@
   .village-v2.has-workspace .village-story-slot { display:block !important; position:absolute; z-index:2; left:12px; top:10px; width:min(31%,390px); height:calc(100% - 20px); opacity:0; pointer-events:none; transition:opacity .2s ease; }
   .village-v2.has-workspace .building-workspace { animation:mobile-workspace-enter .45s .16s ease-out both; }
 }
-@media (max-width:1100px) and (orientation:portrait) {
+@media (min-width:768px) and (max-width:1100px) and (orientation:portrait) {
   .village-v2.is-home { position:fixed; top:0; left:100vw; width:100dvh; height:100vw; min-height:0; transform:rotate(90deg); transform-origin:top left; }
   .village-v2.is-home .village-scene { position:absolute; inset:0; width:100%; height:100%; }
   .village-v2.is-home .village-main { grid-template-columns:clamp(250px,31%,340px) minmax(0,1fr); }
   .village-v2.is-home .building-sign,.village-v2.is-home[data-compact-mode=places] .building-sign { display:inline-flex; }
   .village-v2.is-home .compact-places,.village-v2.is-home[data-compact-mode=places] .compact-places { display:none !important; }
 }
-@media (max-width:1100px) and (orientation:landscape) {
+@media (min-width:768px) and (max-width:1100px) and (orientation:landscape) {
   .village-v2.has-workspace { position:fixed; top:100dvh; left:0; width:100dvh; height:100vw; min-height:0; transform:rotate(-90deg); transform-origin:top left; }
   .village-v2.has-workspace .village-scene { position:absolute; inset:0; width:100%; height:100%; }
   .village-v2.has-workspace .village-main { height:calc(100% - 64px); }

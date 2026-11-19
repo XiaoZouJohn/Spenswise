@@ -79,8 +79,8 @@ export function VillageScene({ chapter, selectedCategory, categoryAmount, worksp
           })}
         </div>
         {buildings.map(building => <BuildingLabel key={building.id} building={building} active={active === building.id}
-          x={`clamp(${compactScene ? 85 : 170}px, ${building.x * 1920 * fit.scale + fit.x}px, calc(100% - ${compactScene ? 85 : 170}px))`}
-          y={`clamp(${compactScene ? 55 : 160}px, ${building.y * 1080 * fit.scale + fit.y}px, calc(100% - ${compactScene ? 55 : 85}px))`}
+          x={`clamp(var(--building-label-x-pad, ${compactScene ? 85 : 170}px), ${building.x * 1920 * fit.scale + fit.x}px, calc(100% - var(--building-label-x-pad, ${compactScene ? 85 : 170}px)))`}
+          y={`clamp(var(--building-label-y-top, ${compactScene ? 55 : 160}px), ${building.y * 1080 * fit.scale + fit.y}px, calc(100% - var(--building-label-y-bottom, ${compactScene ? 55 : 85}px)))`}
           onHover={() => setHovered(building.id)} onLeave={() => setHovered(null)}
           onFocus={() => setFocused(building.id)} onBlur={() => setFocused(null)}/>)}
         {(showIncome || showExpense) && <div className={`scene-financial-focus ${showIncome ? 'is-income' : 'is-expense'}`} role="status">

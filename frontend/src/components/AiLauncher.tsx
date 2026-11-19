@@ -6,14 +6,14 @@ const storageKey = 'spendwise-ai-launcher-position-v2'
 type Drag = { pointerId: number; startX: number; startY: number; x: number; y: number; moved: boolean }
 
 function metrics() {
-  return window.innerWidth <= 600 ? { size: 44, margin: 12 } : { size: 60, margin: 20 }
+  return window.innerWidth <= 767 ? { size: 44, margin: 12, bottomInset: 84 } : { size: 60, margin: 20, bottomInset: 20 }
 }
 
 function clamp(position: AiBubblePosition): AiBubblePosition {
-  const { size, margin } = metrics()
+  const { size, margin, bottomInset } = metrics()
   return {
     x: Math.max(margin, Math.min(position.x, window.innerWidth - size - margin)),
-    y: Math.max(margin, Math.min(position.y, window.innerHeight - size - margin)),
+    y: Math.max(margin, Math.min(position.y, window.innerHeight - size - bottomInset)),
   }
 }
 
@@ -22,8 +22,9 @@ function initialPosition(): AiBubblePosition {
     const stored = JSON.parse(localStorage.getItem(storageKey) || 'null') as AiBubblePosition | null
     if (stored && Number.isFinite(stored.x) && Number.isFinite(stored.y)) return clamp(stored)
   } catch { /* Ignore an invalid saved position. */ }
-  const { size, margin } = metrics()
-  return clamp({ x: margin, y: window.innerHeight - size - margin })
+  const { size, margin, bottomInset } = metrics()
+  const x = window.innerWidth <= 767 ? window.innerWidth - size - margin : margin
+  return clamp({ x, y: window.innerHeight - size - bottomInset })
 }
 
 export function AiLauncher({ onOpen }: { onOpen: (position: AiBubblePosition) => void }) {
