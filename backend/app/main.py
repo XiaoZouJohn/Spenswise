@@ -27,6 +27,7 @@ from .routes_review import router as review_router
 from .routes_village import router as village_router
 from .schemas import (
     AiCategoryApplyIn,
+    AiConnectionIn,
     AiConnectionOut,
     AiStatusOut,
     BatchCategory,
@@ -488,6 +489,21 @@ def accept_ai_agreement(user: User = Depends(current_user), db: Session = Depend
 @app.get("/api/ai/connection", response_model=AiConnectionOut)
 def get_ai_connection(user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
     return ai_connection.status(db, user.id)
+
+
+@app.put("/api/ai/connection", response_model=AiConnectionOut)
+def save_ai_connection(
+    value: AiConnectionIn, user: User = Depends(current_user), db: Session = Depends(get_db)
+) -> dict:
+    try:
+        return ai_connection.save(db, user.id, value.api_key or "", value.model)
+    except ValueError as exc:
+        raise HTTPException(422, detail={"code": "INVALID_AI_CONNECTION", "message": str(exc)}) from exc
+
+
+@app.delete("/api/ai/connection", response_model=AiConnectionOut)
+def delete_ai_connection(user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    return ai_connection.delete(db, user.id)
 
 
 @app.get("/api/ai/conversations", response_model=list[ChatConversationOut])

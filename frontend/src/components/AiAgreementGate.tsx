@@ -26,7 +26,7 @@ export function AiAgreementGate({ userId, children }: { userId: number; children
         <p>富贵村的 AI 助手由 DeepSeek 提供。你可以用它整理账单分类、生成月度回顾、查看财务简报、讨论收支和消费计划。</p>
         <p>使用这些功能时，服务端会向 DeepSeek 发送完成当前任务需要的账目数据。聊天会按需查询相关账单；月度回顾和简报会使用对应月份的汇总。你允许 AI 使用的生活记录，也可能用于解释当月变化。</p>
         <p>AI 的回答由模型生成，请以账房里的交易记录、钱庄里的账户记录和你保存的预算为准。聊天记录会保存在你的账户中，方便继续查看。</p>
-        <p>平台统一管理 AI 密钥。每项 AI 功能有每日使用次数上限，平台也有每日 token 总额度。额度用完后，可以次日再使用。</p>
+        <p>你可以在右上角的“配置 API”中保存自己的 DeepSeek 密钥。密钥仅由后端加密保存，不会显示在页面上。每项 AI 功能有每日使用次数上限，服务端也有每日 token 总额度；额度用完后，可以次日再使用。</p>
       </div>
       <label className="flex items-start gap-3"><input type="checkbox" checked={read} onChange={event => setRead(event.target.checked)}/><span>我已阅读并同意上述 AI 使用协议</span></label>
       {accept.isError && <p role="alert" className="text-danger">保存失败：{accept.error.message}</p>}

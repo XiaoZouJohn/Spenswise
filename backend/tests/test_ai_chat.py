@@ -210,17 +210,22 @@ def test_invalid_chat_message_and_legacy_connection_recovery(tmp_path: Path, mon
         assert legacy.json()["configured"] is True
         assert legacy.json()["model"] == "deepseek-flash"
 
-        assert client.put("/api/ai/connection", json={"api_key": "user-key"}).status_code == 405
+        assert client.put("/api/ai/connection", json={"api_key": "user-key"}).status_code == 200
+        assert "user-key" not in client.get("/api/ai/connection").text
         assert client.post("/api/ai/agreement").status_code == 200
-        monkeypatch.setenv("AI_API_KEY", "env-backup-key")
         with Session(engine) as db:
-            assert ai_connection.resolve(db, 1) == ("env-backup-key", "deepseek-flash")
+            assert ai_connection.resolve(db, 1) == ("user-key", "deepseek-flash")
         assert client.get("/api/ai/connection").json()["configured"] is True
+        assert client.delete("/api/ai/connection").json()["configured"] is False
+        with Session(engine) as db:
+            with pytest.raises(ValueError, match="请先配置"):
+                ai_connection.resolve(db, 1)
+        assert client.put("/api/ai/connection", json={"api_key": "user-key"}).status_code == 200
         monkeypatch.setenv("AI_MODEL", "deepseek-v4-pro")
         changed = client.get("/api/ai/connection")
-        assert changed.json()["model"] == "deepseek-v4-pro"
+        assert changed.json()["model"] == "deepseek-flash"
         with Session(engine) as db:
-            assert ai_connection.resolve(db, 1) == ("env-backup-key", "deepseek-v4-pro")
+            assert ai_connection.resolve(db, 1) == ("user-key", "deepseek-flash")
     finally:
         app.dependency_overrides.clear()
 

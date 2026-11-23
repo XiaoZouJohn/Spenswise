@@ -51,7 +51,7 @@ docker compose up --build -d
 ## 演示与协作
 
 - `sample-data/` 是虚构账单。先注册账号，再在 `backend` 运行 `.\.venv\Scripts\python.exe -m scripts.seed --owner-email "你的注册邮箱"`，可填充演示数据。请勿在真实账本账号上运行种子命令。
-- DeepSeek API Key 由每个账号在“设置 → DeepSeek 连接”中自行填写。交付包**不含**任何真实 API Key、AI 加密主密钥、用户数据库或上传的账单。不要把 `.env`、`backend/*.db`、`backend/ai-key/`、`backend/uploads/` 提交或发给他人。
+- DeepSeek API Key 由每个账号点击页面右上角齿轮，在“配置 API”中自行填写、保存、测试或删除。交付包**不含**任何真实 API Key、AI 加密主密钥、用户数据库或上传的账单。不要把 `.env`、`backend/*.db`、`backend/ai-key/`、`backend/uploads/` 提交或发给他人。
 - 家庭组功能从顶部“家庭组”进入；创建或加入家庭后，左侧才显示家庭菜单。页面和数据授权边界见 [FEATURE_PARITY.md](FEATURE_PARITY.md)；目录职责与改动流程见 [AGENTS.md](AGENTS.md)。
 - 后端测试：在 `backend` 执行 `.\.venv\Scripts\python.exe -m pytest -q`。前端检查：在 `frontend` 执行 `npm run build` 和 `npm run lint`；浏览器测试执行 `npm run test:e2e`，它会使用独立测试数据库。
 

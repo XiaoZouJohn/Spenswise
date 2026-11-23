@@ -25,6 +25,7 @@ backend/__pycache__/
 backend/**/__pycache__/
 .env
 backend/ai-key/
+backend/ai-connection.key
 
 # Local artifacts and secrets
 backend/build/

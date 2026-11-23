@@ -10,6 +10,7 @@ import type { BudgetStatusData } from './types'
 const Simulate = lazy(() => import('./pages/Simulate').then(m => ({ default: m.Simulate })))
 const Ledger = lazy(() => import('./pages/Ledger').then(m => ({ default: m.Ledger })))
 const SettingsPage = lazy(() => import('./pages/Settings').then(m => ({ default: m.SettingsPage })))
+const AiConnectionPage = lazy(() => import('./pages/AiConnection').then(m => ({ default: m.AiConnectionPage })))
 const ComponentsPage = lazy(() => import('./pages/Components').then(m => ({ default: m.ComponentsPage })))
 const UserCenter = lazy(() => import('./pages/UserCenter').then(m => ({ default: m.UserCenter })))
 const FamilyWelcome = lazy(() => import('./pages/FamilyWelcome').then(m => ({ default: m.FamilyWelcome })))
@@ -42,6 +43,7 @@ export default function App() {
       <Route path="/accounts" element={<AccountsPage/>}/>
       <Route path="/import" element={<Navigate to="/ledger?import=1" replace/>}/>
       <Route path="/settings" element={<SettingsPage onBudgetPreview={setBudgetPreview}/>}/>
+      <Route path="/api-settings" element={<AiConnectionPage/>}/>
       <Route path="/user" element={<UserCenter/>}/>
       <Route path="/family" element={hasFamily ? <FamilyDashboardPage/> : <FamilyWelcome/>}/>
       <Route path="/family/decisions" element={hasFamily ? <FamilyDecisionsPage/> : <Navigate to="/family" replace/>}/>

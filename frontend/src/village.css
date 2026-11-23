@@ -70,6 +70,8 @@ input[aria-invalid=true], textarea[aria-invalid=true] { border-color: var(--dang
 .village-space-switch a.is-active { border-color: var(--forest-light); background: color-mix(in srgb, var(--forest-light) 16%, var(--paper-soft)); }
 .village-header-actions { display: flex; align-items: center; gap: 14px; }
 .village-header-actions button { font-size: 13px; }
+.village-api-settings { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--village-glass); }
+.village-api-settings:hover, .village-api-settings:focus-visible { color: var(--forest-light); border-color: var(--forest-light); }
 .village-icon-button, .village-user { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; min-width: 32px; font-size: 13px; }
 .village-user span { max-width: 100px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .village-district-nav { position: relative; z-index: 30; display: flex; align-items: center; gap: 3px; width: fit-content; max-width: calc(100% - 32px); height: 42px; margin: 16px auto 0; padding: 3px 6px; border: 1px solid var(--line); border-radius: 9px; background: var(--village-glass); }

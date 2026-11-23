@@ -243,12 +243,42 @@ export const AiCategorySuggestionInSchema = {
             type: 'string',
             maxLength: 200,
             title: 'Reason',
-            default: 'AI 分类'
+            default: 'AI ����'
         }
     },
     type: 'object',
     required: ['id', 'category', 'confidence'],
     title: 'AiCategorySuggestionIn'
+} as const;
+
+export const AiConnectionInSchema = {
+    properties: {
+        api_key: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 512
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Api Key'
+        },
+        model: {
+            type: 'string',
+            enum: ['deepseek-flash', 'deepseek-v4-pro'],
+            title: 'Model',
+            default: 'deepseek-flash'
+        },
+        clear_key: {
+            type: 'boolean',
+            title: 'Clear Key',
+            default: false
+        }
+    },
+    type: 'object',
+    title: 'AiConnectionIn'
 } as const;
 
 export const AiConnectionOutSchema = {
@@ -1401,7 +1431,7 @@ export const FamilyGoalInSchema = {
             maxLength: 255,
             minLength: 1,
             title: 'Source Note',
-            default: '手动记录'
+            default: '�ֶ���¼'
         },
         monthly_contribution_cents: {
             type: 'integer',
@@ -1450,7 +1480,7 @@ export const FamilyGoalOutSchema = {
             maxLength: 255,
             minLength: 1,
             title: 'Source Note',
-            default: '手动记录'
+            default: '�ֶ���¼'
         },
         monthly_contribution_cents: {
             type: 'integer',
@@ -1538,7 +1568,7 @@ export const FamilyProposalInSchema = {
             maxLength: 80,
             minLength: 1,
             title: 'Category',
-            default: '其他'
+            default: '����'
         },
         split_method: {
             type: 'string',
@@ -1598,7 +1628,7 @@ export const FamilyProposalOutSchema = {
             maxLength: 80,
             minLength: 1,
             title: 'Category',
-            default: '其他'
+            default: '����'
         },
         split_method: {
             type: 'string',
@@ -2986,7 +3016,7 @@ export const ScenarioInSchema = {
         name: {
             type: 'string',
             title: 'Name',
-            default: '未命名方案'
+            default: 'δ��������'
         },
         amount_cents: {
             type: 'integer',
@@ -3501,7 +3531,7 @@ export const TransactionInSchema = {
         category: {
             type: 'string',
             title: 'Category',
-            default: '待确认'
+            default: '��ȷ��'
         },
         is_fixed: {
             type: 'boolean',

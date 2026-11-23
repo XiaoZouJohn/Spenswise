@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSPrope
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, BookOpen, Building2, Compass, UserRound, UsersRound } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, BookOpen, Building2, Compass, Settings2, UserRound, UsersRound } from 'lucide-react'
 import { AgentReminder } from '../AgentReminder'
 import { BudgetWarning } from '../BudgetWarning'
 import { Overview } from '../../pages/Overview'
@@ -49,6 +49,7 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
   const reducedMotion = useReducedMotion()
   const returnFocus = useRef<HTMLAnchorElement | null>(null)
   const family = location.pathname.startsWith('/family')
+  const apiSettings = location.pathname === '/api-settings'
   const home = ['/', '/overview', '/ai', '/plan'].includes(location.pathname)
   useEffect(() => {
     if (!home || family || !journey.data?.show_welcome || autoGuideStarted.current) return
@@ -115,7 +116,7 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
       <header className="village-topbar">
         <Link to="/overview" className="village-brand"><Illustration name="village"/><span>富贵村<small>SPENDWISE</small></span></Link>
         <div className="village-space-switch" aria-label="财务空间"><NavLink to="/overview" className={!family ? 'is-active' : ''}>个人空间</NavLink><NavLink to="/family" className={family ? 'is-active' : ''}><UsersRound size={14}/>家庭组</NavLink></div>
-<div className="village-header-actions"><button className="village-guide-trigger" onClick={() => { if (tourStep > 0 && tourPaused) { setTourPaused(false); navigate(tourStep === 2 && mobileLayout ? '/overview?view=places' : tourSteps[tourStep - 1].path); return } autoGuideStarted.current = true; setTourLocal(1); setTourPaused(false); setTourIntro(value => value + 1); navigate('/overview'); saveGuide({ dismiss_welcome: true, tour_step: 1 }) }}><BookOpen size={17}/>{tourStep > 0 && tourPaused ? '继续指引' : '使用指引'}</button><AgentReminder ownerId={session.user.id} quiet/><Link to="/user" className="village-user" aria-label="个人资料"><UserRound size={17}/><span>{session.user.display_name}</span></Link></div>
+<div className="village-header-actions"><button className="village-guide-trigger" onClick={() => { if (tourStep > 0 && tourPaused) { setTourPaused(false); navigate(tourStep === 2 && mobileLayout ? '/overview?view=places' : tourSteps[tourStep - 1].path); return } autoGuideStarted.current = true; setTourLocal(1); setTourPaused(false); setTourIntro(value => value + 1); navigate('/overview'); saveGuide({ dismiss_welcome: true, tour_step: 1 }) }}><BookOpen size={17}/>{tourStep > 0 && tourPaused ? '继续指引' : '使用指引'}</button><AgentReminder ownerId={session.user.id} quiet/><Link to="/api-settings" className="village-api-settings" aria-label="配置 API" title="配置 API"><Settings2 size={19}/></Link><Link to="/user" className="village-user" aria-label="个人资料"><UserRound size={17}/><span>{session.user.display_name}</span></Link></div>
       </header>
       <nav className="village-district-nav" aria-label="地点导航">
         <Link to="/overview" className={home ? 'is-active' : ''}><Illustration name="ledger"/>本月 Story</Link>
@@ -133,9 +134,9 @@ export function VillageShell({ session, budgetPreview, children }: { session: Se
         <div className="village-story-slot"><Overview/></div>
         {home && <nav id="mobile-places" className="compact-places mobile-village-destinations" aria-label="村庄地点"><header><span>富贵村 · 地点</span><h2>接下来去哪儿</h2><p>四座建筑各管一件事，随时可以进入。</p></header>{buildings.map(building => <Link to={building.href} key={building.id}><Illustration name={building.id}/><span><strong>{building.name}</strong><small>{building.task}</small>{business.data?.buildings[building.id]?.label && <em>{business.data.buildings[building.id].label}</em>}</span><ArrowUpRight size={20} aria-hidden="true"/></Link>)}</nav>}
         <AnimatePresence mode="wait">{workspace && <motion.section key={location.pathname} initial={{ opacity: 0, x: reducedMotion ? 0 : 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: reducedMotion ? 0 : 16 }} transition={{ duration: reducedMotion ? 0 : .28, ease: 'easeOut' }} className="building-workspace" aria-label={`${family ? '家庭空间' : current.name}工作区`}>
-          <header className="building-workspace-head"><span><Building2 size={15}/>{family ? '家庭组 · 家庭事务' : `${current.name} · ${current.task}`}</span><Link to="/overview"><ArrowLeft size={16}/>{mobileLayout ? '返回首页' : '返回村庄'}</Link></header>
+          <header className="building-workspace-head"><span>{apiSettings ? <Settings2 size={15}/> : <Building2 size={15}/>} {apiSettings ? '设置 · 配置 API' : family ? '家庭组 · 家庭事务' : `${current.name} · ${current.task}`}</span><Link to="/overview"><ArrowLeft size={16}/>{mobileLayout ? '返回首页' : '返回村庄'}</Link></header>
           {family && session.family && <nav className="building-tabs" aria-label="家庭功能">{familyNav.map(([href, label]) => <NavLink key={href} end={href === '/family'} to={href}>{label}</NavLink>)}</nav>}
-          {!family && current.id === 'hall' && <nav className="building-tabs" aria-label="议事厅功能"><NavLink to="/review">月度回顾</NavLink><NavLink to="/logs">生活记录</NavLink><NavLink to="/settings">预算</NavLink><NavLink to="/user">个人资料</NavLink></nav>}
+          {!family && !apiSettings && current.id === 'hall' && <nav className="building-tabs" aria-label="议事厅功能"><NavLink to="/review">月度回顾</NavLink><NavLink to="/logs">生活记录</NavLink><NavLink to="/settings">预算</NavLink><NavLink to="/user">个人资料</NavLink></nav>}
           <div className="workspace-content" key={location.pathname}>{children}</div>
         </motion.section>}</AnimatePresence>
       </main>

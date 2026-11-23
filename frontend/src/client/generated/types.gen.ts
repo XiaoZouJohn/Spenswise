@@ -69,6 +69,14 @@ export type AiCategorySuggestionIn = {
     reason?: string;
 };
 
+export type AiConnectionIn = {
+    api_key?: (string | null);
+    model?: 'deepseek-flash' | 'deepseek-v4-pro';
+    clear_key?: boolean;
+};
+
+export type model = 'deepseek-flash' | 'deepseek-v4-pro';
+
 export type AiConnectionOut = {
     configured: boolean;
     model: string;
@@ -1406,6 +1414,14 @@ export type GetAiUsageApiAiUsageGetResponse = ({
 });
 
 export type GetAiConnectionApiAiConnectionGetResponse = (AiConnectionOut);
+
+export type SaveAiConnectionApiAiConnectionPutData = {
+    requestBody: AiConnectionIn;
+};
+
+export type SaveAiConnectionApiAiConnectionPutResponse = (AiConnectionOut);
+
+export type DeleteAiConnectionApiAiConnectionDeleteResponse = (AiConnectionOut);
 
 export type ListAiConversationsApiAiConversationsGetResponse = (Array<ChatConversationOut>);
 
